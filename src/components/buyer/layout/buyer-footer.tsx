@@ -90,6 +90,7 @@ const resourceLinks = [
     label: "Buying Guide",
     href: "/buying-guide",
   },
+
   {
     label: "Industry Insights",
     href: "/industry-insights",
@@ -107,11 +108,20 @@ const resourceLinks = [
 export function BuyerFooter() {
   return (
     <WideContainer>
-      <footer className="w-full bg-[#07194d] px-10 pt-7 pb-4 text-white">
-        <div className="grid grid-cols-[1.35fr_1fr_1fr_1fr_1fr_1.2fr] gap-7">
+      <footer className="w-full overflow-hidden bg-[#07194d] px-5 py-7 text-white sm:px-8 lg:px-10">
+        {/* MAIN FOOTER */}
+        <div
+          className="
+      mx-auto w-full max-w-[1600px]
+      grid grid-cols-1 gap-8
+      sm:grid-cols-2
+      lg:grid-cols-4
+      xl:grid-cols-[1.35fr_1fr_1fr_1fr_1fr_1.2fr]
+      xl:gap-7
+    "
+        >
           {/* BRAND */}
-
-          <div>
+          <div className="min-w-0">
             <Image
               src="/images/logo/logo-light1.png"
               alt="CoolerGuru"
@@ -120,8 +130,9 @@ export function BuyerFooter() {
               className="h-auto w-[150px] brightness-0 invert"
             />
 
-            <p className="mt-3 max-w-[190px] text-[9px] text-white/80 leading-[1.55]">
-              India&apos;s most comprehensive directory for air cooler manufacturers, OEMs, suppliers &amp; exporters.
+            <p className="mt-3 max-w-[190px] text-[9px] leading-[1.55] text-white/80">
+              India&apos;s most comprehensive directory for air cooler manufacturers,
+              OEMs, suppliers &amp; exporters.
             </p>
 
             <div className="mt-4 flex items-center gap-2">
@@ -143,61 +154,116 @@ export function BuyerFooter() {
             </div>
           </div>
 
-          <FooterColumn title="For Buyers" links={buyerLinks} />
+          {/* BUYERS */}
+          <div className="min-w-0">
+            <FooterColumn title="For Buyers" links={buyerLinks} />
+          </div>
 
-          <FooterColumn title="For Suppliers" links={supplierLinks} />
+          {/* SUPPLIERS */}
+          <div className="min-w-0">
+            <FooterColumn title="For Suppliers" links={supplierLinks} />
+          </div>
 
-          <FooterColumn title="Company" links={companyLinks} />
+          {/* COMPANY */}
+          <div className="min-w-0">
+            <FooterColumn title="Company" links={companyLinks} />
+          </div>
 
-          <FooterColumn title="Resources" links={resourceLinks} />
+          {/* RESOURCES */}
+          <div className="min-w-0">
+            <FooterColumn title="Resources" links={resourceLinks} />
+          </div>
 
           {/* CONTACT */}
-
-          <div>
-            <h3 className="font-bold text-[10px] text-white">Contact Us</h3>
+          <div className="min-w-0">
+            <h3 className="font-bold text-[10px] text-white">
+              Contact Us
+            </h3>
 
             <div className="mt-3 space-y-2.5">
-              <ContactItem icon={<Phone size={13} />} text="+91 98765 43210" />
+              <ContactItem
+                icon={<Phone size={13} />}
+                text="+91 98765 43210"
+              />
 
-              <ContactItem icon={<Mail size={13} />} text="support@coolerguru.com" />
+              <ContactItem
+                icon={<Mail size={13} />}
+                text="support@coolerguru.com"
+              />
 
-              <ContactItem icon={<MapPin size={13} />} text="Ahmedabad, Gujarat, India" />
+              <ContactItem
+                icon={<MapPin size={13} />}
+                text="Ahmedabad, Gujarat, India"
+              />
 
-              <ContactItem icon={<Clock3 size={13} />} text="Mon - Sat: 10:00 AM - 6:00 PM" />
+              <ContactItem
+                icon={<Clock3 size={13} />}
+                text="Mon - Sat: 10:00 AM - 6:00 PM"
+              />
 
-              <p className="pl-[22px] text-[8px] text-white/75">GST: 24AABCC1234D1Z5</p>
+              <p className="pl-[22px] text-[8px] text-white/75">
+                GST: 24AABCC1234D1Z5
+              </p>
             </div>
           </div>
         </div>
 
         {/* BOTTOM */}
-
-        <div className="mt-6 border-white/15 border-t pt-4">
-          <div className="flex items-center justify-between">
-            <p className="text-[8px] text-white/65">
-              © {new Date().getFullYear()} CoolerGuru Systems Pvt. Ltd. All Rights Reserved.
+        <div className="mx-auto mt-7 w-full max-w-[1600px] border-t border-white/15 pt-4">
+          <div
+            className="
+        flex flex-col gap-3
+        sm:flex-row
+        sm:items-center
+        sm:justify-between
+      "
+          >
+            {/* COPYRIGHT */}
+            <p className="text-[8px] leading-[1.5] text-white/65">
+              © {new Date().getFullYear()} CoolerGuru Systems Pvt. Ltd.
+              All Rights Reserved.
             </p>
 
-            <div className="flex items-center gap-5 text-[8px] text-white/70">
-              <Link href="/sitemap" className="transition hover:text-white">
+            {/* LINKS */}
+            <div
+              className="
+          flex flex-wrap items-center
+          gap-x-3 gap-y-2
+          text-[8px] text-white/70
+          sm:justify-end
+        "
+            >
+              <Link
+                href="/sitemap"
+                className="transition hover:text-white"
+              >
                 Sitemap
               </Link>
 
               <span className="text-white/25">|</span>
 
-              <Link href="/disclaimer" className="transition hover:text-white">
+              <Link
+                href="/disclaimer"
+                className="transition hover:text-white"
+              >
                 Disclaimer
               </Link>
 
               <span className="text-white/25">|</span>
 
-              <Link href="/privacy-policy" className="transition hover:text-white">
+              <Link
+                href="/privacy-policy"
+                className="transition hover:text-white"
+              >
                 Privacy Policy
               </Link>
 
               <span className="text-white/25">|</span>
 
-              <Link href="/terms-and-conditions" className="transition hover:text-white">
+              <Link
+                href="/terms-and-conditions"
+                className="transition hover:text-white"
+              >
                 Terms &amp; Conditions
               </Link>
             </div>

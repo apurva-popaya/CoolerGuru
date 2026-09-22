@@ -35,33 +35,39 @@ export function HowItWorks() {
       <Container>
         <h2 className="mb-3 text-center font-bold text-[#17159a] text-[20px]">How CoolerGuru Works</h2>
 
-        <div className="rounded-[10px] border border-[#ecebfa] bg-[#f8f7ff] px-5 py-4">
-          <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] items-center gap-3">
-            {steps.map((item, index) => {
-              const Icon = item.icon;
+        <div className="rounded-[10px] border border-[#ecebfa] bg-[#f8f7ff] px-4 py-4">
+          <div className="overflow-x-auto">
+            <div className="flex min-w-[850px] items-center justify-between gap-3">
+              {steps.map((item, index) => {
+                const Icon = item.icon;
 
-              return (
-                <div key={item.step} className="contents">
-                  <div className="flex items-center gap-3">
+                return (
+                  <div key={item.step} className="flex shrink-0 items-center gap-3">
                     <div className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[10px] border border-[#dcd8ff] bg-white text-[#3025d0]">
                       <Icon size={22} />
                     </div>
 
                     <div>
-                      <p className="font-bold text-[#5a52c8] text-[9px]">{item.step}</p>
+                      <p className="font-bold text-[9px] text-[#5a52c8]">
+                        {item.step}
+                      </p>
 
-                      <h3 className="mt-[1px] font-bold text-[#17134d] text-[14px]">{item.title}</h3>
+                      <h3 className="mt-[1px] font-bold text-[14px] text-[#17134d]">
+                        {item.title}
+                      </h3>
 
-                      <p className="mt-[2px] max-w-[145px] text-[#6a6e86] text-[9px] leading-[1.35]">
+                      <p className="mt-[2px] max-w-[145px] text-[9px] leading-[1.35] text-[#6a6e86]">
                         {item.description}
                       </p>
                     </div>
-                  </div>
 
-                  {index < steps.length - 1 ? <ArrowRight size={20} className="text-[#3c2fc9]" /> : null}
-                </div>
-              );
-            })}
+                    {index < steps.length - 1 && (
+                      <ArrowRight size={20} className="shrink-0 text-[#3c2fc9]" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </Container>
