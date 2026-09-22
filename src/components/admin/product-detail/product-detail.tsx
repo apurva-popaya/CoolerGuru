@@ -1,0 +1,322 @@
+"use client";
+
+import Link from "next/link";
+
+import {
+  ArrowLeft,
+  Building2,
+  Eye,
+  Heart,
+  IndianRupee,
+  Package,
+  Settings,
+  ShieldCheck,
+  ShoppingCart,
+  Warehouse,
+} from "lucide-react";
+
+import { DetailSection } from "@/components/admin/company-detail/detail-section";
+import { StatusBadge, type StatusVariant } from "@/components/common/status-badge";
+import { Button } from "@/components/ui/button";
+
+import { ProductAdminDecision } from "./product-admin-decision";
+import type { ProductDetailData } from "./product-detail-data";
+
+function approvalVariant(status: ProductDetailData["approvalStatus"]): StatusVariant {
+  switch (status) {
+    case "Approved":
+      return "success";
+
+    case "Pending":
+      return "warning";
+
+    case "Under Review":
+      return "info";
+
+    case "Rejected":
+      return "danger";
+
+    default:
+      return "neutral";
+  }
+}
+
+export function ProductDetail({ product }: { product: ProductDetailData }) {
+  const approved = product.approvalStatus === "Approved";
+
+  const rejected = product.approvalStatus === "Rejected";
+
+  return (
+    <div className="space-y-5">
+      <Link href="/admin/products" className="inline-flex items-center gap-2 font-medium text-[#2720a8] text-[12px]">
+        <ArrowLeft className="size-4" />
+        Back to Products
+      </Link>
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_300px]">
+        <div className="rounded-[9px] border border-border bg-white p-5">
+          <div className="flex gap-5">
+            <div className="flex size-[120px] shrink-0 items-center justify-center rounded-[9px] border border-border bg-[#fafaff]">
+              <Package className="size-12 text-[#2720a8]" />
+            </div>
+
+            <div>
+              <h1 className="font-bold text-[#15136f] text-[25px]">{product.name}</h1>
+
+              {product.companyId !== null ? (
+                <Link
+                  href={`/admin/companies/${product.companyId}`}
+                  className="mt-2 inline-flex items-center gap-2 font-semibold text-[#2720a8] text-[13px]"
+                >
+                  <Building2 className="size-4" />
+                  {product.company}
+                </Link>
+              ) : (
+                <p className="mt-2 inline-flex items-center gap-2 text-[13px] font-semibold text-muted-foreground">
+                  <Building2 className="size-4" />
+                  {product.company}
+                </p>
+              )}
+
+              <p className="mt-2 text-[12px] text-muted-foreground">Model Number: {product.modelNumber}</p>
+
+              <div className="mt-3 flex gap-2">
+                <StatusBadge variant={approvalVariant(product.approvalStatus)}>{product.approvalStatus}</StatusBadge>
+
+                <StatusBadge
+                  variant={
+                    product.stockStatus === "In Stock"
+                      ? "success"
+                      : product.stockStatus === "Low Stock"
+                        ? "warning"
+                        : "danger"
+                  }
+                >
+                  {product.stockStatus}
+                </StatusBadge>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <ProductAdminDecision product={product} />
+      </div>
+
+      {approved && (
+        <div className="flex justify-end gap-3">
+          {product.companyId !== null ? (
+            <Button asChild variant="outline">
+              <Link href={`/admin/companies/${product.companyId}`}>
+                <Building2 className="size-4" />
+                View Company
+              </Link>
+            </Button>
+          ) : null}
+
+          <Button variant="outline" className="border-red-300 text-red-600 hover:bg-red-50">
+            Deactivate Product
+          </Button>
+        </div>
+      )}
+
+      {rejected && (
+        <div className="rounded-[9px] border border-red-200 bg-red-50 p-4">
+          <h2 className="font-bold text-red-700">Product Rejected</h2>
+
+          <p className="mt-2 text-[12px] text-red-700">{product.rejectionReason}</p>
+
+          {product.rejectedDate ? (
+            <p className="mt-2 text-[11px] text-muted-foreground">Reviewed on {product.rejectedDate}</p>
+          ) : null}
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        {/* <Metric icon={Eye} label="Views" value={product.views.toLocaleString()} /> */}
+
+        <Metric icon={Heart} label="Saved Count" value={product.savedCount} />
+
+        <Metric icon={ShoppingCart} label="Inquiry Count" value={product.inquiries} />
+
+        <Metric
+          icon={IndianRupee}
+          label="Price"
+          value={product.price !== null ? `₹ ${product.price.toLocaleString("en-IN")}` : "-"}
+        />
+
+        <Metric
+          icon={Warehouse}
+          label="Stock Quantity"
+          value={product.stockQuantity !== null ? `${product.stockQuantity} ${product.stockUnit}` : "-"}
+        />
+
+        <Metric icon={ShieldCheck} label="Approval" value={product.approvalStatus} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <DetailSection title="Product Information" icon={<Package className="size-4 text-[#2720a8]" />}>
+          <div className="space-y-3">
+            <Info label="Product Name" value={product.name} />
+
+            <Info label="Product Slug" value={product.slug} />
+
+            <Info label="Company" value={product.company} />
+
+            <Info label="Category" value={product.category} />
+
+            <Info label="Product Type" value={product.productType} />
+
+            <Info label="Model Number" value={product.modelNumber} />
+
+            <Info label="Description" value={product.description} />
+
+            <Info label="Created Date" value={product.createdDate} />
+
+            <Info label="Updated Date" value={product.updatedDate} />
+          </div>
+        </DetailSection>
+
+        <DetailSection title="Product Images / Media Gallery" icon={<Package className="size-4 text-[#2720a8]" />}>
+          <div className="grid grid-cols-2 gap-3">
+            {product.images.length > 0 ? (
+              product.images.map((image) => (
+                <div
+                  key={image.id}
+                  className="relative flex aspect-square overflow-hidden rounded-[8px] border border-border bg-[#fafaff]"
+                >
+                  <img src={image.url} alt={image.alt} className="h-full w-full object-contain" />
+
+                  {image.isPrimary ? (
+                    <span className="absolute left-2 top-2 rounded-[4px] bg-[#2720a8] px-2 py-1 text-[8px] font-bold text-white">
+                      Primary
+                    </span>
+                  ) : null}
+                </div>
+              ))
+            ) : (
+              <div className="col-span-2 flex min-h-[150px] items-center justify-center rounded-[8px] border border-border bg-[#fafaff]">
+                <div className="text-center">
+                  <Package className="mx-auto size-10 text-[#a7a3d7]" />
+
+                  <p className="mt-2 text-[11px] text-muted-foreground">No product images</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </DetailSection>
+
+        <DetailSection title="Specifications" icon={<Settings className="size-4 text-[#2720a8]" />}>
+          <div className="divide-y divide-border">
+            {product.specifications.map((item) => (
+              <div key={item.label} className="grid grid-cols-2 gap-3 py-2 text-[12px]">
+                <span className="text-muted-foreground">{item.label}</span>
+
+                <span className="font-medium text-[#15136f]">{item.value}</span>
+              </div>
+            ))}
+          </div>
+        </DetailSection>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <DetailSection title="Pricing & Inventory" icon={<IndianRupee className="size-4 text-[#2720a8]" />}>
+          <div className="grid gap-3 md:grid-cols-2">
+            <Info label="Price" value={product.price !== null ? `₹ ${product.price.toLocaleString("en-IN")}` : "-"} />
+
+            <Info label="Minimum Order Quantity" value={product.moq} />
+
+            <Info
+              label="Stock Quantity"
+              value={product.stockQuantity !== null ? `${product.stockQuantity} ${product.stockUnit}` : "-"}
+            />
+
+            <Info label="Stock Status" value={product.stockStatus} />
+
+            <Info label="SKU" value={product.sku} />
+
+            <Info label="Availability" value="Pan India" />
+          </div>
+        </DetailSection>
+
+        <DetailSection title="Category & Listing Information" icon={<Package className="size-4 text-[#2720a8]" />}>
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {product.tags.map((tag) => (
+                <StatusBadge key={tag} variant="info">
+                  {tag}
+                </StatusBadge>
+              ))}
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <Info label="Category" value={product.category} />
+
+              <Info label="Product Type" value={product.productType} />
+
+              <Info label="SKU" value={product.sku} />
+
+              <Info label="Brand" value={product.brand} />
+
+              <Info label="Listing Visibility" value="Public Listing" />
+            </div>
+          </div>
+        </DetailSection>
+      </div>
+
+      <DetailSection
+        title="Company Information"
+        icon={<Building2 className="size-4 text-[#2720a8]" />}
+        action={
+          product.companyId ? (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/admin/companies/${product.companyId}`}>View Company</Link>
+            </Button>
+          ) : null
+        }
+      >
+        <h3 className="font-bold text-[#15136f]">{product.company || "No Company Assigned"}</h3>
+
+        <p className="mt-2 text-[12px] text-muted-foreground">
+          Supplier company information will later come from the related company API.
+        </p>
+      </DetailSection>
+
+      {!approved && !rejected && (
+        <DetailSection title="Admin Notes & Remarks" icon={<ShieldCheck className="size-4 text-[#2720a8]" />}>
+          <textarea
+            className="min-h-[100px] w-full resize-none rounded-[8px] border border-border p-3 text-[12px] outline-none focus:border-[#2720a8]"
+            placeholder="Add internal notes, comments or review remarks..."
+          />
+        </DetailSection>
+      )}
+    </div>
+  );
+}
+
+function Metric({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | number }) {
+  return (
+    <div className="rounded-[9px] border border-border bg-white p-4">
+      <div className="flex items-center gap-3">
+        <div className="flex size-10 items-center justify-center rounded-full bg-[#f3f2ff]">
+          <Icon className="size-5 text-[#2720a8]" />
+        </div>
+
+        <div>
+          <p className="text-[11px] text-muted-foreground">{label}</p>
+
+          <p className="mt-1 font-bold text-[#15136f] text-[19px]">{value}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[11px] text-muted-foreground">{label}</p>
+
+      <p className="mt-1 font-medium text-[#15136f] text-[12px]">{value}</p>
+    </div>
+  );
+}

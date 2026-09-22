@@ -1,0 +1,40 @@
+import type { SupplierProduct } from "@/types/supplier-product";
+
+export const supplierProducts: SupplierProduct[] = [
+  {
+    id: "industrial-air-cooler-ic-5000",
+    name: "Industrial Air Cooler IC-5000",
+    description: "Heavy duty industrial air cooler with high airflow.",
+    image: "/images/home/products/tower-air-cooler-1.png",
+    category: "Industrial Air Coolers",
+    subCategory: "Industrial Air Coolers",
+    modelNumber: "IC-5000",
+    price: 85000,
+    stockStatus: "IN_STOCK",
+    status: "ACTIVE",
+  },
+  {
+    id: "desert-cooler-dc-pro",
+    name: "Desert Cooler DC-Pro",
+    description: "High performance desert cooler for commercial use.",
+    image: "/images/home/products/desert-air-cooler.png",
+    category: "Desert Air Coolers",
+    subCategory: "Desert Air Coolers",
+    modelNumber: "DC-PRO",
+    price: 28500,
+    stockStatus: "LOW_STOCK",
+    status: "ACTIVE",
+  },
+  {
+    id: "tower-cooler-x1",
+    name: "Tower Cooler X1",
+    description: "Compact tower cooler with efficient cooling.",
+    image: "/images/home/products/tower-air-cooler-2.png",
+    category: "Tower Air Coolers",
+    subCategory: "Tower Air Coolers",
+    modelNumber: "TC-X1",
+    price: 12800,
+    stockStatus: "IN_STOCK",
+    status: "INACTIVE",
+  },
+];
