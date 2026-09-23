@@ -7,7 +7,11 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
 import { getBuyerInquiries } from "@/lib/api/buyer-inquiries-api";
-import type { BuyerInquiry, BuyerInquiryPagination, BuyerInquiryStatus } from "@/types/buyer-inquiry";
+import type {
+  BuyerInquiry,
+  BuyerInquiryPagination,
+  BuyerInquiryStatus,
+} from "@/types/buyer-inquiry";
 
 import { BuyerInquiriesFilters } from "./buyer-inquiries-filters";
 import { BuyerInquiriesPagination } from "./buyer-inquiries-pagination";
@@ -24,7 +28,9 @@ const emptyPagination: BuyerInquiryPagination = {
 
 export function BuyerInquiriesPage() {
   const [inquiries, setInquiries] = useState<BuyerInquiry[]>([]);
-  const [pagination, setPagination] = useState<BuyerInquiryPagination>(emptyPagination);
+  const [pagination, setPagination] =
+    useState<BuyerInquiryPagination>(emptyPagination);
+
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<BuyerInquiryStatus | "">("");
   const [dateFrom, setDateFrom] = useState("");
@@ -41,29 +47,20 @@ export function BuyerInquiriesPage() {
 
       const response = await getBuyerInquiries({
         search: search.trim() || undefined,
-
         status: status || undefined,
-
         date_from: dateFrom || undefined,
-
         date_to: dateTo || undefined,
-
         sort_by: "created_at",
-
         sort_order: "desc",
-
         page,
         limit,
       });
 
       setInquiries(response.data.inquiries);
-
       setPagination(response.data.pagination);
     } catch (error) {
       console.error("Buyer inquiries error:", error);
-
       setError("Unable to load inquiries.");
-
       setInquiries([]);
     } finally {
       setLoading(false);
@@ -79,10 +76,12 @@ export function BuyerInquiriesPage() {
   }, [loadInquiries]);
 
   return (
-    <section className="px-8 py-7">
-      <h1 className="font-bold text-[#171570] text-[27px]">My Inquiries</h1>
+    <section className="px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
+      <h1 className="font-bold text-[#171570] text-[24px] sm:text-[27px]">
+        My Inquiries
+      </h1>
 
-      <div className="mt-2 flex items-center gap-2 text-[#555b75] text-[10px]">
+      <div className="mt-2 flex items-center gap-2 text-[#555b75] text-[9px] sm:text-[10px]">
         <Link href="/" className="hover:text-[#2118ad]">
           Home
         </Link>

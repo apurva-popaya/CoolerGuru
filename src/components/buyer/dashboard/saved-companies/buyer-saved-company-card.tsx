@@ -24,7 +24,6 @@ export function BuyerSavedCompanyCard({ favorite, company }: Props) {
   const { toggleFavorite } = useFavorites();
 
   const companyName = company?.name ?? favorite.title;
-
   const companyImage = company?.logo ?? favorite.image;
 
   function handleRemove() {
@@ -38,15 +37,26 @@ export function BuyerSavedCompanyCard({ favorite, company }: Props) {
 
   return (
     <div className="relative rounded-[9px] border border-[#e1e2ec] bg-white p-4">
-      <div className="grid grid-cols-[92px_1fr_115px] gap-4">
+      {/* Main content */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[82px_1fr] lg:grid-cols-[92px_1fr_115px]">
+        {/* Logo */}
         <div className="flex h-[82px] w-[82px] items-center justify-center rounded-[7px] border border-[#e2e3ee] bg-white p-2">
           <div className="relative h-full w-full">
-            <Image src={companyImage} alt={companyName} fill sizes="82px" className="object-contain" />
+            <Image
+              src={companyImage}
+              alt={companyName}
+              fill
+              sizes="82px"
+              className="object-contain"
+            />
           </div>
         </div>
 
+        {/* Company information */}
         <div className="min-w-0">
-          <h3 className="font-bold text-[#171570] text-[13px]">{companyName}</h3>
+          <h3 className="font-bold text-[#171570] text-[13px]">
+            {companyName}
+          </h3>
 
           {company && (
             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -67,9 +77,14 @@ export function BuyerSavedCompanyCard({ favorite, company }: Props) {
 
           {company?.location && (
             <div className="mt-2 flex items-center gap-1">
-              <MapPin size={10} className="shrink-0 text-[#3025c7]" />
+              <MapPin
+                size={10}
+                className="shrink-0 text-[#3025c7]"
+              />
 
-              <span className="text-[#555b76] text-[8px]">{company.location}</span>
+              <span className="text-[#555b76] text-[8px]">
+                {company.location}
+              </span>
             </div>
           )}
 
@@ -79,16 +94,22 @@ export function BuyerSavedCompanyCard({ favorite, company }: Props) {
                 <span key={type}>
                   {type}
 
-                  {index < company.businessTypes.length - 1 && <span className="ml-1.5 text-[#aaaaba]">/</span>}
+                  {index < company.businessTypes.length - 1 && (
+                    <span className="ml-1.5 text-[#aaaaba]">/</span>
+                  )}
                 </span>
               ))}
             </div>
           )}
         </div>
 
-        <div className="flex flex-col gap-2">
-          <div className="flex h-[30px] items-center justify-center gap-1.5 rounded-[4px] bg-[#fff1f3] font-bold text-[#db3550] text-[8px]">
-            <Heart size={11} className="fill-[#e43a55] text-[#e43a55]" />
+        {/* Actions */}
+        <div className="grid grid-cols-2 gap-2 sm:col-span-2 lg:col-span-1 lg:flex lg:flex-col">
+          <div className="col-span-2 flex h-[30px] items-center justify-center gap-1.5 rounded-[4px] bg-[#fff1f3] font-bold text-[#db3550] text-[8px] lg:col-span-1">
+            <Heart
+              size={11}
+              className="fill-[#e43a55] text-[#e43a55]"
+            />
             Saved
           </div>
 
@@ -118,10 +139,14 @@ export function BuyerSavedCompanyCard({ favorite, company }: Props) {
         </div>
       </div>
 
+      {/* Description */}
       {company?.shortDescription && (
-        <p className="mt-3 max-w-[560px] text-[#535873] text-[8.5px] leading-[1.5]">{company.shortDescription}</p>
+        <p className="mt-3 max-w-[560px] text-[#535873] text-[8.5px] leading-[1.5]">
+          {company.shortDescription}
+        </p>
       )}
 
+      {/* Categories */}
       {company && company.productCategories.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
           {company.productCategories.slice(0, 3).map((category) => (

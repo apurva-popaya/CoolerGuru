@@ -90,18 +90,20 @@ interface ProductsByCategoryProps {
   products?: HomepageFeaturedProduct[];
 }
 
-export function ProductsByCategory({ products: _products }: ProductsByCategoryProps) {
+export function ProductsByCategory({
+  products: _products,
+}: ProductsByCategoryProps) {
   return (
-    <section className="bg-white py-5">
+    <section className="bg-white py-4 sm:py-5">
       <Container>
         <SectionHeader
           title="Popular Products & Suppliers"
           viewAllLabel="View All Products"
           viewAllHref="/products"
-          className="mb-5"
+          className="mb-4 sm:mb-5"
         />
 
-        <HorizontalCarousel scrollAmount={290}>
+        <HorizontalCarousel scrollAmount={290} className="gap-3">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
@@ -111,22 +113,38 @@ export function ProductsByCategory({ products: _products }: ProductsByCategoryPr
   );
 }
 
-function ProductCard({ product }: { product: (typeof products)[number] }) {
+function ProductCard({
+  product,
+}: {
+  product: (typeof products)[number];
+}) {
   return (
     <div className="flex min-h-[330px] min-w-[255px] max-w-[255px] shrink-0 flex-col rounded-[10px] border border-[#e5e6ef] bg-white px-4 pt-4 pb-4">
-      <h3 className="font-bold text-[#17159a] text-[15px] leading-[1.25]">{product.name}</h3>
+      <h3 className="font-bold text-[#17159a] text-[15px] leading-[1.25]">
+        {product.name}
+      </h3>
 
       <div className="mt-3 grid grid-cols-[1fr_115px] gap-2">
         <div className="space-y-[9px] pt-2">
           {product.specs.map((spec) => (
-            <p key={spec.label} className="text-[#292e4d] text-[10px] leading-[1.3]">
-              <span className="font-bold">{spec.label}:</span> <span className="font-semibold">{spec.value}</span>
+            <p
+              key={spec.label}
+              className="text-[#292e4d] text-[10px] leading-[1.3]"
+            >
+              <span className="font-bold">{spec.label}:</span>{" "}
+              <span className="font-semibold">{spec.value}</span>
             </p>
           ))}
         </div>
 
         <div className="relative h-[190px] w-[115px] self-start">
-          <Image src={product.image} alt={product.name} fill sizes="115px" className="object-contain object-center" />
+          <Image
+            src={product.image}
+            alt={product.name}
+            fill
+            sizes="115px"
+            className="object-contain object-center"
+          />
         </div>
       </div>
 

@@ -1,108 +1,196 @@
 "use client";
 
-import type { ReactTable } from "@tanstack/react-table";
-import { Search } from "lucide-react";
+import {
+  RotateCcw,
+  Search,
+} from "lucide-react";
 
-import { FilterBar } from "@/components/common/filter-bar";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { DataTableFeatures } from "@/lib/data-table-features";
+import {
+  FilterBar,
+} from "@/components/common/filter-bar";
 
-import { type AdminUserRow, userFilterOptions } from "./users-data";
+import {
+  Button,
+} from "@/components/ui/button";
 
-interface UsersFiltersProps {
-  table: ReactTable<DataTableFeatures, AdminUserRow>;
+import {
+  Input,
+} from "@/components/ui/input";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+import type {
+  AdminUserAccountType,
+  AdminUserRole,
+  AdminUserStatus,
+} from "@/lib/api/admin-users-api";
+
+export interface UsersFilterValues {
+  search: string;
+
+  role:
+    | "ALL"
+    | AdminUserRole;
+
+  accountType:
+    | "ALL"
+    | AdminUserAccountType;
+
+  status:
+    | "ALL"
+    | AdminUserStatus;
 }
 
-export function UsersFilters({ table }: UsersFiltersProps) {
-  const searchValue = (table.getColumn("search")?.getFilterValue() as string) ?? "";
+interface UsersFiltersProps {
+  values:
+    UsersFilterValues;
 
-  function getValue(columnId: string) {
-    return (table.getColumn(columnId)?.getFilterValue() as string | undefined) ?? "All";
-  }
+  onChange: (
+    values: UsersFilterValues,
+  ) => void;
 
-  function setFilter(columnId: string, value: string) {
-    table.getColumn(columnId)?.setFilterValue(value === "All" ? undefined : value);
+  onSearch:
+    () => void;
 
-    table.setPageIndex(0);
+  onReset:
+    () => void;
+}
+
+export function UsersFilters({
+  values,
+  onChange,
+  onSearch,
+  onReset,
+}: UsersFiltersProps) {
+  function updateValue<
+    K extends keyof UsersFilterValues,
+  >(
+    key: K,
+    value: UsersFilterValues[K],
+  ) {
+    onChange({
+      ...values,
+      [key]: value,
+    });
   }
 
   return (
     <FilterBar>
       <FilterSelect
-        value={getValue("role")}
-        placeholder="All Roles"
-        options={userFilterOptions.roles}
-        onChange={(value) => setFilter("role", value)}
+        value={values.role}
+        options={[
+          {
+            value: "ALL",
+            label: "All Roles",
+          },
+          {
+            value: "BUYER",
+            label: "Buyer",
+          },
+          {
+            value: "SELLER",
+            label: "Supplier",
+          },
+          {
+            value: "ADMIN",
+            label: "Admin",
+          },
+        ]}
+        onChange={(value) => updateValue("role", value as UsersFilterValues["role"])}
       />
 
       <FilterSelect
-        value={getValue("accountType")}
-        placeholder="All Account Types"
-        options={userFilterOptions.accountTypes}
-        onChange={(value) => setFilter("accountType", value)}
+        value={values.accountType}
+        options={[
+          {
+            value: "ALL",
+            label: "All Account Types",
+          },
+          {
+            value: "INDIVIDUAL",
+            label: "Individual",
+          },
+          {
+            value: "COMPANY",
+            label: "Company",
+          },
+        ]}
+        onChange={(value) => updateValue("accountType", value as UsersFilterValues["accountType"])}
       />
 
-      {/* <FilterSelect
-        value={getValue(
-          "status",
-        )}
-        placeholder="All Statuses"
-        options={
-          userFilterOptions.statuses
-        }
-        onChange={(value) =>
-          setFilter(
-            "status",
-            value,
-          )
-        }
-      /> */}
+      <FilterSelect
+        value={values.status}
+        options={[
+          {
+            value: "ALL",
+            label: "All Statuses",
+          },
+          {
+            value: "ACTIVE",
+            label: "Active",
+          },
+          {
+            value: "INACTIVE",
+            label: "Inactive",
+          },
+        ]}
+        onChange={(value) => updateValue("status", value as UsersFilterValues["status"])}
+      />
 
       <div className="relative min-w-[280px] flex-1">
-        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 
-        <Input
-          value={searchValue}
-          onChange={(event) => {
-            table.getColumn("search")?.setFilterValue(event.target.value || undefined);
-
-            table.setPageIndex(0);
-          }}
-          placeholder="Search by name, email or mobile..."
-          className="h-10 pl-10"
-        />
+        <Input value={values.search} onChange={(event) => updateValue("search", event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { onSearch(); } }} placeholder="Search by name, email or mobile..." className="h-10 pl-10" />
       </div>
+
+      <Button type="button" variant="outline" onClick={onReset} className="h-10 gap-2">
+        <RotateCcw className="size-4" />
+        Reset
+      </Button>
+
+      <Button type="button" onClick={onSearch} className="h-10 gap-2 bg-[#2720a8] text-white hover:bg-[#15136f]">
+        <Search className="size-4" />
+        Search
+      </Button>
     </FilterBar>
   );
 }
 
 function FilterSelect({
   value,
-  placeholder,
   options,
   onChange,
 }: {
   value: string;
 
-  placeholder: string;
+  options: {
+    value: string;
+    label: string;
+  }[];
 
-  options: string[];
-
-  onChange: (value: string) => void;
+  onChange:
+    (value: string) => void;
 }) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="h-10 min-w-[190px]">
-        <SelectValue placeholder={placeholder} />
+      <SelectTrigger className="h-10 min-w-[170px]">
+        <SelectValue />
       </SelectTrigger>
 
       <SelectContent>
-        {options.map((option) => (
-          <SelectItem key={option} value={option}>
-            {option}
-          </SelectItem>
-        ))}
+        {options.map(
+          (option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ),
+        )}
       </SelectContent>
     </Select>
   );

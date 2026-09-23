@@ -12,7 +12,9 @@ interface SubcategoryProductCardProps {
   product: SubcategoryProduct;
 }
 
-export function SubcategoryProductCard({ product }: SubcategoryProductCardProps) {
+export function SubcategoryProductCard({
+  product,
+}: SubcategoryProductCardProps) {
   const { isFavorite, toggleFavorite } = useFavorites();
 
   const liked = isFavorite(product.id, "product");
@@ -32,28 +34,45 @@ export function SubcategoryProductCard({ product }: SubcategoryProductCardProps)
         }
         className="absolute top-3 right-3 z-10 text-[#3829f2]"
       >
-        <Heart size={16} className={liked ? "fill-[#3829f2]" : ""} />
+        <Heart
+          size={16}
+          className={liked ? "fill-[#3829f2]" : ""}
+        />
       </button>
 
-      <div className="relative h-[190px] w-full">
-        <Image src={product.image} alt={product.name} fill sizes="300px" className="object-contain" />
+      <div className="relative h-[170px] w-full sm:h-[180px] lg:h-[190px]">
+        <Image
+          src={product.image}
+          alt={product.name}
+          fill
+          sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 300px"
+          className="object-contain"
+        />
       </div>
 
-      <h3 className="mt-2 font-bold text-[#19149e] text-[12px] leading-[1.3]">{product.name}</h3>
+      <h3 className="mt-2 font-bold text-[#19149e] text-[11px] leading-[1.3] sm:text-[12px]">
+        {product.name}
+      </h3>
 
-      <p className="mt-1 font-medium text-[#575c76] text-[9px]">{product.company}</p>
+      <p className="mt-1 font-medium text-[#575c76] text-[8px] sm:text-[9px]">
+        {product.company}
+      </p>
 
-      <div className="mt-3 flex items-center gap-5">
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
         <div className="flex items-center gap-1.5">
           <Wind size={12} className="text-[#2b20d4]" />
 
-          <span className="text-[#454b6b] text-[9px]">{product.airflow}</span>
+          <span className="text-[#454b6b] text-[8px] sm:text-[9px]">
+            {product.airflow}
+          </span>
         </div>
 
         <div className="flex items-center gap-1.5">
           <TankIcon size={12} className="text-[#2b20d4]" />
 
-          <span className="text-[#454b6b] text-[9px]">{product.tank}</span>
+          <span className="text-[#454b6b] text-[8px] sm:text-[9px]">
+            {product.tank}
+          </span>
         </div>
       </div>
 

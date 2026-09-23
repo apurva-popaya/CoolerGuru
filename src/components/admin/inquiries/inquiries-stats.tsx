@@ -1,6 +1,15 @@
-import { CheckCircle2, Clock3, MessageCircle, MessageSquare, Reply } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock3,
+  MessageCircle,
+  MessageSquare,
+  Reply,
+  ShieldAlert,
+} from "lucide-react";
 
-import { StatCard } from "@/components/common/stat-card";
+import {
+  StatCard,
+} from "@/components/common/stat-card";
 
 interface InquiriesStatsProps {
   total: number;
@@ -8,11 +17,19 @@ interface InquiriesStatsProps {
   replied: number;
   discussion: number;
   closed: number;
+  spam: number;
 }
 
-export function InquiriesStats({ total, newCount, replied, discussion, closed }: InquiriesStatsProps) {
+export function InquiriesStats({
+  total,
+  newCount,
+  replied,
+  discussion,
+  closed,
+  spam,
+}: InquiriesStatsProps) {
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
       <StatCard title="Total Inquiries" value={total} icon={MessageSquare} subtitle="All buyer inquiries" />
 
       <StatCard title="New" value={newCount} icon={MessageCircle} subtitle="Awaiting response" />
@@ -22,6 +39,8 @@ export function InquiriesStats({ total, newCount, replied, discussion, closed }:
       <StatCard title="In Discussion" value={discussion} icon={Clock3} subtitle="Active conversations" />
 
       <StatCard title="Closed" value={closed} icon={CheckCircle2} subtitle="Successfully closed" />
+
+      <StatCard title="Spam" value={spam} icon={ShieldAlert} subtitle="Reported inquiries" />
     </div>
   );
 }

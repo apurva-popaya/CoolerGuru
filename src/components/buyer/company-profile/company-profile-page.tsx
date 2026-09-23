@@ -22,24 +22,23 @@ interface CompanyProfilePageProps {
 
 export function CompanyProfilePage({ company }: CompanyProfilePageProps) {
   return (
-    <section className="bg-white py-5">
+    <section className="bg-white py-4 sm:py-5">
       <Container>
         {/* Breadcrumb */}
-
-        <div className="mb-3 flex items-center gap-1.5 text-[#666b83] text-[10px]">
-          <Link href="/" className="hover:text-[#2118ad]">
+        <div className="mb-3 flex min-w-0 items-center gap-1.5 overflow-x-auto whitespace-nowrap text-[9px] text-[#666b83] sm:text-[10px]">
+          <Link href="/" className="shrink-0 hover:text-[#2118ad]">
             Home
           </Link>
 
-          <ChevronRight size={12} />
+          <ChevronRight size={11} className="shrink-0" />
 
-          <Link href="/companies" className="hover:text-[#2118ad]">
+          <Link href="/companies" className="shrink-0 hover:text-[#2118ad]">
             Companies
           </Link>
 
-          <ChevronRight size={12} />
+          <ChevronRight size={11} className="shrink-0" />
 
-          <span className="font-semibold text-[#2118ad]">{company.name}</span>
+          <span className="truncate font-semibold text-[#2118ad]">{company.name}</span>
         </div>
 
         <CompanyProfileHero company={company} />
@@ -48,7 +47,8 @@ export function CompanyProfilePage({ company }: CompanyProfilePageProps) {
 
         <CompanyProducts products={company.products} companyId={company.id} />
 
-        <div className="mt-4 grid grid-cols-3 gap-4">
+        {/* Company information */}
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           <CompanyContactInfo company={company} />
 
           <CompanySocialLinks company={company} />
@@ -56,7 +56,8 @@ export function CompanyProfilePage({ company }: CompanyProfilePageProps) {
           <CompanyDetails company={company} />
         </div>
 
-        <div className="mt-4 grid grid-cols-[0.9fr_1.1fr_0.9fr] gap-4">
+        {/* Certifications / Location / Brochure */}
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[0.9fr_1.1fr_0.9fr]">
           <CompanyCertifications certifications={company.certifications} />
 
           <CompanyLocation company={company} />

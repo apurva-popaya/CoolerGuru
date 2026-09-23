@@ -6,7 +6,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { Bell, ChevronDown, LogOut, MessageSquareText, Search, UserRound } from "lucide-react";
+import {
+  Bell,
+  ChevronDown,
+  LogOut,
+  MessageSquareText,
+  Search,
+  UserRound,
+} from "lucide-react";
 
 import { WideContainer } from "@/components/common/wide-container";
 import { getCurrentUser, logoutUser } from "@/lib/api/auth-session-api";
@@ -50,11 +57,17 @@ export function BuyerNavbar() {
     function handleOutsideClick(event: MouseEvent) {
       const target = event.target as Node;
 
-      if (searchDropdownRef.current && !searchDropdownRef.current.contains(target)) {
+      if (
+        searchDropdownRef.current &&
+        !searchDropdownRef.current.contains(target)
+      ) {
         setSearchDropdownOpen(false);
       }
 
-      if (profileDropdownRef.current && !profileDropdownRef.current.contains(target)) {
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(target)
+      ) {
         setProfileOpen(false);
       }
     }
@@ -77,12 +90,6 @@ export function BuyerNavbar() {
           return;
         }
 
-        // const authData = response.data;
-
-        // const user =
-        //   authData?.user ??
-        //   authData;
-
         const user = response.user;
 
         if (user?.active_portal !== "BUYER") {
@@ -93,7 +100,9 @@ export function BuyerNavbar() {
         }
 
         const fullName =
-          user.name?.trim() || [user.first_name, user.last_name].filter(Boolean).join(" ").trim() || "Buyer";
+          user.name?.trim() ||
+          [user.first_name, user.last_name].filter(Boolean).join(" ").trim() ||
+          "Buyer";
 
         setBuyerName(fullName);
         setIsLoggedIn(true);
@@ -114,9 +123,16 @@ export function BuyerNavbar() {
     };
   }, []);
 
-  const selectedSearchOption = searchOptions.find((option) => option.value === searchType);
+  const selectedSearchOption = searchOptions.find(
+    (option) => option.value === searchType,
+  );
 
-  const searchTypeWidth = searchType === "all" ? "w-[120px]" : searchType === "products" ? "w-[145px]" : "w-[155px]";
+  const searchTypeWidth =
+    searchType === "all"
+      ? "w-[120px]"
+      : searchType === "products"
+        ? "w-[145px]"
+        : "w-[155px]";
 
   function handleSearch() {
     const query = searchQuery.trim();
@@ -127,28 +143,30 @@ export function BuyerNavbar() {
       return;
     }
 
-    const globalSearchType = searchType === "products" || searchType === "companies" ? searchType : "all";
+    const globalSearchType =
+      searchType === "products" || searchType === "companies"
+        ? searchType
+        : "all";
 
     const params = new URLSearchParams();
 
     params.set("q", query);
-
     params.set("type", globalSearchType);
 
-    /*
-     * Keep the selected suggestion
-     * scope in the URL so the Search
-     * Results page knows what the user
-     * selected in the header.
-     */
-    if (searchType !== "all" && searchType !== "products" && searchType !== "companies") {
+    if (
+      searchType !== "all" &&
+      searchType !== "products" &&
+      searchType !== "companies"
+    ) {
       params.set("scope", searchType);
     }
 
     router.push(`/search?${params.toString()}`);
   }
 
-  function handleSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+  function handleSearchKeyDown(
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) {
     if (event.key === "Enter") {
       handleSearch();
     }
@@ -180,7 +198,7 @@ export function BuyerNavbar() {
   return (
     <header className="sticky top-0 z-[100] w-full border-[#ececf5] border-b bg-white">
       <WideContainer>
-        <div className="flex h-[78px] items-center gap-7 px-5 md:px-8 lg:px-10">
+        <div className="flex h-[64px] items-center gap-3 px-3 sm:h-[70px] sm:gap-5 sm:px-5 md:px-8 lg:h-[78px] lg:gap-7 lg:px-10">
           {/* Logo */}
           <Link href="/" className="shrink-0">
             <Image
@@ -189,7 +207,7 @@ export function BuyerNavbar() {
               width={210}
               height={62}
               priority
-              className="h-[78px] w-[175px] object-contain xl:w-[205px]"
+              className="h-[58px] w-[130px] object-contain sm:h-[64px] sm:w-[155px] lg:h-[78px] lg:w-[175px] xl:w-[205px]"
             />
           </Link>
 
@@ -203,14 +221,18 @@ export function BuyerNavbar() {
               >
                 <button
                   type="button"
-                  onClick={() => setSearchDropdownOpen((previous) => !previous)}
+                  onClick={() =>
+                    setSearchDropdownOpen((previous) => !previous)
+                  }
                   className="flex h-full w-full items-center justify-between gap-2 rounded-l-[8px] border-[#dedff0] border-r bg-[#fafaff] px-4 font-semibold text-[#2720a8] text-[14px] transition hover:bg-[#f5f3ff]"
                 >
                   <span>{selectedSearchOption?.label}</span>
 
                   <ChevronDown
                     size={16}
-                    className={`shrink-0 transition-transform ${searchDropdownOpen ? "rotate-180" : ""}`}
+                    className={`shrink-0 transition-transform ${
+                      searchDropdownOpen ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
 
@@ -229,7 +251,9 @@ export function BuyerNavbar() {
                             setSearchQuery("");
                           }}
                           className={`flex w-full items-center rounded-[6px] px-3 py-2.5 text-left font-medium text-[13px] transition ${
-                            active ? "bg-[#eeeaff] text-[#2418b6]" : "text-[#393d5e] hover:bg-[#f7f6ff]"
+                            active
+                              ? "bg-[#eeeaff] text-[#2418b6]"
+                              : "text-[#393d5e] hover:bg-[#f7f6ff]"
                           }`}
                         >
                           {option.label}
@@ -247,7 +271,7 @@ export function BuyerNavbar() {
                 onChange={(event) => setSearchQuery(event.target.value)}
                 onKeyDown={handleSearchKeyDown}
                 placeholder={placeholders[searchType]}
-                className="min-w-0 flex-1 px-5 text-[#11163d] text-[14px] outline-none placeholder:text-[#9a9db3]"
+                className="min-w-0 flex-1 px-4 text-[#11163d] text-[13px] outline-none placeholder:text-[#9a9db3] xl:px-5 xl:text-[14px]"
               />
 
               {/* Search Button */}
@@ -255,15 +279,15 @@ export function BuyerNavbar() {
                 type="button"
                 onClick={handleSearch}
                 aria-label="Search"
-                className="flex w-[62px] shrink-0 items-center justify-center rounded-r-[8px] bg-[#21159b] text-white transition-colors hover:bg-[#3022c6]"
+                className="flex w-[58px] shrink-0 items-center justify-center rounded-r-[8px] bg-[#21159b] text-white transition-colors hover:bg-[#3022c6] sm:w-[62px]"
               >
-                <Search size={22} strokeWidth={2} />
+                <Search size={21} strokeWidth={2} />
               </button>
             </div>
           </div>
 
           {/* Right Side */}
-          <div className="ml-auto flex shrink-0 items-center gap-6">
+          <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-4 lg:gap-6">
             {!authChecked ? null : !isLoggedIn ? (
               <>
                 <Link
@@ -275,7 +299,7 @@ export function BuyerNavbar() {
 
                 <Link
                   href="/register"
-                  className="whitespace-nowrap rounded-md bg-[#171176] px-5 py-3 font-semibold text-sm text-white transition-colors hover:bg-[#2920b7]"
+                  className="whitespace-nowrap rounded-md bg-[#171176] px-3 py-2 font-semibold text-[11px] text-white transition-colors hover:bg-[#2920b7] sm:px-5 sm:py-3 sm:text-sm"
                 >
                   Register / Login
                 </Link>
@@ -286,11 +310,11 @@ export function BuyerNavbar() {
                 <Link
                   href="/dashboard"
                   aria-label="Notifications"
-                  className="relative flex h-[40px] w-[40px] items-center justify-center text-[#171570]"
+                  className="relative flex h-[36px] w-[36px] items-center justify-center text-[#171570] sm:h-[40px] sm:w-[40px]"
                 >
-                  <Bell size={23} strokeWidth={1.9} />
+                  <Bell size={21} className="sm:h-[23px] sm:w-[23px]" strokeWidth={1.9} />
 
-                  <span className="absolute top-[1px] right-[1px] flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#3021c9] px-1 font-bold text-[8px] text-white">
+                  <span className="absolute top-0 right-0 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[#3021c9] px-1 font-bold text-[7px] text-white sm:h-[18px] sm:min-w-[18px] sm:text-[8px]">
                     3
                   </span>
                 </Link>
@@ -300,31 +324,39 @@ export function BuyerNavbar() {
                   <button
                     type="button"
                     onClick={() => setProfileOpen((previous) => !previous)}
-                    className="flex items-center gap-2.5 rounded-[6px] px-2 py-2 transition hover:bg-[#f8f7ff]"
+                    className="flex items-center gap-2 rounded-[6px] px-1.5 py-1.5 transition hover:bg-[#f8f7ff] sm:gap-2.5 sm:px-2 sm:py-2"
                   >
-                    <div className="flex h-[37px] w-[37px] items-center justify-center rounded-full bg-[#dedeea] text-[#171570]">
-                      <UserRound size={25} strokeWidth={2} />
+                    <div className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#dedeea] text-[#171570] sm:h-[37px] sm:w-[37px]">
+                      <UserRound size={22} className="sm:h-[25px] sm:w-[25px]" strokeWidth={2} />
                     </div>
 
-                    <span className="whitespace-nowrap font-bold text-[#15154f] text-[13px]">Hi, {buyerName}</span>
+                    <span className="hidden whitespace-nowrap font-bold text-[#15154f] text-[13px] xl:block">
+                      Hi, {buyerName}
+                    </span>
 
                     <ChevronDown
-                      size={16}
-                      className={`text-[#171570] transition-transform ${profileOpen ? "rotate-180" : ""}`}
+                      size={15}
+                      className={`text-[#171570] transition-transform ${
+                        profileOpen ? "rotate-180" : ""
+                      }`}
                     />
                   </button>
 
                   {profileOpen && (
-                    <div className="absolute top-[54px] right-0 z-[300] w-[285px] overflow-hidden rounded-[10px] border border-[#dedfe9] bg-white shadow-[0_10px_30px_rgba(18,20,80,0.16)]">
-                      <div className="flex items-center gap-3 px-5 py-5">
-                        <div className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full bg-[#dedeea] text-[#171570]">
-                          <UserRound size={35} />
+                    <div className="absolute top-[48px] right-0 z-[300] w-[270px] overflow-hidden rounded-[10px] border border-[#dedfe9] bg-white shadow-[0_10px_30px_rgba(18,20,80,0.16)] sm:top-[54px] sm:w-[285px]">
+                      <div className="flex items-center gap-3 px-4 py-4 sm:px-5 sm:py-5">
+                        <div className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-full bg-[#dedeea] text-[#171570] sm:h-[54px] sm:w-[54px]">
+                          <UserRound size={32} className="sm:h-[35px] sm:w-[35px]" />
                         </div>
 
-                        <div>
-                          <p className="font-bold text-[#16164d] text-[14px]">{buyerName}</p>
+                        <div className="min-w-0">
+                          <p className="truncate font-bold text-[#16164d] text-[14px]">
+                            {buyerName}
+                          </p>
 
-                          <p className="mt-1 font-medium text-[#747891] text-[11px]">Buyer Account</p>
+                          <p className="mt-1 font-medium text-[#747891] text-[11px]">
+                            Buyer Account
+                          </p>
                         </div>
                       </div>
 
@@ -350,7 +382,7 @@ export function BuyerNavbar() {
                         type="button"
                         onClick={handleLogout}
                         disabled={loggingOut}
-                        className="flex w-full items-center gap-4 px-6 py-5 text-left font-medium text-[#242448] text-[13px] transition hover:bg-[#f8f7ff] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full items-center gap-4 px-5 py-4 text-left font-medium text-[#242448] text-[13px] transition hover:bg-[#f8f7ff] disabled:cursor-not-allowed disabled:opacity-50 sm:px-6 sm:py-5"
                       >
                         <LogOut size={21} />
 
@@ -366,24 +398,24 @@ export function BuyerNavbar() {
       </WideContainer>
 
       {/* Mobile Search */}
-      <div className="border-[#f1f1f7] border-t px-5 pt-3 pb-4 lg:hidden">
-        <div className="flex h-[44px] overflow-hidden rounded-md border border-[#dedff0]">
+      <div className="border-[#f1f1f7] border-t px-3 pt-2.5 pb-3 sm:px-5 sm:pt-3 sm:pb-4 lg:hidden">
+        <div className="flex h-[42px] overflow-hidden rounded-md border border-[#dedff0] sm:h-[44px]">
           <input
             type="text"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             onKeyDown={handleSearchKeyDown}
             placeholder={placeholders[searchType]}
-            className="min-w-0 flex-1 px-3 text-sm outline-none"
+            className="min-w-0 flex-1 px-3 text-[11px] outline-none placeholder:text-[#9a9db3] sm:text-sm"
           />
 
           <button
             type="button"
             onClick={handleSearch}
             aria-label="Search"
-            className="flex w-[50px] items-center justify-center bg-[#21159b] text-white"
+            className="flex w-[48px] shrink-0 items-center justify-center bg-[#21159b] text-white sm:w-[50px]"
           >
-            <Search size={20} />
+            <Search size={19} className="sm:h-[20px] sm:w-[20px]" />
           </button>
         </div>
       </div>
@@ -398,12 +430,17 @@ interface DropdownLinkProps {
   onClick?: () => void;
 }
 
-function DropdownLink({ href, icon, label, onClick }: DropdownLinkProps) {
+function DropdownLink({
+  href,
+  icon,
+  label,
+  onClick,
+}: DropdownLinkProps) {
   return (
     <Link
       href={href}
       onClick={onClick}
-      className="flex items-center gap-4 px-6 py-4 font-medium text-[#242448] text-[13px] transition hover:bg-[#f8f7ff]"
+      className="flex items-center gap-4 px-5 py-3.5 font-medium text-[#242448] text-[13px] transition hover:bg-[#f8f7ff] sm:px-6 sm:py-4"
     >
       <span className="text-[#25254d]">{icon}</span>
 

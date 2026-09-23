@@ -1,11 +1,29 @@
 import Link from "next/link";
 
-import { Boxes, Building2, Cog, Factory, Fan, Package, Power, Settings } from "lucide-react";
+import {
+  Boxes,
+  Building2,
+  ChevronDown,
+  Cog,
+  Factory,
+  Fan,
+  Package,
+  Power,
+  Settings,
+} from "lucide-react";
 
 interface SidebarItem {
   slug: string;
   label: string;
-  icon: "manufacturer" | "body" | "component" | "electrical" | "factory" | "material" | "machinery" | "oem";
+  icon:
+    | "manufacturer"
+    | "body"
+    | "component"
+    | "electrical"
+    | "factory"
+    | "material"
+    | "machinery"
+    | "oem";
 }
 
 const sidebarItems: SidebarItem[] = [
@@ -56,28 +74,76 @@ interface CategorySidebarProps {
 }
 
 export function CategorySidebar({ activeSlug }: CategorySidebarProps) {
+  const activeItem =
+    sidebarItems.find((item) => item.slug === activeSlug) ?? sidebarItems[0];
+
   return (
-    <aside className="rounded-[10px] border border-[#e2e3ef] bg-white p-2">
-      <div className="flex flex-col gap-1">
-        {sidebarItems.map((item) => {
-          const active = item.slug === activeSlug;
+    <>
+      {/* Desktop Sidebar */}
+      <aside className="hidden rounded-[10px] border border-[#e2e3ef] bg-white p-2 lg:block">
+        <div className="flex flex-col gap-1">
+          {sidebarItems.map((item) => {
+            const active = item.slug === activeSlug;
 
-          return (
-            <Link
-              key={item.slug}
-              href={`/category/${item.slug}`}
-              className={`flex min-h-[43px] items-center gap-3 rounded-[7px] px-3 py-2 font-semibold text-[11px] leading-[1.25] transition ${
-                active ? "bg-[#f0edff] text-[#251bc1]" : "text-[#222660] hover:bg-[#f7f7ff]"
-              }`}
-            >
-              <SidebarIcon type={item.icon} />
+            return (
+              <Link
+                key={item.slug}
+                href={`/category/${item.slug}`}
+                className={`flex min-h-[43px] items-center gap-3 rounded-[7px] px-3 py-2 font-semibold text-[11px] leading-[1.25] transition ${
+                  active
+                    ? "bg-[#f0edff] text-[#251bc1]"
+                    : "text-[#222660] hover:bg-[#f7f7ff]"
+                }`}
+              >
+                <SidebarIcon type={item.icon} />
 
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </aside>
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </aside>
+
+      {/* Mobile / Tablet Category Selector */}
+      <details className="group rounded-[9px] border border-[#e2e3ef] bg-white lg:hidden">
+        <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 px-3.5 py-2.5 font-bold text-[#2118ad] text-[11px] [&::-webkit-details-marker]:hidden">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <SidebarIcon type={activeItem.icon} />
+
+            <span className="truncate">{activeItem.label}</span>
+          </div>
+
+          <ChevronDown
+            size={16}
+            className="shrink-0 text-[#2920c3] transition-transform group-open:rotate-180"
+          />
+        </summary>
+
+        <div className="border-[#e8e8f1] border-t px-2 py-2">
+          <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+            {sidebarItems.map((item) => {
+              const active = item.slug === activeSlug;
+
+              return (
+                <Link
+                  key={item.slug}
+                  href={`/category/${item.slug}`}
+                  className={`flex min-h-[40px] items-center gap-2.5 rounded-[6px] px-3 py-2 font-semibold text-[10px] ${
+                    active
+                      ? "bg-[#f0edff] text-[#251bc1]"
+                      : "text-[#222660] hover:bg-[#f7f7ff]"
+                  }`}
+                >
+                  <SidebarIcon type={item.icon} />
+
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </details>
+    </>
   );
 }
 

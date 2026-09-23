@@ -12,16 +12,20 @@ export function ProductGallery({ product }: { product: ProductDetail }) {
   const [activeImage, setActiveImage] = useState(0);
 
   function previousImage() {
-    setActiveImage((current) => (current === 0 ? product.images.length - 1 : current - 1));
+    setActiveImage((current) =>
+      current === 0 ? product.images.length - 1 : current - 1,
+    );
   }
 
   function nextImage() {
-    setActiveImage((current) => (current === product.images.length - 1 ? 0 : current + 1));
+    setActiveImage((current) =>
+      current === product.images.length - 1 ? 0 : current + 1,
+    );
   }
 
   return (
-    <div className="rounded-[8px] border border-[#e2e3ee] bg-white p-4">
-      <div className="relative h-[310px]">
+    <div className="rounded-[8px] border border-[#e2e3ee] bg-white p-3 sm:p-4">
+      <div className="relative h-[250px] sm:h-[310px]">
         {product.isVerifiedSupplier ? (
           <span className="absolute top-0 left-0 z-10 rounded-[3px] bg-[#159447] px-2 py-[3px] font-bold text-[7px] text-white">
             Verified Supplier
@@ -33,7 +37,7 @@ export function ProductGallery({ product }: { product: ProductDetail }) {
           alt={product.name}
           fill
           priority
-          sizes="500px"
+          sizes="(max-width: 1024px) 100vw, 500px"
           className="object-contain"
         />
 
@@ -56,13 +60,17 @@ export function ProductGallery({ product }: { product: ProductDetail }) {
         </button>
       </div>
 
-      <div className="mt-3 grid grid-cols-4 gap-3">
+      <div className="mt-3 grid grid-cols-4 gap-2 sm:gap-3">
         {product.images.map((image, index) => (
           <button
             key={`${image}-${index}`}
             type="button"
             onClick={() => setActiveImage(index)}
-            className={`relative h-[60px] overflow-hidden rounded-[5px] border bg-white ${activeImage === index ? "border-[#3929df]" : "border-[#e3e4ed]"}`}
+            className={`relative h-[55px] overflow-hidden rounded-[5px] border bg-white sm:h-[60px] ${
+              activeImage === index
+                ? "border-[#3929df]"
+                : "border-[#e3e4ed]"
+            }`}
           >
             <Image
               src={image}

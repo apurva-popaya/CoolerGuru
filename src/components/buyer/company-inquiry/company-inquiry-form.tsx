@@ -13,7 +13,9 @@ interface CompanyInquiryFormProps {
   companySlug: string;
 }
 
-export function CompanyInquiryForm({ companySlug }: CompanyInquiryFormProps) {
+export function CompanyInquiryForm({
+  companySlug,
+}: CompanyInquiryFormProps) {
   const [productRequirement, setProductRequirement] = useState("");
   const [quantity, setQuantity] = useState("");
   const [buyerName, setBuyerName] = useState("");
@@ -42,13 +44,11 @@ export function CompanyInquiryForm({ companySlug }: CompanyInquiryFormProps) {
 
     if (!Number.isFinite(quantityNumber) || quantityNumber <= 0) {
       setError("Please enter a valid quantity.");
-
       return;
     }
 
     if (mobileNumber.length !== 10) {
       setError("Please enter a valid 10 digit mobile number.");
-
       return;
     }
 
@@ -57,19 +57,12 @@ export function CompanyInquiryForm({ companySlug }: CompanyInquiryFormProps) {
     try {
       const response = await createCompanyInquiry(companySlug, {
         product_requirement: productRequirement.trim(),
-
         quantity: quantityNumber,
-
         quantity_unit: "Units",
-
         buyer_name: buyerName.trim(),
-
         buyer_phone_number: `+91${mobileNumber}`,
-
         buyer_email: email.trim(),
-
         buyer_city_state: cityState.trim(),
-
         requirement_details: requirementDetails.trim(),
       });
 
@@ -86,14 +79,18 @@ export function CompanyInquiryForm({ companySlug }: CompanyInquiryFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-[10px] border border-[#e1e2ed] bg-white p-5">
+    <form
+      onSubmit={handleSubmit}
+      className="rounded-[10px] border border-[#e1e2ed] bg-white p-4 sm:p-5"
+    >
       {/* Product / Requirement */}
-
       <FormField label="Product / Requirement" required>
         <input
           type="text"
           value={productRequirement}
-          onChange={(event) => setProductRequirement(event.target.value)}
+          onChange={(event) =>
+            setProductRequirement(event.target.value)
+          }
           placeholder="Enter product name or requirement"
           className={inputClass}
           disabled={loading}
@@ -102,8 +99,7 @@ export function CompanyInquiryForm({ companySlug }: CompanyInquiryFormProps) {
       </FormField>
 
       {/* Quantity + Buyer Name */}
-
-      <div className="mt-5 grid grid-cols-2 gap-5">
+      <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
         <FormField label="Quantity" required>
           <input
             type="number"
@@ -131,13 +127,12 @@ export function CompanyInquiryForm({ companySlug }: CompanyInquiryFormProps) {
       </div>
 
       {/* Mobile + Email */}
-
-      <div className="mt-5 grid grid-cols-2 gap-5">
+      <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
         <FormField label="Mobile Number" required>
           <div className="flex h-[44px] overflow-hidden rounded-[5px] border border-[#dedff0] bg-white">
             <button
               type="button"
-              className="flex w-[68px] shrink-0 items-center justify-center gap-1 border-[#dedff0] border-r font-medium text-[#30355c] text-[11px]"
+              className="flex w-[58px] shrink-0 items-center justify-center gap-1 border-[#dedff0] border-r font-medium text-[#30355c] text-[11px] sm:w-[68px]"
               disabled={loading}
             >
               <span className="text-[16px]">🇮🇳</span>
@@ -145,16 +140,20 @@ export function CompanyInquiryForm({ companySlug }: CompanyInquiryFormProps) {
               <ChevronDown size={11} />
             </button>
 
-            <div className="flex w-[55px] shrink-0 items-center justify-center border-[#dedff0] border-r font-medium text-[#34395f] text-[11px]">
+            <div className="flex w-[50px] shrink-0 items-center justify-center border-[#dedff0] border-r font-medium text-[#34395f] text-[11px] sm:w-[55px]">
               +91
             </div>
 
             <input
               type="tel"
               value={mobileNumber}
-              onChange={(event) => setMobileNumber(event.target.value.replace(/\D/g, "").slice(0, 10))}
+              onChange={(event) =>
+                setMobileNumber(
+                  event.target.value.replace(/\D/g, "").slice(0, 10),
+                )
+              }
               placeholder="Enter mobile number"
-              className="min-w-0 flex-1 px-3 text-[#292e50] text-[11px] outline-none placeholder:text-[#a4a7b8]"
+              className="min-w-0 flex-1 px-2.5 text-[#292e50] text-[11px] outline-none placeholder:text-[#a4a7b8] sm:px-3"
               disabled={loading}
               required
             />
@@ -175,7 +174,6 @@ export function CompanyInquiryForm({ companySlug }: CompanyInquiryFormProps) {
       </div>
 
       {/* City */}
-
       <div className="mt-5">
         <FormField label="City / State" required>
           <input
@@ -191,15 +189,18 @@ export function CompanyInquiryForm({ companySlug }: CompanyInquiryFormProps) {
       </div>
 
       {/* Requirement Details */}
-
       <div className="mt-5">
         <FormField label="Requirement Details" required>
           <div className="relative">
             <textarea
               value={requirementDetails}
-              onChange={(event) => setRequirementDetails(event.target.value.slice(0, maxCharacters))}
+              onChange={(event) =>
+                setRequirementDetails(
+                  event.target.value.slice(0, maxCharacters),
+                )
+              }
               placeholder="Describe your requirement, specifications, purpose, delivery timeline, or any other details..."
-              className="min-h-[110px] w-full resize-none rounded-[5px] border border-[#dedff0] bg-white px-3 py-3 pb-7 text-[#292e50] text-[11px] leading-[1.5] outline-none transition placeholder:text-[#a4a7b8] focus:border-[#8c83e8]"
+              className="min-h-[120px] w-full resize-none rounded-[5px] border border-[#dedff0] bg-white px-3 py-3 pb-7 text-[#292e50] text-[11px] leading-[1.5] outline-none transition placeholder:text-[#a4a7b8] focus:border-[#8c83e8]"
               disabled={loading}
               required
             />
@@ -211,6 +212,7 @@ export function CompanyInquiryForm({ companySlug }: CompanyInquiryFormProps) {
         </FormField>
       </div>
 
+      {/* Messages */}
       {error && (
         <div className="mt-5 rounded-[6px] border border-red-200 bg-red-50 px-4 py-3 font-medium text-[10px] text-red-600">
           {error}
@@ -224,8 +226,7 @@ export function CompanyInquiryForm({ companySlug }: CompanyInquiryFormProps) {
       )}
 
       {/* Actions */}
-
-      <div className="mt-5 grid grid-cols-2 gap-4">
+      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
         <button
           type="submit"
           disabled={loading}
@@ -253,13 +254,19 @@ interface FormFieldProps {
   children: React.ReactNode;
 }
 
-function FormField({ label, required = false, children }: FormFieldProps) {
+function FormField({
+  label,
+  required = false,
+  children,
+}: FormFieldProps) {
   return (
     <div>
       <label className="mb-2 block font-bold text-[#171570] text-[10px]">
         {label}
 
-        {required && <span className="ml-1 text-red-500">*</span>}
+        {required && (
+          <span className="ml-1 text-red-500">*</span>
+        )}
       </label>
 
       {children}

@@ -21,9 +21,7 @@ interface Props {
 
 export function BuyerInquiryDetailPage({ inquiryNumber }: Props) {
   const [inquiry, setInquiry] = useState<BuyerInquiry | null>(null);
-
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -37,7 +35,6 @@ export function BuyerInquiryDetailPage({ inquiryNumber }: Props) {
         setInquiry(response.data.inquiry);
       } catch (error) {
         console.error("Buyer inquiry detail error:", error);
-
         setError("Unable to load inquiry details.");
       } finally {
         setLoading(false);
@@ -49,7 +46,7 @@ export function BuyerInquiryDetailPage({ inquiryNumber }: Props) {
 
   if (loading) {
     return (
-      <section className="px-8 py-7">
+      <section className="px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
         <div className="rounded-[8px] border border-[#e1e2ed] bg-white px-5 py-12 text-center text-[#60657d] text-[10px]">
           Loading inquiry details...
         </div>
@@ -59,7 +56,7 @@ export function BuyerInquiryDetailPage({ inquiryNumber }: Props) {
 
   if (error || !inquiry) {
     return (
-      <section className="px-8 py-7">
+      <section className="px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
         <div className="rounded-[8px] border border-red-200 bg-red-50 px-5 py-8 text-center text-[10px] text-red-600">
           {error || "Inquiry not found."}
         </div>
@@ -68,8 +65,8 @@ export function BuyerInquiryDetailPage({ inquiryNumber }: Props) {
   }
 
   return (
-    <section className="px-8 py-7">
-      <div className="flex items-center gap-2 text-[#555b75] text-[9px]">
+    <section className="px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
+      <div className="flex flex-wrap items-center gap-2 text-[#555b75] text-[9px]">
         <Link href="/dashboard" className="hover:text-[#2118ad]">
           Dashboard
         </Link>
@@ -85,16 +82,20 @@ export function BuyerInquiryDetailPage({ inquiryNumber }: Props) {
         <span className="font-medium text-[#29247e]">Inquiry Detail</span>
       </div>
 
-      <div className="mt-2 flex items-start justify-between gap-5">
+      <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="font-bold text-[#171570] text-[26px]">Inquiry Details</h1>
+          <h1 className="font-bold text-[#171570] text-[24px] sm:text-[26px]">
+            Inquiry Details
+          </h1>
 
-          <p className="mt-1 text-[#60657d] text-[9px]">Review the inquiry you submitted to the supplier.</p>
+          <p className="mt-1 text-[#60657d] text-[9px]">
+            Review the inquiry you submitted to the supplier.
+          </p>
         </div>
 
         <Link
           href="/dashboard/inquiries"
-          className="!text-[#251bb4] flex h-[34px] items-center gap-2 rounded-[5px] border border-[#3929dd] bg-white px-4 font-bold text-[8px] transition hover:bg-[#f6f5ff]"
+          className="!text-[#251bb4] flex h-[34px] w-full items-center justify-center gap-2 rounded-[5px] border border-[#3929dd] bg-white px-4 font-bold text-[8px] transition hover:bg-[#f6f5ff] sm:w-auto"
         >
           <ArrowLeft size={12} />
           Back to My Inquiries
@@ -103,13 +104,15 @@ export function BuyerInquiryDetailPage({ inquiryNumber }: Props) {
 
       <BuyerInquirySummary inquiry={inquiry} />
 
-      <div className="mt-4 grid grid-cols-[1.25fr_0.75fr] items-start gap-4">
+      <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-[1.25fr_0.75fr]">
         <BuyerInquiryInformation inquiry={inquiry} />
 
         <div className="space-y-4">
           <BuyerInquirySupplierCard inquiry={inquiry} />
 
-          {inquiry.product && <BuyerInquiryProductCard inquiry={inquiry} />}
+          {inquiry.product && (
+            <BuyerInquiryProductCard inquiry={inquiry} />
+          )}
         </div>
       </div>
 

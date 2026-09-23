@@ -1,7 +1,6 @@
-import { notFound } from "next/navigation";
-
-import { InquiryDetail } from "@/components/admin/inquiry-detail/inquiry-detail";
-import { getInquiryDetail } from "@/components/admin/inquiry-detail/inquiry-detail-data";
+import {
+  InquiryDetailPage,
+} from "@/components/admin/inquiry-detail/inquiry-detail-page";
 
 interface AdminInquiryDetailPageProps {
   params: Promise<{
@@ -9,14 +8,18 @@ interface AdminInquiryDetailPageProps {
   }>;
 }
 
-export default async function AdminInquiryDetailPage({ params }: AdminInquiryDetailPageProps) {
-  const { inquiryId } = await params;
+export default async function AdminInquiryDetailPage({
+  params,
+}: AdminInquiryDetailPageProps) {
+  const {
+    inquiryId,
+  } = await params;
 
-  const inquiry = getInquiryDetail(inquiryId);
-
-  if (!inquiry) {
-    notFound();
-  }
-
-  return <InquiryDetail inquiry={inquiry} />;
+  return (
+    <InquiryDetailPage
+      inquiryNumber={
+        inquiryId
+      }
+    />
+  );
 }

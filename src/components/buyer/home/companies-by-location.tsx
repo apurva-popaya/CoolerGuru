@@ -40,36 +40,53 @@ const locations = [
 
 export function CompaniesByLocation() {
   return (
-    <section className="bg-white py-4">
+    <section className="bg-white py-3 sm:py-4">
       <Container>
-        <h2 className="mb-4 text-center font-bold text-[#17159a] text-[22px]">Find Companies by Location</h2>
+        <h2 className="mb-4 px-2 text-center font-bold text-[#17159a] text-[19px] leading-[1.2] sm:text-[22px]">
+          Find Companies by Location
+        </h2>
 
-        <div className="grid grid-cols-4 gap-4 md:grid-cols-7">
+        <div className="grid grid-cols-2 gap-y-5 gap-x-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-7">
           {locations.map((location) => (
             <Link
               key={location.city}
               href={`/companies?location=${encodeURIComponent(location.city)}`}
-              className="flex flex-col items-center justify-center text-center"
+              className="flex min-w-0 flex-col items-center justify-center text-center"
             >
-              <div className="relative h-[58px] w-[58px]">
-                <Image src={location.image} alt={location.city} fill sizes="60px" className="object-contain" />
+              <div className="relative h-[52px] w-[52px] sm:h-[58px] sm:w-[58px]">
+                <Image
+                  src={location.image}
+                  alt={location.city}
+                  fill
+                  sizes="60px"
+                  className="object-contain"
+                />
               </div>
 
-              <h3 className="mt-2 font-bold text-[#17159a] text-[13px]">{location.city}</h3>
+              <h3 className="mt-2 font-bold text-[#17159a] text-[12px] sm:text-[13px]">
+                {location.city}
+              </h3>
 
-              <p className="mt-[2px] font-medium text-[#6a6e87] text-[10px]">{location.count}</p>
+              <p className="mt-[2px] font-medium text-[#6a6e87] text-[9px] sm:text-[10px]">
+                {location.count}
+              </p>
             </Link>
           ))}
 
-          <Link href="/companies" className="flex flex-col items-center justify-center gap-2 text-center">
-            <div className="flex h-[58px] w-[58px] items-center justify-center rounded-full border border-[#dedcff] bg-white text-[#2b20c1]">
-              <MoreHorizontal size={24} />
+          <Link
+            href="/companies"
+            className="flex flex-col items-center justify-center gap-2 text-center"
+          >
+            <div className="flex h-[52px] w-[52px] items-center justify-center rounded-full border border-[#dedcff] bg-white text-[#2b20c1] sm:h-[58px] sm:w-[58px]">
+              <MoreHorizontal size={22} className="sm:h-[24px] sm:w-[24px]" />
             </div>
 
             <div>
               <h3 className="font-bold text-[#17159a] text-[10px]">More</h3>
 
-              <p className="font-medium text-[#6a6e87] text-[8px]">Cities</p>
+              <p className="font-medium text-[#6a6e87] text-[8px]">
+                Cities
+              </p>
             </div>
           </Link>
         </div>

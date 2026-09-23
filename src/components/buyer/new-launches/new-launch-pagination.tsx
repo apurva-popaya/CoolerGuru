@@ -4,8 +4,9 @@ import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 export function NewLaunchPagination() {
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex items-center gap-2">
+    <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
+      {/* Pagination buttons */}
+      <div className="flex items-center gap-1.5 sm:gap-2">
         <PageButton ariaLabel="Previous page">
           <ChevronLeft size={12} />
         </PageButton>
@@ -28,9 +29,10 @@ export function NewLaunchPagination() {
         </PageButton>
       </div>
 
+      {/* Page size */}
       <button
         type="button"
-        className="flex h-[32px] min-w-[110px] items-center justify-between rounded-[5px] border border-[#dedff0] bg-white px-3 font-medium text-[#454a68] text-[8px]"
+        className="flex h-[32px] min-w-[105px] items-center justify-between rounded-[5px] border border-[#dedff0] bg-white px-3 font-medium text-[#454a68] text-[8px]"
       >
         <span>
           <strong className="text-[#171570]">12</strong> / page

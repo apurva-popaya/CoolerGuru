@@ -25,21 +25,23 @@ function statusVariant(status: InquiryRow["status"]): StatusVariant {
     case "Closed":
       return "neutral";
 
+    case "Closed":
+      return "neutral";
+
     default:
       return "neutral";
   }
 }
 
-function inquiryTypeVariant(type: InquiryRow["inquiryType"]): StatusVariant {
+function inquiryTypeVariant(
+  type: InquiryRow["inquiryType"],
+): StatusVariant {
   switch (type) {
     case "Request Quote":
       return "info";
 
     case "Contact Supplier":
       return "purple";
-
-    case "Send Inquiry":
-      return "neutral";
 
     default:
       return "neutral";

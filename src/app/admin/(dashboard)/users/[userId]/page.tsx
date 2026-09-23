@@ -1,9 +1,23 @@
-import { notFound } from "next/navigation";
+import {
+  notFound,
+} from "next/navigation";
 
-import { AddUserForm } from "@/components/admin/add-user/add-user-form";
-import { UserDetail } from "@/components/admin/user-detail/user-detail";
-import { getUserDetail } from "@/components/admin/user-detail/user-detail-data";
-import { usersData } from "@/components/admin/users/users-data";
+import {
+  AddUserForm,
+} from "@/components/admin/add-user/add-user-form";
+
+import {
+  UserDetail,
+} from "@/components/admin/user-detail/user-detail";
+
+import {
+  mapAdminUserDetail,
+} from "@/components/admin/user-detail/user-detail-data";
+
+import {
+  getAdminUserActivityServer,
+  getAdminUserDetailServer,
+} from "@/lib/api/admin-users-server-api";
 
 interface AdminUserPageProps {
   params: Promise<{
@@ -15,38 +29,100 @@ interface AdminUserPageProps {
   }>;
 }
 
-export default async function AdminUserPage({ params, searchParams }: AdminUserPageProps) {
-  const { userId } = await params;
+export default async function AdminUserPage({
+  params,
+  searchParams,
+}: AdminUserPageProps) {
+  const {
+    userId,
+  } = await params;
 
-  const { edit } = await searchParams;
+  const {
+    edit,
+  } = await searchParams;
 
-  const user = getUserDetail(userId);
+  try {
+    const [
+      detailResponse,
+      activityResponse,
+    ] =
+      await Promise.all([
+        getAdminUserDetailServer(
+          userId,
+        ),
 
-  if (!user) {
-    notFound();
-  }
+        getAdminUserActivityServer(
+          userId,
+        ),
+      ]);
 
-  if (edit === "true") {
-    const userRow = usersData.find((item) => item.id === userId);
+    const backendUser =
+      detailResponse.data?.user;
 
-    if (!userRow) {
+    if (!backendUser) {
       notFound();
     }
 
+    const activities =
+      activityResponse.data
+        ?.activities ??
+      [];
+
+    if (
+      edit === "true"
+    ) {
+      const role =
+        backendUser.roles.includes(
+          "SELLER",
+        )
+          ? "Supplier"
+          : "Buyer";
+
+      const fullName =
+        backendUser.name?.trim() ||
+        [
+          backendUser.first_name,
+          backendUser.last_name,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+
+      return (
+        <AddUserForm
+          mode="edit"
+          userId={String(backendUser.user_id)}
+          initialValues={{
+            name:
+              fullName ||
+              "",
+
+            mobile:
+              backendUser.phone_number,
+
+            role,
+          }}
+        />
+      );
+    }
+
+    const user =
+      mapAdminUserDetail(
+        backendUser,
+        activities,
+      );
+
     return (
-      <AddUserForm
-        mode="edit"
-        userId={userRow.backendId !== undefined ? String(userRow.backendId) : userRow.id}
-        initialValues={{
-          name: userRow.name,
-
-          mobile: userRow.mobile,
-
-          role: userRow.role,
-        }}
+      <UserDetail
+        user={user}
       />
     );
-  }
+  } catch (error) {
+    console.error(
+      "Admin user detail error:",
+      error,
+    );
 
-  return <UserDetail user={user} />;
+    notFound();
+  }
 }

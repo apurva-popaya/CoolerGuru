@@ -2,61 +2,111 @@
 
 import Link from "next/link";
 
-import type { ColumnDef } from "@tanstack/react-table";
-import { Eye } from "lucide-react";
+import type {
+  ColumnDef,
+} from "@tanstack/react-table";
 
-import { StatusBadge, type StatusVariant } from "@/components/common/status-badge";
-import { Button } from "@/components/ui/button";
-import type { DataTableFeatures } from "@/lib/data-table-features";
+import {
+  Eye,
+} from "lucide-react";
 
-import { UserActionsMenu } from "./user-actions-menu";
-import type { AdminUserRow } from "./users-data";
+import {
+  StatusBadge,
+  type StatusVariant,
+} from "@/components/common/status-badge";
 
-function roleVariant(role: AdminUserRow["role"]): StatusVariant {
+import {
+  Button,
+} from "@/components/ui/button";
+
+import type {
+  DataTableFeatures,
+} from "@/lib/data-table-features";
+
+import {
+  UserActionsMenu,
+} from "./user-actions-menu";
+
+import type {
+  AdminUserRow,
+  UserRole,
+} from "./users-data";
+
+function roleVariant(
+  role: UserRole,
+): StatusVariant {
   if (role === "Buyer") {
     return "info";
+  }
+
+  if (role === "Admin") {
+    return "warning";
   }
 
   return "purple";
 }
 
-function getInitials(name: string) {
+function getInitials(
+  name: string,
+) {
   return name
     .split(" ")
-    .map((part) => part[0])
+    .map(
+      (part) => part[0],
+    )
     .join("")
     .slice(0, 2)
     .toUpperCase();
 }
 
 export function createUsersColumns({
-  onDelete,
+  onStatusUpdated,
 }: {
-  onDelete?: (userId: string) => void;
-} = {}): ColumnDef<DataTableFeatures, AdminUserRow>[] {
+  onStatusUpdated?: () => void;
+} = {}): ColumnDef<
+  DataTableFeatures,
+  AdminUserRow
+>[] {
   return [
     {
       id: "search",
 
-      accessorFn: (row) => `${row.name} ${row.mobile}`,
+      accessorFn: (row) =>
+        `${row.name} ${row.mobile} ${row.email}`,
 
-      filterFn: "includesString",
+      filterFn:
+        "includesString",
 
-      enableHiding: true,
+      enableHiding:
+        true,
     },
 
     {
-      accessorKey: "name",
+      accessorKey:
+        "name",
 
-      header: "Name",
+      header:
+        "Name",
 
       cell: ({ row }) => (
         <div className="flex min-w-[190px] items-center gap-3">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#edf3ff] font-bold text-[#2720a8] text-[12px]">
-            {getInitials(row.original.name)}
+            {getInitials(
+              row.original.name,
+            )}
           </div>
 
-          <span className="font-semibold text-[#15136f]">{row.original.name}</span>
+          <div>
+            <span className="font-semibold text-[#15136f]">
+              {row.original.name}
+            </span>
+
+            {row.original.companyName ? (
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                {row.original.companyName}
+              </p>
+            ) : null}
+          </div>
         </div>
       ),
     },
@@ -64,100 +114,119 @@ export function createUsersColumns({
     {
       id: "contact",
 
-      accessorFn: (row) => `${row.mobile} `,
-
-      header: "Mobile",
+      header:
+        "Mobile",
 
       cell: ({ row }) => (
-        <div className="min-w-[190px]">
-          <p className="text-[#5d6280]">{row.original.mobile}</p>
+        <div className="min-w-[170px]">
+          <p className="text-[#5d6280]">
+            {row.original.mobile}
+          </p>
 
-          {/* {row.original.email && (
+          {row.original.email ? (
             <p className="mt-1 text-[11px] text-muted-foreground">
-              {
-                row.original
-                  .email
-              }
+              {row.original.email}
             </p>
-          )} */}
+          ) : null}
         </div>
       ),
     },
 
     {
-      accessorKey: "role",
+      id: "roles",
 
-      header: "Role",
+      header:
+        "Role",
 
-      filterFn: "equalsString",
-
-      cell: ({ row }) => <StatusBadge variant={roleVariant(row.original.role)}>{row.original.role}</StatusBadge>,
-    },
-
-    {
-      accessorKey: "accountType",
-
-      header: "Account Type",
-
-      filterFn: "equalsString",
+      cell: ({ row }) => (
+        <div className="flex flex-wrap gap-1">
+          {row.original.roles.map(
+            (role) => (
+              <StatusBadge key={role} variant={roleVariant(role)}>
+                {role}
+              </StatusBadge>
+            ),
+          )}
+        </div>
+      ),
     },
 
     // {
     //   accessorKey:
-    //     "status",
+    //     "accountType",
 
-    //   header: "Status",
-
-    //   filterFn:
-    //     "equalsString",
-
-    //   cell: ({ row }) => (
-    //     <StatusBadge variant={row.original.status === "Active" ? "success" : "danger"}>
-    //       {row.original.status}
-    //     </StatusBadge>
-    //   ),
+    //   header:
+    //     "Account Type",
     // },
 
     {
-      accessorKey: "joinedDate",
+      accessorKey:
+        "status",
 
-      header: "Joined",
+      header:
+        "Status",
 
-      cell: ({ row }) => <span className="whitespace-nowrap text-[#5d6280]">{row.original.joinedDate}</span>,
+      cell: ({ row }) => (
+        <StatusBadge variant={row.original.status === "Active" ? "success" : "danger"}>
+          {row.original.status}
+        </StatusBadge>
+      ),
     },
 
     {
-      accessorKey: "lastActivity",
+      accessorKey:
+        "joinedDate",
 
-      header: "Last Activity",
+      header:
+        "Joined",
 
-      cell: ({ row }) => <span className="whitespace-nowrap text-[#5d6280]">{row.original.lastActivity}</span>,
+      cell: ({ row }) => (
+        <span className="whitespace-nowrap text-[#5d6280]">
+          {row.original.joinedDate}
+        </span>
+      ),
+    },
+
+    {
+      accessorKey:
+        "lastActivity",
+
+      header:
+        "Last Activity",
+
+      cell: ({ row }) => (
+        <span className="whitespace-nowrap text-[#5d6280]">
+          {row.original.lastActivity}
+        </span>
+      ),
     },
 
     {
       id: "action",
 
-      header: () => <div className="text-center">Action</div>,
+      header: () => (
+        <div className="text-center">
+          Action
+        </div>
+      ),
 
       cell: ({ row }) => (
         <div className="flex items-center justify-center gap-2">
-          <Button
-            asChild
-            variant="outline"
-            size="icon-sm"
-            className="border-[#d9d8ef] text-[#2720a8] hover:bg-[#f3f2ff]"
-          >
-            <Link href={`/admin/users/${row.original.id}`} aria-label={`View ${row.original.name}`}>
+          <Button asChild variant="outline" size="icon-sm" className="border-[#d9d8ef] text-[#2720a8] hover:bg-[#f3f2ff]">
+            <Link href={`/admin/users/${row.original.backendId}`} aria-label={`View ${row.original.name}`}>
               <Eye className="size-4" />
             </Link>
           </Button>
 
-          <UserActionsMenu user={row.original} onDelete={onDelete} />
+          <UserActionsMenu user={row.original} onStatusUpdated={onStatusUpdated} />
         </div>
       ),
 
-      enableSorting: false,
-      enableHiding: false,
+      enableSorting:
+        false,
+
+      enableHiding:
+        false,
     },
   ];
 }

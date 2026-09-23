@@ -36,7 +36,24 @@ function statusVariant(status: InquiryDetailData["status"]): StatusVariant {
   }
 }
 
-export function InquiryDetail({ inquiry }: { inquiry: InquiryDetailData }) {
+export function InquiryDetail({
+  inquiry,
+}: {
+  inquiry: InquiryDetailData;
+}) {
+  const hasSellerReply =
+    inquiry.messages.some(
+      (message) =>
+        message.role === "Supplier",
+    );
+
+  const hasBuyerFollowUp =
+    hasSellerReply &&
+    inquiry.messages.some(
+      (message) =>
+        message.role === "Buyer",
+    );
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -71,25 +88,33 @@ export function InquiryDetail({ inquiry }: { inquiry: InquiryDetailData }) {
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <FlowStep icon={UserRound} title={inquiry.buyer.name} subtitle="Buyer" />
 
-          <Arrow />
+<Arrow />
 
-          <FlowStep icon={FileText} title="Sent" subtitle={inquiry.inquiryType} />
+<FlowStep icon={FileText} title="Sent" subtitle={inquiry.inquiryType} />
 
-          <Arrow />
+<Arrow />
 
-          <FlowStep icon={Building2} title={inquiry.company.name} subtitle="Supplier" />
+<FlowStep icon={Building2} title={inquiry.company.name} subtitle="Supplier" />
 
-          <Arrow />
+{hasSellerReply ? (
+  <>
+    <Arrow />
 
-          <FlowStep icon={MessageCircle} title="Seller replied" />
+    <FlowStep icon={MessageCircle} title="Seller replied" />
+  </>
+) : null}
 
-          <Arrow />
+{hasBuyerFollowUp ? (
+  <>
+    <Arrow />
 
-          <FlowStep icon={MessageCircle} title="Buyer replied" />
+    <FlowStep icon={MessageCircle} title="Buyer replied" />
+  </>
+) : null}
 
-          <Arrow />
+<Arrow />
 
-          <FlowStep icon={MessageCircle} title={inquiry.status} />
+<FlowStep icon={MessageCircle} title={inquiry.status} />
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
@@ -267,7 +292,7 @@ export function InquiryDetail({ inquiry }: { inquiry: InquiryDetailData }) {
             <div className="mt-3 grid grid-cols-3 gap-2">
               <TopInfo label="Last Activity" value={inquiry.lastActivity} />
 
-              <TopInfo label="Total Replies" value={`${inquiry.messages.length - 1}`} />
+              <TopInfo label="Total Replies" value={`${inquiry.messages.length}`} />
 
               <TopInfo label="Attachments" value={`${inquiry.attachments.length}`} />
             </div>

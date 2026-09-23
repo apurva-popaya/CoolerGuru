@@ -1,20 +1,21 @@
-import { type UserRole, type UserStatus, usersData } from "@/components/admin/users/users-data";
+import type {
+  AdminUserActivityItem,
+  AdminUserDetail,
+} from "@/lib/api/admin-users-api";
 
-export type UserActivityType =
-  | "Viewed Product"
-  | "Viewed Company"
-  | "Saved Product"
-  | "Saved Company"
-  | "Sent Inquiry"
-  | "Contacted Company"
-  | "Added Product"
-  | "Updated Product"
-  | "Replied Inquiry";
+export type UserDisplayRole =
+  | "Buyer"
+  | "Supplier"
+  | "Admin";
+
+export type UserDisplayStatus =
+  | "Active"
+  | "Inactive";
 
 export interface UserActivity {
   id: string;
 
-  type: UserActivityType;
+  type: string;
 
   title: string;
 
@@ -46,7 +47,11 @@ export interface SupplierStats {
 
   repliesSent: number;
 
-  verification: "Verified" | "Under Verification" | "Rejected";
+  verification:
+    | "Verified"
+    | "Under Verification"
+    | "Rejected"
+    | "Draft";
 }
 
 export interface UserDetailData {
@@ -58,11 +63,13 @@ export interface UserDetailData {
 
   email: string;
 
-  role: UserRole;
+  role: UserDisplayRole;
+
+  roles: UserDisplayRole[];
 
   accountType: string;
 
-  status: UserStatus;
+  status: UserDisplayStatus;
 
   location: string;
 
@@ -77,153 +84,330 @@ export interface UserDetailData {
   activities: UserActivity[];
 }
 
-export function getUserDetail(userId: string): UserDetailData | null {
-  const user = usersData.find((item) => item.id === userId);
-
-  if (!user) {
-    return null;
+function formatDate(
+  value: string | null | undefined,
+) {
+  if (!value) {
+    return "Not available";
   }
 
-  /*
-   * SUPPLIER
-   */
-  if (user.role === "Supplier") {
-    return {
-      ...user,
-
-      location: "Ahmedabad, Gujarat, India",
-
-      registrationDate: user.joinedDate,
-
-      supplierStats: {
-        company: user.name,
-
-        companyId: "arctic-cooling-solutions",
-
-        products: 24,
-
-        inquiriesReceived: 38,
-
-        repliesSent: 29,
-
-        verification: "Verified",
-      },
-
-      activities: [
-        {
-          id: "ACT001",
-          type: "Updated Product",
-
-          title: "Updated Industrial Air Cooler IC-15000",
-
-          date: "08 Sep 2024, 02:15 PM",
-        },
-
-        {
-          id: "ACT002",
-          type: "Added Product",
-
-          title: "Added Tower Air Cooler TC-3000",
-
-          date: "07 Sep 2024, 11:40 AM",
-        },
-
-        {
-          id: "ACT003",
-          type: "Replied Inquiry",
-
-          title: "Replied to INQ-2024-1002",
-
-          date: "07 Sep 2024, 10:22 AM",
-        },
-      ],
-    };
-  }
-
-  /*
-   * BUYER
-   */
-  return {
-    ...user,
-
-    location: "Ahmedabad, Gujarat, India",
-
-    registrationDate: user.joinedDate,
-
-    buyerStats: {
-      savedProducts: 8,
-
-      savedCompanies: 4,
-
-      productsViewed: 37,
-
-      companiesViewed: 18,
-
-      inquiriesSent: 6,
-
-      companiesContacted: 4,
+  return new Date(value).toLocaleString(
+    "en-IN",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     },
+  );
+}
 
-    activities: [
-      {
-        id: "ACT001",
+function mapRole(
+  role: string,
+): UserDisplayRole {
+  switch (role) {
+    case "SELLER":
+      return "Supplier";
 
-        type: "Viewed Product",
+    case "ADMIN":
+      return "Admin";
 
-        title: "Industrial Air Cooler IC-15000",
+    default:
+      return "Buyer";
+  }
+}
 
-        date: "08 Sep 2024, 02:15 PM",
-      },
+function mapVerificationStatus(
+  value?: string,
+): SupplierStats["verification"] {
+  switch (value) {
+    case "VERIFIED":
+      return "Verified";
 
-      {
-        id: "ACT002",
+    case "UNDER_VERIFICATION":
+      return "Under Verification";
 
-        type: "Saved Company",
+    case "REJECTED":
+      return "Rejected";
 
-        title: "ABC Cooling Industries",
+    default:
+      return "Draft";
+  }
+}
 
-        date: "07 Sep 2024, 11:40 AM",
-      },
+function readMetric(
+  source: Record<string, unknown> | null,
+  keys: string[],
+) {
+  if (!source) {
+    return 0;
+  }
 
-      {
-        id: "ACT003",
+  for (const key of keys) {
+    const value =
+      source[key];
 
-        type: "Sent Inquiry",
+    if (
+      typeof value === "number" &&
+      Number.isFinite(value)
+    ) {
+      return value;
+    }
+  }
 
-        title: "Request Quote to Arctic Cooling Systems",
+  return 0;
+}
 
-        date: "07 Sep 2024, 10:22 AM",
-      },
+function mapActivities(
+  activities: AdminUserActivityItem[],
+): UserActivity[] {
+  return activities.map(
+    (
+      activity,
+      index,
+    ) => {
+      const id =
+        String(
+          activity.id ??
+            activity.activity_id ??
+            activity.user_activity_id ??
+            index,
+        );
 
-      {
-        id: "ACT004",
+      const type =
+        String(
+          activity.type ??
+            activity.activity_type ??
+            "Activity",
+        );
 
-        type: "Viewed Product",
+      const title =
+        String(
+          activity.title ??
+            activity.description ??
+            activity.action ??
+            "User activity",
+        );
 
-        title: "Tower Air Cooler",
+      const dateValue =
+        activity.created_at ??
+        activity.date ??
+        activity.occurred_at;
 
-        date: "06 Sep 2024, 04:18 PM",
-      },
+      return {
+        id,
 
-      {
-        id: "ACT005",
+        type,
 
-        type: "Saved Product",
+        title,
 
-        title: "Desert Air Cooler 9000",
+        date:
+          typeof dateValue ===
+          "string"
+            ? formatDate(
+                dateValue,
+              )
+            : "Not available",
+      };
+    },
+  );
+}
 
-        date: "05 Sep 2024, 03:50 PM",
-      },
+export function mapAdminUserDetail(
+  user: AdminUserDetail,
+  activities: AdminUserActivityItem[],
+): UserDetailData {
+  const roles =
+    user.roles.map(
+      mapRole,
+    );
 
-      {
-        id: "ACT006",
+  const primaryRole =
+    roles.includes(
+      "Supplier",
+    )
+      ? "Supplier"
+      : roles.includes(
+            "Buyer",
+          )
+        ? "Buyer"
+        : "Admin";
 
-        type: "Contacted Company",
+  const buyerStats =
+    user.buyer_metrics
+      ? {
+          savedProducts:
+            readMetric(
+              user.buyer_metrics,
+              [
+                "saved_products",
+                "savedProducts",
+              ],
+            ),
 
-        title: "MaxCool Systems",
+          savedCompanies:
+            readMetric(
+              user.buyer_metrics,
+              [
+                "saved_companies",
+                "savedCompanies",
+              ],
+            ),
 
-        date: "04 Sep 2024, 12:12 PM",
-      },
-    ],
+          productsViewed:
+            readMetric(
+              user.buyer_metrics,
+              [
+                "products_viewed",
+                "product_views",
+                "productsViewed",
+              ],
+            ),
+
+          companiesViewed:
+            readMetric(
+              user.buyer_metrics,
+              [
+                "companies_viewed",
+                "company_views",
+                "companiesViewed",
+              ],
+            ),
+
+          inquiriesSent:
+            readMetric(
+              user.buyer_metrics,
+              [
+                "inquiries_sent",
+                "inquiries",
+                "inquiriesSent",
+              ],
+            ),
+
+          companiesContacted:
+            readMetric(
+              user.buyer_metrics,
+              [
+                "companies_contacted",
+                "companiesContacted",
+              ],
+            ),
+        }
+      : undefined;
+
+  const supplierStats =
+    user.company
+      ? {
+          company:
+            user.company.name,
+
+          companyId:
+            String(
+              user.company.company_id,
+            ),
+
+          products:
+            readMetric(
+              user.supplier_metrics,
+              [
+                "products",
+                "product_count",
+                "active_products",
+              ],
+            ),
+
+          inquiriesReceived:
+            readMetric(
+              user.supplier_metrics,
+              [
+                "inquiries_received",
+                "inquiries",
+              ],
+            ),
+
+          repliesSent:
+            readMetric(
+              user.supplier_metrics,
+              [
+                "replies_sent",
+                "replies",
+              ],
+            ),
+
+          verification:
+            mapVerificationStatus(
+              user.company.verification_status,
+            ),
+        }
+      : undefined;
+
+  return {
+    id:
+      String(
+        user.user_id,
+      ),
+
+    name:
+      user.name?.trim() ||
+      [
+        user.first_name,
+        user.last_name,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim() ||
+      `User #${user.user_id}`,
+
+    mobile:
+      user.phone_number,
+
+    email:
+      user.email ?? "",
+
+    role:
+      primaryRole,
+
+    roles,
+
+    accountType:
+      user.account_type ===
+      "COMPANY"
+        ? "Company"
+        : "Individual",
+
+    status:
+      user.status ===
+      "ACTIVE"
+        ? "Active"
+        : "Inactive",
+
+    location:
+      user.company
+        ? [
+            user.company.name,
+          ]
+            .filter(Boolean)
+            .join(", ")
+        : "Not available",
+
+    registrationDate:
+      formatDate(
+        user.joined_at,
+      ),
+
+    lastActivity:
+      formatDate(
+        user.last_activity_at,
+      ),
+
+    buyerStats,
+
+    supplierStats,
+
+    activities:
+      mapActivities(
+        activities,
+      ),
   };
 }

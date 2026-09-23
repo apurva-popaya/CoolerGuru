@@ -56,7 +56,10 @@ interface NewLaunchesProps {
   newLaunchBadgeDays?: number;
 }
 
-export function NewLaunches({ launches: _launches, newLaunchBadgeDays: _newLaunchBadgeDays }: NewLaunchesProps) {
+export function NewLaunches({
+  launches: _launches,
+  newLaunchBadgeDays: _newLaunchBadgeDays,
+}: NewLaunchesProps) {
   return (
     <section className="bg-white py-2">
       <Container>
@@ -64,10 +67,10 @@ export function NewLaunches({ launches: _launches, newLaunchBadgeDays: _newLaunc
           title="New Launches"
           viewAllLabel="View All Launches"
           viewAllHref="/new-launches"
-          className="mb-5"
+          className="mb-4 sm:mb-5"
         />
 
-        <HorizontalCarousel scrollAmount={275}>
+        <HorizontalCarousel scrollAmount={275} className="gap-3">
           {launches.map((item) => (
             <LaunchCard key={item.id} item={item} />
           ))}
@@ -77,7 +80,11 @@ export function NewLaunches({ launches: _launches, newLaunchBadgeDays: _newLaunc
   );
 }
 
-function LaunchCard({ item }: { item: (typeof launches)[number] }) {
+function LaunchCard({
+  item,
+}: {
+  item: (typeof launches)[number];
+}) {
   return (
     <div className="relative flex min-h-[315px] min-w-[245px] max-w-[245px] shrink-0 flex-col overflow-hidden rounded-[10px] border border-[#e4e5ed] bg-white px-4 pt-4 pb-4">
       <span className="absolute top-4 left-4 z-10 inline-flex rounded-[4px] bg-[#159447] px-2 py-[3px] font-bold text-[8px] text-white">
@@ -85,15 +92,27 @@ function LaunchCard({ item }: { item: (typeof launches)[number] }) {
       </span>
 
       <div className="relative mx-auto h-[170px] w-[175px]">
-        <Image src={item.image} alt={item.name} fill sizes="175px" className="object-contain object-center" />
+        <Image
+          src={item.image}
+          alt={item.name}
+          fill
+          sizes="175px"
+          className="object-contain object-center"
+        />
       </div>
 
       <div className="text-center">
-        <h3 className="line-clamp-2 min-h-[20px] font-bold text-[#17159a] text-[13px] leading-[1.25]">{item.name}</h3>
+        <h3 className="line-clamp-2 min-h-[20px] font-bold text-[#17159a] text-[13px] leading-[1.25]">
+          {item.name}
+        </h3>
 
-        <p className="mt-1 font-medium text-[#555a70] text-[10px]">{item.category}</p>
+        <p className="mt-1 font-medium text-[#555a70] text-[10px]">
+          {item.category}
+        </p>
 
-        <p className="mt-1 font-medium text-[#555a70] text-[10px]">{item.specification}</p>
+        <p className="mt-1 font-medium text-[#555a70] text-[10px]">
+          {item.specification}
+        </p>
       </div>
 
       <Link

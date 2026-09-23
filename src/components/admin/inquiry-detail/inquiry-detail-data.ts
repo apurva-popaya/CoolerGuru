@@ -1,4 +1,13 @@
-import { type InquiryStatus, type InquiryType, inquiriesData } from "@/components/admin/inquiries/inquiries-data";
+import type {
+  AdminInquiryDetail,
+  AdminInquiryStatus,
+  AdminInquiryType,
+} from "@/lib/api/admin-inquiries-api";
+
+import type {
+  InquiryStatus,
+  InquiryType,
+} from "@/components/admin/inquiries/inquiries-data";
 
 export interface InquiryMessage {
   id: string;
@@ -74,159 +83,315 @@ export interface InquiryDetailData {
   lastActivity: string;
 }
 
-export function getInquiryDetail(inquiryId: string): InquiryDetailData | null {
-  const inquiry = inquiriesData.find((item) => item.id === inquiryId);
+function mapStatus(
+  status: AdminInquiryStatus,
+): InquiryStatus {
+  switch (status) {
+    case "REPLIED":
+      return "Replied";
 
-  if (!inquiry) {
-    return null;
+    case "IN_DISCUSSION":
+      return "In Discussion";
+
+    case "CLOSED":
+      return "Closed";
+
+    case "SPAM":
+      return "Spam";
+
+    default:
+      return "New";
+  }
+}
+
+function mapType(
+  type: AdminInquiryType,
+): InquiryType {
+  return type === "CONTACT_SUPPLIER"
+    ? "Contact Supplier"
+    : "Request Quote";
+}
+
+function formatDate(
+  value: string | null,
+) {
+  if (!value) {
+    return "Not available";
   }
 
+  return new Date(
+    value,
+  ).toLocaleString(
+    "en-IN",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+  );
+}
+
+function getPersonName(
+  person:
+    | {
+        name: string | null;
+        first_name: string | null;
+        last_name: string | null;
+      }
+    | null,
+  fallback: string,
+) {
+  if (!person) {
+    return fallback;
+  }
+
+  return (
+    person.name?.trim() ||
+    [
+      person.first_name,
+      person.last_name,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim() ||
+    fallback
+  );
+}
+
+function getBudget(
+  inquiry: AdminInquiryDetail,
+) {
+  const product =
+    inquiry.product;
+
+  if (!product) {
+    return "Not provided";
+  }
+
+  const unit =
+    product.price_unit
+      ? ` / ${product.price_unit}`
+      : "";
+
+  if (
+    product.min_price &&
+    product.max_price
+  ) {
+    return `₹${Number(product.min_price).toLocaleString("en-IN")} - ₹${Number(product.max_price).toLocaleString("en-IN")}${unit}`;
+  }
+
+  if (product.price) {
+    return `₹${Number(product.price).toLocaleString("en-IN")}${unit}`;
+  }
+
+  return "Not provided";
+}
+
+export function mapAdminInquiryDetail(
+  inquiry: AdminInquiryDetail,
+): InquiryDetailData {
+  const companyLocation =
+    [
+      inquiry.company?.city,
+      inquiry.company?.state,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+  const contactPerson =
+    getPersonName(
+      inquiry.company?.owner ??
+        null,
+      "Not available",
+    );
+
   return {
-    id: inquiry.id,
+    id:
+      inquiry.inquiry_number,
 
-    status: inquiry.status,
+    status:
+      mapStatus(
+        inquiry.status,
+      ),
 
-    createdDate: inquiry.createdDate,
+    createdDate:
+      formatDate(
+        inquiry.created_at,
+      ),
 
-    inquiryType: inquiry.inquiryType,
+    inquiryType:
+      mapType(
+        inquiry.inquiry_type,
+      ),
 
-    quantity: inquiry.quantity,
+    quantity:
+      inquiry.quantity !== null
+        ? `${inquiry.quantity} ${inquiry.quantity_unit ?? ""}`.trim()
+        : "Not specified",
 
     buyer: {
-      id: "buyer-rahul-sharma",
-      name: "Rahul Sharma",
-      company: "FreshAir Distributors",
-      location: "Mumbai, Maharashtra",
-      email: "rahul@freshair.in",
-      phone: "+91 98765 43210",
-      buyerType: "Distributor",
+      id:
+        String(
+          inquiry.buyer_user_id,
+        ),
+
+      name:
+        inquiry.buyer_name ||
+        getPersonName(
+          inquiry.buyer,
+          "Buyer",
+        ),
+
+      company: "",
+
+      location:
+        inquiry.buyer_city_state ??
+        "Not provided",
+
+      email:
+        inquiry.buyer_email ??
+        inquiry.buyer?.email ??
+        "Not provided",
+
+      phone:
+        inquiry.buyer_phone_number ??
+        inquiry.buyer?.phone_number ??
+        "Not provided",
+
+      buyerType:
+        "Buyer",
     },
 
     company: {
-      id: inquiry.companyId,
-      name: inquiry.companyName,
-      contactPerson: "Sales Desk",
-      location: inquiry.companyLocation,
-      email: "sales@company.com",
-      phone: "+91 79 4010 1234",
-      supplierTypes: ["Manufacturer", "Exporter", "Supplier"],
-      verified: true,
+      id:
+        inquiry.company
+          ? String(
+              inquiry.company.company_id,
+            )
+          : "",
+
+      name:
+        inquiry.company?.name ??
+        "No Company",
+
+      contactPerson,
+
+      location:
+        companyLocation ||
+        "Not provided",
+
+      email:
+        inquiry.company?.email ??
+        "Not provided",
+
+      phone:
+        inquiry.company?.phone_number ??
+        "Not provided",
+
+      supplierTypes:
+        inquiry.company?.business_types ??
+        [],
+
+      verified:
+        inquiry.company?.verification_status ===
+        "VERIFIED",
     },
 
     product: {
-      id: inquiry.productId,
+      id:
+        inquiry.product?.slug,
 
-      name: inquiry.productName,
+      name:
+        inquiry.product?.name ??
+        inquiry.product_requirement,
 
-      category: "Industrial Air Coolers",
+      category:
+        inquiry.product?.category?.name ??
+        "Not applicable",
 
-      quantity: inquiry.quantity,
+      quantity:
+        inquiry.quantity !== null
+          ? `${inquiry.quantity} ${inquiry.quantity_unit ?? ""}`.trim()
+          : "Not specified",
 
-      budget: "₹78,000 - ₹85,000 / unit",
+      budget:
+        getBudget(inquiry),
 
-      deliveryLocation: "Mumbai, Maharashtra",
+      deliveryLocation:
+        "Not provided",
 
       notes:
-        "Need high airflow industrial coolers for warehouse ventilation. Looking for pricing, availability, dispatch timeline, and warranty support.",
+        inquiry.requirement_details ??
+        inquiry.product_requirement,
     },
 
-    originalInquiry: `Hi,\nWe are looking for ${inquiry.productName} for our warehouse project in Mumbai. Please share the best price, availability, dispatch timeline and warranty details.\n\nThanks,\nRahul Sharma\nFreshAir Distributors`,
+    originalInquiry:
+      inquiry.requirement_details ??
+      inquiry.product_requirement,
 
-    attachments: [
-      {
-        id: "attachment-1",
-        name: "warehouse-layout.pdf",
-        type: "PDF",
-        size: "1.8 MB",
-      },
+    /*
+     * Admin inquiry detail API currently
+     * does not return attachments.
+     */
+    attachments: [],
 
-      {
-        id: "attachment-2",
-        name: "requirement-sheet.xlsx",
-        type: "XLSX",
-        size: "420 KB",
-      },
-    ],
+    messages:
+      inquiry.messages.map(
+        (message) => ({
+          id:
+            String(
+              message.inquiry_message_id,
+            ),
 
-    messages: [
-      {
-        id: "message-1",
-        sender: "Rahul Sharma",
-        role: "Buyer",
-        time: "14 Mar 2025, 10:24 AM",
-        message:
-          "Hi, We are looking for Industrial Air Cooler IC-45000 for our warehouse project in Mumbai. Please share the best price, availability, dispatch timeline and warranty details.",
-      },
+          sender:
+            getPersonName(
+              message.sender,
+              message.sender_type ===
+                "BUYER"
+                ? "Buyer"
+                : "Supplier",
+            ),
 
-      {
-        id: "message-2",
-        sender: "Sales Desk",
-        role: "Supplier",
-        time: "14 Mar 2025, 01:15 PM",
-        message:
-          "Dear Rahul Sharma, thank you for your inquiry. We have noted your requirement and are pleased to share our quote. Please find the detailed pricing and specifications attached.",
-      },
+          role:
+            message.sender_type ===
+            "BUYER"
+              ? "Buyer"
+              : "Supplier",
 
-      {
-        id: "message-3",
-        sender: "Rahul Sharma",
-        role: "Buyer",
-        time: "15 Mar 2025, 09:42 AM",
-        message:
-          "Thanks for the quote. Could you please confirm the estimated delivery timeline to Mumbai? Also, do you provide warranty support for this model?",
-      },
+          time:
+            formatDate(
+              message.created_at,
+            ),
 
-      {
-        id: "message-4",
-        sender: "Sales Desk",
-        role: "Supplier",
-        time: "15 Mar 2025, 12:10 PM",
-        message:
-          "We can dispatch within 10–12 working days after order confirmation. The product comes with 1 year manufacturer warranty and we also provide after-sales support across India.",
-      },
+          message:
+            message.message,
+        }),
+      ),
 
-      {
-        id: "message-5",
-        sender: "Rahul Sharma",
-        role: "Buyer",
-        time: "15 Mar 2025, 02:30 PM",
-        message:
-          "That sounds good. We are interested to proceed further. Please share the proforma invoice and let us know the next steps.",
-      },
-    ],
+    timeline:
+      inquiry.events.map(
+        (event) => ({
+          id:
+            String(
+              event.inquiry_event_id,
+            ),
 
-    timeline: [
-      {
-        id: "timeline-1",
-        date: "14 Mar 2025, 10:24 AM",
-        event: "Inquiry Received from Rahul Sharma",
-      },
+          date:
+            formatDate(
+              event.created_at,
+            ),
 
-      {
-        id: "timeline-2",
-        date: "14 Mar 2025, 11:03 AM",
-        event: "Viewed by Supplier",
-      },
+          event:
+            event.description ||
+            event.event_type,
+        }),
+      ),
 
-      {
-        id: "timeline-3",
-        date: "14 Mar 2025, 01:15 PM",
-        event: "Seller Replied",
-      },
-
-      {
-        id: "timeline-4",
-        date: "15 Mar 2025, 09:42 AM",
-        event: "Buyer Follow-up Received",
-      },
-
-      {
-        id: "timeline-5",
-        date: "15 Mar 2025, 02:30 PM",
-        event: "Status Updated to In Discussion",
-      },
-    ],
-
-    lastActivity: "15 Mar 2025, 02:30 PM",
+    lastActivity:
+      formatDate(
+        inquiry.last_activity_at,
+      ),
   };
 }

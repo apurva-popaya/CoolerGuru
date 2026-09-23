@@ -25,24 +25,33 @@ const steps = [
 
 export function ProductInquiryNextSteps() {
   return (
-    <div className="rounded-[10px] border border-[#e1e2ed] bg-white p-5">
-      <h2 className="font-bold text-[#171570] text-[16px]">What happens next?</h2>
+    <div className="rounded-[10px] border border-[#e1e2ed] bg-white p-4 sm:p-5">
+      <h2 className="font-bold text-[#171570] text-[15px] sm:text-[16px]">
+        What happens next?
+      </h2>
 
       <div className="mt-4 space-y-4">
         {steps.map((step, index) => (
-          <div key={step.title} className="relative flex items-start gap-4">
+          <div
+            key={step.title}
+            className="relative flex items-start gap-3 sm:gap-4"
+          >
             {index !== steps.length - 1 ? (
-              <div className="absolute top-[39px] left-[20px] h-[34px] border-[#cfcaf8] border-l border-dashed" />
+              <div className="absolute top-[39px] left-[19px] h-[34px] border-[#cfcaf8] border-l border-dashed" />
             ) : null}
 
-            <div className="relative z-10 flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full bg-[#f0edff] text-[#3427d7]">
+            <div className="relative z-10 flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-[#f0edff] text-[#3427d7] sm:h-[40px] sm:w-[40px]">
               {step.icon}
             </div>
 
-            <div className="pt-0.5">
-              <h3 className="font-bold text-[#191574] text-[10px]">{step.title}</h3>
+            <div className="min-w-0 pt-0.5">
+              <h3 className="font-bold text-[#191574] text-[9px] sm:text-[10px]">
+                {step.title}
+              </h3>
 
-              <p className="mt-1 max-w-[270px] text-[#62677e] text-[8px] leading-[1.45]">{step.description}</p>
+              <p className="mt-1 max-w-[270px] text-[#62677e] text-[8px] leading-[1.45]">
+                {step.description}
+              </p>
             </div>
           </div>
         ))}

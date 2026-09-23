@@ -17,14 +17,27 @@ function formatStatus(value: string) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-export function BuyerInquirySummary({ inquiry }: { inquiry: BuyerInquiry }) {
+export function BuyerInquirySummary({
+  inquiry,
+}: {
+  inquiry: BuyerInquiry;
+}) {
   return (
-    <div className="mt-5 grid grid-cols-3 rounded-[8px] border border-[#e1e2ed] bg-white px-5 py-4">
-      <SummaryItem icon={<ClipboardList size={15} />} label="Inquiry ID" value={inquiry.inquiry_number} />
+    <div className="mt-5 grid grid-cols-1 rounded-[8px] border border-[#e1e2ed] bg-white px-4 py-3 sm:grid-cols-3 sm:px-5 sm:py-4">
+      <SummaryItem
+        icon={<ClipboardList size={15} />}
+        label="Inquiry ID"
+        value={inquiry.inquiry_number}
+      />
 
-      <SummaryItem icon={<CalendarDays size={15} />} label="Sent Date" value={formatDate(inquiry.created_at)} border />
+      <SummaryItem
+        icon={<CalendarDays size={15} />}
+        label="Sent Date"
+        value={formatDate(inquiry.created_at)}
+        border
+      />
 
-      <div className="flex items-center justify-center border-[#e5e6ee] border-l">
+      <div className="flex items-center justify-center border-[#e5e6ee] border-t py-3 sm:border-t-0 sm:border-l">
         <div className="flex items-center gap-3">
           <CheckCircle2 size={17} className="text-[#159447]" />
 
@@ -53,14 +66,22 @@ function SummaryItem({
   border?: boolean;
 }) {
   return (
-    <div className={`flex items-center justify-center ${border ? "border-[#e5e6ee] border-l" : ""}`}>
+    <div
+      className={`flex items-center justify-center py-3 sm:py-0 ${
+        border
+          ? "border-[#e5e6ee] border-t sm:border-t-0 sm:border-l"
+          : ""
+      }`}
+    >
       <div className="flex items-center gap-3">
         <span className="text-[#3428d6]">{icon}</span>
 
         <div>
           <p className="text-[#777b90] text-[8px]">{label}</p>
 
-          <p className="mt-1 font-semibold text-[#2e3357] text-[9px]">{value}</p>
+          <p className="mt-1 font-semibold text-[#2e3357] text-[9px]">
+            {value}
+          </p>
         </div>
       </div>
     </div>

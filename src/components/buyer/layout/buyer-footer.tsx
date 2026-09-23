@@ -4,7 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Clock3, Mail, MapPin, Phone } from "lucide-react";
-import { FaFacebookF, FaInstagram, FaLinkedinIn, FaYoutube } from "react-icons/fa";
+import {
+  FaFacebookF,
+  FaInstagram,
+  FaLinkedinIn,
+  FaYoutube,
+} from "react-icons/fa";
 
 import { WideContainer } from "@/components/common/wide-container";
 
@@ -90,7 +95,6 @@ const resourceLinks = [
     label: "Buying Guide",
     href: "/buying-guide",
   },
-
   {
     label: "Industry Insights",
     href: "/industry-insights",
@@ -108,17 +112,16 @@ const resourceLinks = [
 export function BuyerFooter() {
   return (
     <WideContainer>
-      <footer className="w-full overflow-hidden bg-[#07194d] px-5 py-7 text-white sm:px-8 lg:px-10">
-        {/* MAIN FOOTER */}
+      <footer className="w-full overflow-hidden bg-[#07194d] px-4 py-6 text-white sm:px-8 sm:py-7 lg:px-10">
         <div
           className="
-      mx-auto w-full max-w-[1600px]
-      grid grid-cols-1 gap-8
-      sm:grid-cols-2
-      lg:grid-cols-4
-      xl:grid-cols-[1.35fr_1fr_1fr_1fr_1fr_1.2fr]
-      xl:gap-7
-    "
+            mx-auto w-full max-w-[1600px]
+            grid grid-cols-1 gap-7
+            sm:grid-cols-2
+            lg:grid-cols-4
+            xl:grid-cols-[1.35fr_1fr_1fr_1fr_1fr_1.2fr]
+            xl:gap-7
+          "
         >
           {/* BRAND */}
           <div className="min-w-0">
@@ -127,12 +130,12 @@ export function BuyerFooter() {
               alt="CoolerGuru"
               width={175}
               height={55}
-              className="h-auto w-[150px] brightness-0 invert"
+              className="h-auto w-[140px] brightness-0 invert sm:w-[150px]"
             />
 
-            <p className="mt-3 max-w-[190px] text-[9px] leading-[1.55] text-white/80">
-              India&apos;s most comprehensive directory for air cooler manufacturers,
-              OEMs, suppliers &amp; exporters.
+            <p className="mt-3 max-w-[220px] text-[9px] leading-[1.55] text-white/80">
+              India&apos;s most comprehensive directory for air cooler
+              manufacturers, OEMs, suppliers &amp; exporters.
             </p>
 
             <div className="mt-4 flex items-center gap-2">
@@ -212,26 +215,24 @@ export function BuyerFooter() {
         <div className="mx-auto mt-7 w-full max-w-[1600px] border-t border-white/15 pt-4">
           <div
             className="
-        flex flex-col gap-3
-        sm:flex-row
-        sm:items-center
-        sm:justify-between
-      "
+              flex flex-col gap-3
+              sm:flex-row
+              sm:items-center
+              sm:justify-between
+            "
           >
-            {/* COPYRIGHT */}
             <p className="text-[8px] leading-[1.5] text-white/65">
               © {new Date().getFullYear()} CoolerGuru Systems Pvt. Ltd.
               All Rights Reserved.
             </p>
 
-            {/* LINKS */}
             <div
               className="
-          flex flex-wrap items-center
-          gap-x-3 gap-y-2
-          text-[8px] text-white/70
-          sm:justify-end
-        "
+                flex flex-wrap items-center
+                gap-x-3 gap-y-2
+                text-[8px] text-white/70
+                sm:justify-end
+              "
             >
               <Link
                 href="/sitemap"
@@ -332,10 +333,10 @@ interface ContactItemProps {
 
 function ContactItem({ icon, text }: ContactItemProps) {
   return (
-    <div className="flex items-start gap-2 text-[8px] text-white/80 leading-[1.35]">
+    <div className="flex min-w-0 items-start gap-2 text-[8px] text-white/80 leading-[1.35]">
       <span className="mt-px shrink-0 text-white/90">{icon}</span>
 
-      <span>{text}</span>
+      <span className="min-w-0 break-words">{text}</span>
     </div>
   );
 }

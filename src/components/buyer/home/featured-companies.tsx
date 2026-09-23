@@ -12,9 +12,11 @@ interface FeaturedCompaniesProps {
   companies?: HomepageTrustedCompany[];
 }
 
-export function FeaturedCompanies({ companies: _companies }: FeaturedCompaniesProps) {
+export function FeaturedCompanies({
+  companies: _companies,
+}: FeaturedCompaniesProps) {
   return (
-    <section className="bg-white py-4">
+    <section className="bg-white py-3 sm:py-4">
       <Container>
         <SectionHeader
           title="Featured Companies"
@@ -23,7 +25,10 @@ export function FeaturedCompanies({ companies: _companies }: FeaturedCompaniesPr
           viewAllHref="/companies"
         />
 
-        <HorizontalCarousel scrollAmount={280} className="gap-3">
+        <HorizontalCarousel
+          scrollAmount={280}
+          className="gap-3"
+        >
           {featuredCompanies.map((company) => (
             <CompanyCard key={company.id} company={company} />
           ))}
@@ -52,7 +57,9 @@ function CompanyCard({ company }: { company: Company }) {
         <CompanyLogo company={company} />
 
         <div className="min-w-0 flex-1">
-          <h3 className="truncate font-bold text-[#161396] text-[14px] leading-[1.2]">{company.name}</h3>
+          <h3 className="truncate font-bold text-[#161396] text-[14px] leading-[1.2]">
+            {company.name}
+          </h3>
 
           <p className="mt-[3px] font-medium text-[#555b7c] text-[10px] leading-[1.25]">
             {company.businessTypes.join(" | ")}
@@ -60,7 +67,9 @@ function CompanyCard({ company }: { company: Company }) {
         </div>
       </div>
 
-      <p className="mt-2.5 font-semibold text-[#555b75] text-[9px] leading-[1.25]">{company.location}</p>
+      <p className="mt-2.5 font-semibold text-[#555b75] text-[9px] leading-[1.25]">
+        {company.location}
+      </p>
 
       <p className="mt-2 line-clamp-2 min-h-[28px] font-semibold text-[#4f5575] text-[9px] leading-[1.45]">
         {company.categories.join(", ")}
@@ -96,7 +105,13 @@ function CompanyLogo({ company }: { company: Company }) {
 
   return (
     <div className="relative h-[42px] w-[42px] shrink-0 overflow-hidden rounded-full bg-white">
-      <Image src={company.logo} alt={`${company.name} logo`} fill sizes="42px" className="object-contain" />
+      <Image
+        src={company.logo}
+        alt={`${company.name} logo`}
+        fill
+        sizes="42px"
+        className="object-contain"
+      />
     </div>
   );
 }

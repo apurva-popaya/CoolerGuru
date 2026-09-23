@@ -4,8 +4,8 @@ import { BuyerDashboardSidebar } from "@/components/buyer/dashboard/buyer-dashbo
 
 export default function BuyerDashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="bg-white">
-      <div className="mx-auto flex max-w-[1440px]">
+    <div className="min-h-screen bg-white">
+      <div className="mx-auto flex max-w-[1440px] flex-col lg:flex-row">
         <BuyerDashboardSidebar />
 
         <main className="min-w-0 flex-1">{children}</main>

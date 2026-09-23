@@ -129,10 +129,10 @@ export function AddUserForm({ mode = "add", userId, initialValues }: AddUserForm
         setSuccess("User updated successfully.");
       } else {
         await createAdminUser({
-          name: currentName,
-          phone_number: `+91${mobile}`,
-          roles: [backendRole],
-        });
+  user_type: backendRole,
+  name: currentName,
+  phone_number: `+91${mobile}`,
+});
 
         setSuccess(`${selectedRole} added successfully.`);
       }

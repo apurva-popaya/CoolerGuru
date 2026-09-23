@@ -57,10 +57,13 @@ export function UserDetail({ user }: { user: UserDetailData }) {
         <div className="space-y-5">
           <UserProfile user={user} />
 
-          {user.role === "Buyer" && user.buyerStats && <BuyerStatsGrid stats={user.buyerStats} />}
+         {user.roles.includes("Buyer") && user.buyerStats ? (
+  <BuyerStatsGrid stats={user.buyerStats} />
+) : null}
 
-          {user.role === "Supplier" && user.supplierStats && <SupplierStatsGrid stats={user.supplierStats} />}
-
+{user.roles.includes("Supplier") && user.supplierStats ? (
+  <SupplierStatsGrid stats={user.supplierStats} />
+) : null}
           <RecentActivity activities={user.activities} />
         </div>
 
@@ -68,7 +71,7 @@ export function UserDetail({ user }: { user: UserDetailData }) {
           <InformationCard title="Account Information">
             <InformationRow label="User ID" value={`#${user.id}`} />
 
-            <InformationRow label="Role" value={user.role} />
+           <InformationRow label="Role" value={user.roles.join(", ")} />
 
             <InformationRow label="Account Type" value={user.accountType} />
 
@@ -154,7 +157,13 @@ function UserProfile({ user }: { user: UserDetailData }) {
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="font-bold text-[#15136f] text-[24px]">{user.name}</h2>
 
-            <StatusBadge variant={user.role === "Buyer" ? "info" : "purple"}>{user.role}</StatusBadge>
+            <div className="flex flex-wrap gap-2">
+  {user.roles.map((role) => (
+    <StatusBadge key={role} variant={role === "Buyer" ? "info" : "purple"}>
+      {role}
+    </StatusBadge>
+  ))}
+</div>
           </div>
 
           <div className="mt-3 space-y-2 text-[#5d6280] text-[12px]">
@@ -267,10 +276,16 @@ function RecentActivity({ activities }: { activities: UserActivity[] }) {
       </p>
 
       <div className="mt-5">
-        {activities.map((activity) => (
-          <ActivityRow key={activity.id} activity={activity} />
-        ))}
-      </div>
+  {activities.length > 0 ? (
+    activities.map((activity) => (
+      <ActivityRow key={activity.id} activity={activity} />
+    ))
+  ) : (
+    <div className="rounded-[8px] border border-dashed border-border px-4 py-8 text-center text-[12px] text-muted-foreground">
+      No recent activity available.
+    </div>
+  )}
+</div>
 
       <div className="mt-4 flex justify-center">
         <Button asChild variant="outline">

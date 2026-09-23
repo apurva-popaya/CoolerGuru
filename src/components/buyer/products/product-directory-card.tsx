@@ -22,30 +22,47 @@ export function ProductDirectoryCard({ product, companyId }: ProductDirectoryCar
       {/* Status */}
       <div className="absolute top-3 left-3 z-10">
         {product.isPremium ? (
-          <span className="rounded-[3px] bg-[#ff6717] px-2 py-[3px] font-bold text-[7px] text-white">Premium</span>
+          <span className="rounded-[3px] bg-[#ff6717] px-2 py-[3px] font-bold text-[7px] text-white">
+            Premium
+          </span>
         ) : product.isVerified ? (
-          <span className="rounded-[3px] bg-[#159447] px-2 py-[3px] font-bold text-[7px] text-white">Verified</span>
+          <span className="rounded-[3px] bg-[#159447] px-2 py-[3px] font-bold text-[7px] text-white">
+            Verified
+          </span>
         ) : null}
       </div>
 
       {/* Image */}
-      <div className="relative h-[135px] w-full">
-        <Image src={product.image} alt={product.name} fill sizes="250px" className="object-contain" />
+      <div className="relative h-[135px] w-full sm:h-[145px]">
+        <Image
+          src={product.image}
+          alt={product.name}
+          fill
+          sizes="(max-width: 639px) 45vw, (max-width: 1023px) 30vw, 250px"
+          className="object-contain"
+        />
       </div>
 
       {/* Name */}
-      <h2 className="mt-2 min-h-[34px] font-bold text-[#171570] text-[11px] leading-[1.25]">{product.name}</h2>
+      <h2 className="mt-2 min-h-[34px] font-bold text-[#171570] text-[11px] leading-[1.25]">
+        {product.name}
+      </h2>
 
-      <p className="mt-1 font-semibold text-[#2b21bd] text-[8px]">{product.company}</p>
+      <p className="mt-1 truncate font-semibold text-[#2b21bd] text-[8px]">
+        {product.company}
+      </p>
 
       <div className="mt-1 flex items-center gap-1">
         <MapPin size={9} className="shrink-0 text-[#3025cf]" />
 
-        <span className="text-[#666b82] text-[7px]">{product.location}</span>
+        <span className="truncate text-[#666b82] text-[7px]">
+          {product.location}
+        </span>
       </div>
 
+      {/* Category */}
       <div className="mt-2">
-        <span className="inline-flex rounded-[4px] bg-[#f1efff] px-2 py-[3px] font-semibold text-[#2d23c3] text-[7px]">
+        <span className="inline-flex max-w-full truncate rounded-[4px] bg-[#f1efff] px-2 py-[3px] font-semibold text-[#2d23c3] text-[7px]">
           {product.category}
         </span>
       </div>
@@ -53,13 +70,23 @@ export function ProductDirectoryCard({ product, companyId }: ProductDirectoryCar
       {/* Specs */}
       <div className="mt-2 space-y-[4px]">
         {product.specs.map((spec, index) => (
-          <div key={`${product.id}-${spec.label}`} className="flex items-start gap-1.5">
+          <div
+            key={`${product.id}-${spec.label}`}
+            className="flex items-start gap-1.5"
+          >
             <span className="mt-[1px] shrink-0 text-[#3127cb]">
-              {index === 0 ? <Gauge size={9} /> : index === 1 ? <Package size={9} /> : <Settings size={9} />}
+              {index === 0 ? (
+                <Gauge size={9} />
+              ) : index === 1 ? (
+                <Package size={9} />
+              ) : (
+                <Settings size={9} />
+              )}
             </span>
 
             <span className="text-[#555b73] text-[7.5px] leading-[1.3]">
-              <span className="font-semibold">{spec.label}:</span> {spec.value}
+              <span className="font-semibold">{spec.label}:</span>{" "}
+              {spec.value}
             </span>
           </div>
         ))}
@@ -71,7 +98,9 @@ export function ProductDirectoryCard({ product, companyId }: ProductDirectoryCar
           <span className="font-semibold">MOQ:</span> {product.moq}
         </p>
 
-        <p className="text-right font-bold text-[#2118ad] text-[8px]">{product.price}</p>
+        <p className="truncate text-right font-bold text-[#2118ad] text-[8px]">
+          {product.price}
+        </p>
       </div>
 
       {/* Actions */}
