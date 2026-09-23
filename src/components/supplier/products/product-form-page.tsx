@@ -1,15 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
-
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
-import { Check, FileText, ImagePlus, Plus, X } from "lucide-react";
+import { Check, FileCheck2, FileText, ImagePlus, Info, Loader2, Plus, Star, Trash2, X } from "lucide-react";
 
-import type { SupplierProduct } from "@/types/supplier-product";
+import { useProductForm } from "@/hooks/use-product-form";
+import { getFileNameFromUrl } from "@/lib/api/file-upload-api";
+import {
+  createSpecificationRow,
+  MAX_PRODUCT_IMAGES,
+  type ProductFormState,
+  type ProductImageItem,
+  type ProductSpecificationRow,
+  type ProductTextField,
+  toSpecificationKey,
+} from "@/lib/seller-product-form";
 
+import { ProductCategorySelect } from "./product-category-select";
+import { ProductImage } from "./product-display";
 import {
   ProductFormField,
   ProductFormSection,
@@ -21,100 +30,116 @@ import {
 
 interface SupplierProductFormPageProps {
   mode: "add" | "edit";
-  product?: SupplierProduct;
+  slug?: string;
 }
 
-interface ProductFormData {
-  name: string;
-  category: string;
-  subCategory: string;
-  modelNumber: string;
-  hsnCode: string;
-  brand: string;
-  shortDescription: string;
-  productType: string;
-  application: string;
-  coolingCapacity: string;
-  power: string;
-  voltage: string;
-  material: string;
-  dimensions: string;
-  weight: string;
-  color: string;
-  price: string;
-  moq: string;
-  stockQuantity: string;
-  availabilityStatus: string;
-  videoUrl: string;
-  tags: string;
-}
+const SPECIFICATION_PRESETS = [
+  { label: "Airflow", unit: "m³/h" },
+  { label: "Tank Capacity", unit: "L" },
+  { label: "Power", unit: "kW" },
+  { label: "Coverage Area", unit: "sq ft" },
+];
 
-export function SupplierProductFormPage({ mode, product }: SupplierProductFormPageProps) {
-  const router = useRouter();
+const QUANTITY_UNITS = ["Unit", "Piece", "Set", "Box"];
 
-  const isEdit = mode === "edit";
+export function SupplierProductFormPage({ mode, slug }: SupplierProductFormPageProps) {
+  const {
+    isEdit,
+    form,
+    product,
+    images,
+    catalogueFileName,
+    isLoading,
+    loadError,
+    isUploading,
+    isUploadingImages,
+    isUploadingCatalogue,
+    isSaving,
+    updateField,
+    addImages,
+    removeImage,
+    setPrimaryImage,
+    uploadCatalogue,
+    removeCatalogue,
+    saveProduct,
+  } = useProductForm(mode === "edit" ? slug : undefined);
 
-  const initialData = useMemo<ProductFormData>(
-    () => ({
-      name: product?.name ?? "",
-      category: product?.category ?? "",
-      subCategory: product?.subCategory ?? "",
-      modelNumber: product?.modelNumber ?? "",
-      hsnCode: "",
-      brand: "",
-      shortDescription: product?.description ?? "",
-      productType: "",
-      application: "",
-      coolingCapacity: "",
-      power: "",
-      voltage: "",
-      material: "",
-      dimensions: "",
-      weight: "",
-      color: "",
-      price: product ? String(product.price) : "",
-      moq: "",
-      stockQuantity: "",
-      availabilityStatus:
-        product?.stockStatus === "OUT_OF_STOCK"
-          ? "out-of-stock"
-          : product?.stockStatus === "LOW_STOCK"
-            ? "low-stock"
-            : "in-stock",
-      videoUrl: "",
-      tags: "",
-    }),
-    [product],
+  const backHref = isEdit && slug ? `/supplier/dashboard/products/${slug}` : "/supplier/dashboard/products";
+
+  const textInput = (field: ProductTextField, placeholder: string, maxLength = 255) => (
+    <input
+      value={form[field]}
+      onChange={(event) => updateField(field, event.target.value)}
+      placeholder={placeholder}
+      maxLength={maxLength}
+      className={productInputClass}
+    />
   );
 
-  const [form, setForm] = useState<ProductFormData>(initialData);
+  const unitSelect = (field: "price_unit" | "moq_unit" | "stock_unit") => (
+    <select
+      value={form[field]}
+      onChange={(event) => updateField(field, event.target.value)}
+      className="h-[38px] w-[70px] shrink-0 rounded-r-[5px] border border-[#dfe0eb] border-l-0 bg-white px-2 text-[#4e5472] text-[7px] outline-none"
+    >
+      {QUANTITY_UNITS.map((unit) => (
+        <option key={unit} value={unit}>
+          {unit}
+        </option>
+      ))}
+    </select>
+  );
 
-  const [images, setImages] = useState<string[]>(product ? [product.image] : []);
-
-  const updateField = (field: keyof ProductFormData, value: string) => {
-    setForm((previous) => ({
-      ...previous,
-      [field]: value,
-    }));
+  const updateSpecification = (id: string, changes: Partial<ProductSpecificationRow>) => {
+    updateField(
+      "specifications",
+      form.specifications.map((row) =>
+        row.id === id
+          ? {
+              ...row,
+              ...changes,
+              ...(changes.label !== undefined ? { key: toSpecificationKey(changes.label) } : {}),
+            }
+          : row,
+      ),
+    );
   };
 
-  const handleSubmit = () => {
-    if (isEdit) {
-      console.log("UPDATE PRODUCT", product?.id, form);
-    } else {
-      console.log("CREATE PRODUCT", form);
-    }
-
-    router.push("/supplier/dashboard/products");
+  const addSpecification = (values?: Partial<ProductSpecificationRow>) => {
+    updateField("specifications", [...form.specifications, createSpecificationRow(values)]);
   };
+
+  if (isLoading) {
+    return (
+      <section className="flex min-h-[60vh] items-center justify-center gap-2 px-7 py-6 text-[#555b76] text-[12px]">
+        <Loader2 size={18} className="animate-spin text-[#3125c8]" />
+        Loading product...
+      </section>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <section className="px-7 py-6">
+        <Link
+          href="/supplier/dashboard/products"
+          className="!text-[#3024c6] mb-3 inline-flex items-center gap-1 font-semibold text-[9px]"
+        >
+          ← Back to Manage Products
+        </Link>
+
+        <div className="rounded-[9px] border border-[#f0c3ca] bg-[#fff7f8] px-5 py-4">
+          <p className="font-bold text-[#db3e57] text-[12px]">Could not load this product</p>
+          <p className="mt-1 text-[#555b76] text-[9px]">{loadError}</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="px-7 py-6">
-      <Link
-        href="/supplier/dashboard/products"
-        className="!text-[#3024c6] mb-3 inline-flex items-center gap-1 font-semibold text-[9px]"
-      >
-        ← Back to Manage Products
+      <Link href={backHref} className="!text-[#3024c6] mb-3 inline-flex items-center gap-1 font-semibold text-[9px]">
+        ← {isEdit ? "Back to Product" : "Back to Manage Products"}
       </Link>
 
       <div>
@@ -127,354 +152,508 @@ export function SupplierProductFormPage({ mode, product }: SupplierProductFormPa
         </p>
       </div>
 
-      <div className="mt-5 rounded-[9px] border border-[#e0e1ed] bg-white p-5">
+      <div className="mt-4 flex items-start gap-2 rounded-[6px] border border-[#dedff0] bg-[#f8f8ff] px-3 py-2.5">
+        <Info size={12} className="mt-[1px] shrink-0 text-[#3125c8]" />
+
+        <p className="text-[#656a83] text-[8px] leading-[1.45]">
+          {isEdit
+            ? "Saving changes sends this product for admin approval again."
+            : "New products are reviewed by our team before they are visible to buyers."}
+        </p>
+      </div>
+
+      <div className="mt-4 rounded-[9px] border border-[#e0e1ed] bg-white p-5">
+        {/* 1. Basic Information */}
         <ProductFormSection title="1. Basic Information">
           <div className="grid grid-cols-3 gap-4">
             <ProductFormField label="Product Name" required>
-              <input
-                value={form.name}
-                onChange={(event) => updateField("name", event.target.value)}
-                placeholder="Enter product name"
-                className={productInputClass}
-              />
+              {textInput("name", "Enter product name", 180)}
             </ProductFormField>
 
-            <ProductFormField label="Category" required>
-              <ProductSelectWrapper>
-                <select
-                  value={form.category}
-                  onChange={(event) => updateField("category", event.target.value)}
-                  className={productSelectClass}
-                >
-                  <option value="">Select category</option>
-                  <option>Industrial Air Coolers</option>
-                  <option>Desert Air Coolers</option>
-                  <option>Tower Air Coolers</option>
-                  <option>Air Cooler Components</option>
-                  <option>Electrical Components</option>
-                </select>
-              </ProductSelectWrapper>
-            </ProductFormField>
-
-            <ProductFormField label="Subcategory">
-              <ProductSelectWrapper>
-                <select
-                  value={form.subCategory}
-                  onChange={(event) => updateField("subCategory", event.target.value)}
-                  className={productSelectClass}
-                >
-                  <option value="">Select subcategory</option>
-                  <option>Industrial Air Coolers</option>
-                  <option>Desert Air Coolers</option>
-                  <option>Tower Air Coolers</option>
-                  <option>Motors</option>
-                  <option>Pumps</option>
-                  <option>Fan Blades</option>
-                </select>
-              </ProductSelectWrapper>
-            </ProductFormField>
+            <ProductCategorySelect value={form.category_id} onChange={(categoryId) => updateField("category_id", categoryId)} />
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-4">
-            <ProductFormField label="SKU / Model Number" required>
-              <input
-                value={form.modelNumber}
-                onChange={(event) => updateField("modelNumber", event.target.value)}
-                placeholder="Enter SKU or model number"
-                className={productInputClass}
-              />
-            </ProductFormField>
+          <div className="mt-4 grid grid-cols-4 gap-4">
+            <ProductFormField label="SKU">{textInput("sku", "Enter SKU")}</ProductFormField>
 
-            <ProductFormField label="HSN Code">
-              <input
-                value={form.hsnCode}
-                onChange={(event) => updateField("hsnCode", event.target.value)}
-                placeholder="Enter HSN code"
-                className={productInputClass}
-              />
-            </ProductFormField>
+            <ProductFormField label="Model Number">{textInput("model_number", "Enter model number")}</ProductFormField>
 
-            <ProductFormField label="Brand">
-              <input
-                value={form.brand}
-                onChange={(event) => updateField("brand", event.target.value)}
-                placeholder="Enter brand name"
-                className={productInputClass}
-              />
-            </ProductFormField>
+            <ProductFormField label="HSN Code">{textInput("hsn_code", "Enter HSN code")}</ProductFormField>
+
+            <ProductFormField label="Brand">{textInput("brand", "Enter brand name")}</ProductFormField>
           </div>
 
           <div className="mt-4">
             <ProductFormField label="Short Description" required>
               <textarea
-                value={form.shortDescription}
-                onChange={(event) => updateField("shortDescription", event.target.value)}
-                maxLength={200}
+                value={form.short_description}
+                onChange={(event) => updateField("short_description", event.target.value)}
+                maxLength={250}
                 placeholder="Enter short description about the product"
                 className={productTextareaClass}
               />
             </ProductFormField>
 
-            <p className="mt-1 text-right text-[#878ba0] text-[6px]">{form.shortDescription.length} / 200</p>
+            <p className="mt-1 text-right text-[#878ba0] text-[6px]">{form.short_description.length} / 250</p>
           </div>
-        </ProductFormSection>
 
-        <ProductFormSection title="2. Product Images">
-          <p className="mb-2 text-[#777c94] text-[7px]">
-            Upload high quality images of your product (Maximum 10 images)
-          </p>
-
-          <label className="flex h-[65px] cursor-pointer items-center justify-center gap-3 rounded-[6px] border border-[#bdbceb] border-dashed bg-[#fbfaff]">
-            <ImagePlus size={18} className="text-[#3024c8]" />
-
-            <div>
-              <p className="font-bold text-[#3024c8] text-[8px]">
-                Click to upload <span className="font-normal text-[#606580]">or drag and drop</span>
-              </p>
-
-              <p className="mt-1 text-[#8c90a5] text-[6px]">PNG, JPG or JPEG. Recommended 1200 × 1200px.</p>
-            </div>
-
-            <input type="file" accept="image/*" multiple className="hidden" />
-          </label>
-
-          <div className="mt-3 grid grid-cols-5 gap-3">
-            {images.map((image, index) => (
-              <div
-                key={`${image}-${index}`}
-                className="relative h-[110px] rounded-[7px] border border-[#e0e1ed] bg-[#fafafa]"
-              >
-                <Image src={image} alt="Product" fill className="object-contain p-2" />
-
-                <button
-                  type="button"
-                  onClick={() => setImages((previous) => previous.filter((_, imageIndex) => imageIndex !== index))}
-                  className="absolute top-2 right-2 flex h-[20px] w-[20px] items-center justify-center rounded-full bg-white shadow"
-                >
-                  <X size={10} className="text-[#3024c8]" />
-                </button>
-              </div>
-            ))}
-
-            {images.length < 10 ? (
-              <label className="flex h-[110px] cursor-pointer flex-col items-center justify-center rounded-[7px] border border-[#c4c4ec] border-dashed bg-[#fbfaff]">
-                <Plus size={18} className="text-[#3024c8]" />
-
-                <span className="mt-1 font-bold text-[#3024c8] text-[7px]">Add More</span>
-
-                <input type="file" accept="image/*" multiple className="hidden" />
-              </label>
-            ) : null}
-          </div>
-        </ProductFormSection>
-
-        <ProductFormSection title="3. Product Details">
-          <div className="grid grid-cols-3 gap-4">
-            <ProductFormField label="Product Type" required>
-              <ProductSelectWrapper>
-                <select
-                  value={form.productType}
-                  onChange={(event) => updateField("productType", event.target.value)}
-                  className={productSelectClass}
-                >
-                  <option value="">Select product type</option>
-                  <option>Air Cooler</option>
-                  <option>Component</option>
-                  <option>Electrical Component</option>
-                </select>
-              </ProductSelectWrapper>
+          <div className="mt-2">
+            <ProductFormField label="Detailed Description">
+              <textarea
+                value={form.description}
+                onChange={(event) => updateField("description", event.target.value)}
+                maxLength={2000}
+                placeholder="Describe features, use cases and what makes this product stand out"
+                className={`${productTextareaClass} min-h-[110px]`}
+              />
             </ProductFormField>
 
-            <ProductFormField label="Application / Usage" required>
-              <ProductSelectWrapper>
-                <select
-                  value={form.application}
-                  onChange={(event) => updateField("application", event.target.value)}
-                  className={productSelectClass}
-                >
-                  <option value="">Select application</option>
-                  <option>Industrial</option>
-                  <option>Commercial</option>
-                  <option>Domestic</option>
-                </select>
-              </ProductSelectWrapper>
+            <p className="mt-1 text-right text-[#878ba0] text-[6px]">{form.description.length} / 2000</p>
+          </div>
+        </ProductFormSection>
+
+        {/* 2. Product Images */}
+        <ProductFormSection title="2. Product Images">
+          {isEdit ? (
+            <>
+              <p className="mb-2 text-[#777c94] text-[7px]">
+                Product images can't be changed after creation yet. Contact support to update them.
+              </p>
+
+              <div className="grid grid-cols-5 gap-3">
+                {images.map((image) => (
+                  <ImageTile key={image.id} image={image} />
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="mb-2 text-[#777c94] text-[7px]">
+                Upload high quality images of your product (Maximum {MAX_PRODUCT_IMAGES} images, up to 5MB each).
+                The starred image is shown first to buyers.
+              </p>
+
+              {images.length === 0 ? (
+                <label className="flex h-[65px] cursor-pointer items-center justify-center gap-3 rounded-[6px] border border-[#bdbceb] border-dashed bg-[#fbfaff]">
+                  {isUploadingImages ? (
+                    <Loader2 size={18} className="animate-spin text-[#3024c8]" />
+                  ) : (
+                    <ImagePlus size={18} className="text-[#3024c8]" />
+                  )}
+
+                  <div>
+                    <p className="font-bold text-[#3024c8] text-[8px]">
+                      {isUploadingImages ? "Uploading..." : "Click to upload"}
+                      {isUploadingImages ? null : <span className="font-normal text-[#606580]"> or drag and drop</span>}
+                    </p>
+
+                    <p className="mt-1 text-[#8c90a5] text-[6px]">PNG, JPG or JPEG. Recommended 1200 × 1200px.</p>
+                  </div>
+
+                  <ImagesInput disabled={isUploadingImages} onSelect={addImages} />
+                </label>
+              ) : (
+                <div className="grid grid-cols-5 gap-3">
+                  {images.map((image) => (
+                    <ImageTile
+                      key={image.id}
+                      image={image}
+                      onRemove={() => removeImage(image.id)}
+                      onSetPrimary={() => setPrimaryImage(image.id)}
+                    />
+                  ))}
+
+                  {images.length < MAX_PRODUCT_IMAGES ? (
+                    <label className="flex h-[110px] cursor-pointer flex-col items-center justify-center rounded-[7px] border border-[#c4c4ec] border-dashed bg-[#fbfaff]">
+                      {isUploadingImages ? (
+                        <Loader2 size={18} className="animate-spin text-[#3024c8]" />
+                      ) : (
+                        <Plus size={18} className="text-[#3024c8]" />
+                      )}
+
+                      <span className="mt-1 font-bold text-[#3024c8] text-[7px]">
+                        {isUploadingImages ? "Uploading..." : "Add More"}
+                      </span>
+
+                      <ImagesInput disabled={isUploadingImages} onSelect={addImages} />
+                    </label>
+                  ) : null}
+                </div>
+              )}
+            </>
+          )}
+        </ProductFormSection>
+
+        {/* 3. Product Details */}
+        <ProductFormSection title="3. Product Details">
+          <div className="grid grid-cols-3 gap-4">
+            <ProductFormField label="Product Type">
+              <input
+                value={form.product_type}
+                onChange={(event) => updateField("product_type", event.target.value)}
+                list="product-type-options"
+                placeholder="e.g. Industrial Air Cooler"
+                maxLength={255}
+                className={productInputClass}
+              />
+
+              <datalist id="product-type-options">
+                <option value="Industrial Air Cooler" />
+                <option value="Desert Air Cooler" />
+                <option value="Tower Air Cooler" />
+                <option value="Personal Air Cooler" />
+                <option value="Component" />
+                <option value="Electrical Component" />
+              </datalist>
+            </ProductFormField>
+
+            <ProductFormField label="Application / Usage">
+              <input
+                value={form.application_usage}
+                onChange={(event) => updateField("application_usage", event.target.value)}
+                list="application-options"
+                placeholder="e.g. Factories and warehouses"
+                maxLength={255}
+                className={productInputClass}
+              />
+
+              <datalist id="application-options">
+                <option value="Industrial" />
+                <option value="Commercial" />
+                <option value="Domestic" />
+                <option value="Factories and warehouses" />
+              </datalist>
             </ProductFormField>
 
             <ProductFormField label="Cooling Capacity">
               <div className="flex">
                 <input
-                  value={form.coolingCapacity}
-                  onChange={(event) => updateField("coolingCapacity", event.target.value)}
+                  value={form.cooling_capacity}
+                  onChange={(event) => updateField("cooling_capacity", event.target.value)}
                   placeholder="Enter capacity"
+                  maxLength={255}
                   className={`${productInputClass} rounded-r-none`}
                 />
 
-                <div className="flex h-[38px] w-[65px] items-center justify-center rounded-r-[5px] border border-[#dfe0eb] border-l-0 text-[#4e5472] text-[7px]">
-                  CMH
+                <div className="flex h-[38px] w-[65px] shrink-0 items-center justify-center rounded-r-[5px] border border-[#dfe0eb] border-l-0 text-[#4e5472] text-[7px]">
+                  {form.cooling_capacity_unit}
                 </div>
               </div>
             </ProductFormField>
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-4">
-            <ProductFormField label="Power / Motor">
-              <input
-                value={form.power}
-                onChange={(event) => updateField("power", event.target.value)}
-                placeholder="Enter power or motor details"
-                className={productInputClass}
-              />
-            </ProductFormField>
+            <ProductFormField label="Power / Motor">{textInput("power_motor", "Enter power or motor details")}</ProductFormField>
 
             <ProductFormField label="Voltage / Frequency">
-              <input
-                value={form.voltage}
-                onChange={(event) => updateField("voltage", event.target.value)}
-                placeholder="Enter voltage / frequency"
-                className={productInputClass}
-              />
+              {textInput("voltage_frequency", "e.g. 230V / 50Hz")}
             </ProductFormField>
 
-            <ProductFormField label="Material">
-              <input
-                value={form.material}
-                onChange={(event) => updateField("material", event.target.value)}
-                placeholder="Enter material"
-                className={productInputClass}
-              />
-            </ProductFormField>
+            <ProductFormField label="Material">{textInput("material", "Enter material")}</ProductFormField>
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-4">
             <ProductFormField label="Dimensions (L × W × H)">
-              <input
-                value={form.dimensions}
-                onChange={(event) => updateField("dimensions", event.target.value)}
-                placeholder="Enter dimensions"
-                className={productInputClass}
-              />
+              {textInput("dimensions", "e.g. 120 × 80 × 150 cm")}
             </ProductFormField>
 
             <ProductFormField label="Weight">
               <div className="flex">
                 <input
+                  type="number"
+                  min={0}
+                  step="any"
                   value={form.weight}
                   onChange={(event) => updateField("weight", event.target.value)}
                   placeholder="Enter weight"
                   className={`${productInputClass} rounded-r-none`}
                 />
 
-                <div className="flex h-[38px] w-[55px] items-center justify-center rounded-r-[5px] border border-[#dfe0eb] border-l-0 text-[7px]">
-                  Kg
+                <div className="flex h-[38px] w-[55px] shrink-0 items-center justify-center rounded-r-[5px] border border-[#dfe0eb] border-l-0 text-[7px]">
+                  {form.weight_unit}
                 </div>
               </div>
             </ProductFormField>
 
-            <ProductFormField label="Color / Finish">
-              <input
-                value={form.color}
-                onChange={(event) => updateField("color", event.target.value)}
-                placeholder="Enter color / finish"
-                className={productInputClass}
-              />
-            </ProductFormField>
+            <ProductFormField label="Color / Finish">{textInput("color_finish", "Enter color / finish")}</ProductFormField>
           </div>
         </ProductFormSection>
 
-        <ProductFormSection title="4. Pricing & Availability">
+        {/* 4. Specifications */}
+        <ProductFormSection title="4. Specifications">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="text-[#777c94] text-[7px]">Quick add:</span>
+
+            {SPECIFICATION_PRESETS.map((preset) => {
+              const isAdded = form.specifications.some((row) => row.key === toSpecificationKey(preset.label));
+
+              return (
+                <button
+                  key={preset.label}
+                  type="button"
+                  disabled={isAdded}
+                  onClick={() => addSpecification({ label: preset.label, unit: preset.unit, is_highlight: true })}
+                  className="rounded-[4px] border border-[#c4c4ec] border-dashed px-2 py-1 font-semibold text-[#3024c8] text-[7px] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  + {preset.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {form.specifications.length > 0 ? (
+            <div className="rounded-[6px] border border-[#e6e7f0]">
+              <div className="grid grid-cols-[1.4fr_1.4fr_0.8fr_0.7fr_30px] gap-3 bg-[#fafaff] px-3 py-2 font-bold text-[#303558] text-[8px]">
+                <span>Name</span>
+                <span>Value</span>
+                <span>Unit</span>
+                <span>Highlight</span>
+                <span />
+              </div>
+
+              {form.specifications.map((row) => (
+                <div
+                  key={row.id}
+                  className="grid grid-cols-[1.4fr_1.4fr_0.8fr_0.7fr_30px] items-center gap-3 border-[#ededf3] border-t px-3 py-2"
+                >
+                  <input
+                    value={row.label}
+                    onChange={(event) => updateSpecification(row.id, { label: event.target.value })}
+                    placeholder="e.g. Airflow"
+                    maxLength={100}
+                    className={productInputClass}
+                  />
+
+                  <input
+                    value={row.value}
+                    onChange={(event) => updateSpecification(row.id, { value: event.target.value })}
+                    placeholder="e.g. 15000"
+                    maxLength={255}
+                    className={productInputClass}
+                  />
+
+                  <input
+                    value={row.unit}
+                    onChange={(event) => updateSpecification(row.id, { unit: event.target.value })}
+                    placeholder="e.g. m³/h"
+                    maxLength={40}
+                    className={productInputClass}
+                  />
+
+                  <label className="flex cursor-pointer items-center gap-1.5 text-[#555a76] text-[8px]">
+                    <input
+                      type="checkbox"
+                      checked={row.is_highlight}
+                      onChange={(event) => updateSpecification(row.id, { is_highlight: event.target.checked })}
+                    />
+                    Show on card
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateField(
+                        "specifications",
+                        form.specifications.filter((item) => item.id !== row.id),
+                      )
+                    }
+                    aria-label={`Remove ${row.label || "specification"}`}
+                    className="flex h-[26px] w-[26px] items-center justify-center rounded-[4px] text-[#db3e57] hover:bg-[#fff0f2]"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[#8c90a5] text-[8px]">No specifications added yet.</p>
+          )}
+
+          <button
+            type="button"
+            onClick={() => addSpecification()}
+            className="mt-3 flex items-center gap-1 font-bold text-[#3024c8] text-[8px]"
+          >
+            <Plus size={12} />
+            Add Specification
+          </button>
+        </ProductFormSection>
+
+        {/* 5. Pricing & Availability */}
+        <ProductFormSection title="5. Pricing & Availability">
           <div className="grid grid-cols-3 gap-4">
-            <ProductFormField label="Price (₹)">
+            <ProductFormField label={`Price (${form.currency})`}>
+              <div className="flex">
+                <input
+                  type="number"
+                  min={0}
+                  step="any"
+                  value={form.price}
+                  onChange={(event) => updateField("price", event.target.value)}
+                  placeholder="Enter price"
+                  className={`${productInputClass} rounded-r-none`}
+                />
+
+                {unitSelect("price_unit")}
+              </div>
+            </ProductFormField>
+
+            <ProductFormField label="Minimum Price">
               <input
                 type="number"
-                value={form.price}
-                onChange={(event) => updateField("price", event.target.value)}
-                placeholder="Enter price"
+                min={0}
+                step="any"
+                value={form.min_price}
+                onChange={(event) => updateField("min_price", event.target.value)}
+                placeholder="Lowest price (optional)"
                 className={productInputClass}
               />
             </ProductFormField>
 
-            <ProductFormField label="Minimum Order Quantity (MOQ)" required>
+            <ProductFormField label="Maximum Price">
               <input
                 type="number"
-                value={form.moq}
-                onChange={(event) => updateField("moq", event.target.value)}
-                placeholder="Enter MOQ"
-                className={productInputClass}
-              />
-            </ProductFormField>
-
-            <ProductFormField label="Stock Quantity" required>
-              <input
-                type="number"
-                value={form.stockQuantity}
-                onChange={(event) => updateField("stockQuantity", event.target.value)}
-                placeholder="Enter stock quantity"
+                min={0}
+                step="any"
+                value={form.max_price}
+                onChange={(event) => updateField("max_price", event.target.value)}
+                placeholder="Highest price (optional)"
                 className={productInputClass}
               />
             </ProductFormField>
           </div>
 
-          <div className="mt-4 max-w-[32%]">
+          <div className="mt-4 grid grid-cols-3 gap-4">
+            <ProductFormField label="Minimum Order Quantity (MOQ)" required>
+              <div className="flex">
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={form.moq}
+                  onChange={(event) => updateField("moq", event.target.value)}
+                  placeholder="Enter MOQ"
+                  className={`${productInputClass} rounded-r-none`}
+                />
+
+                {unitSelect("moq_unit")}
+              </div>
+            </ProductFormField>
+
+            <ProductFormField label="Stock Quantity" required>
+              <div className="flex">
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={form.stock_quantity}
+                  onChange={(event) => updateField("stock_quantity", event.target.value)}
+                  placeholder="Enter stock quantity"
+                  className={`${productInputClass} rounded-r-none`}
+                />
+
+                {unitSelect("stock_unit")}
+              </div>
+            </ProductFormField>
+
             <ProductFormField label="Availability Status" required>
               <ProductSelectWrapper>
                 <select
-                  value={form.availabilityStatus}
-                  onChange={(event) => updateField("availabilityStatus", event.target.value)}
+                  value={form.availability_status}
+                  onChange={(event) =>
+                    updateField("availability_status", event.target.value as ProductFormState["availability_status"])
+                  }
                   className={productSelectClass}
                 >
-                  <option value="in-stock">In Stock</option>
-                  <option value="low-stock">Low Stock</option>
-                  <option value="out-of-stock">Out of Stock</option>
+                  <option value="IN_STOCK">In Stock</option>
+                  <option value="LOW_STOCK">Low Stock</option>
+                  <option value="OUT_OF_STOCK">Out of Stock</option>
                 </select>
               </ProductSelectWrapper>
             </ProductFormField>
           </div>
         </ProductFormSection>
 
-        <ProductFormSection title="5. Additional Information" last>
+        {/* 6. Additional Information */}
+        <ProductFormSection title="6. Additional Information" last>
           <div className="grid grid-cols-2 gap-5">
+            <div>
+              <ProductFormField label="Key Highlights">
+                <textarea
+                  value={form.highlights}
+                  onChange={(event) => updateField("highlights", event.target.value)}
+                  placeholder={"One highlight per line, e.g.\nHigh airflow\nSuitable for large spaces"}
+                  className={productTextareaClass}
+                />
+              </ProductFormField>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <ProductFormField label="Available Colors">
+                {textInput("available_colors", "Enter colors separated by commas, e.g. White, Grey", 2000)}
+              </ProductFormField>
+
+              <ProductFormField label="Tags / Keywords">
+                {textInput("tags", "Enter tags separated by commas", 2000)}
+              </ProductFormField>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-5">
             <ProductFormField label="Product Video URL">
-              <input
-                value={form.videoUrl}
-                onChange={(event) => updateField("videoUrl", event.target.value)}
-                placeholder="https://youtube.com/watch?v=..."
-                className={productInputClass}
-              />
+              {textInput("video_url", "https://youtube.com/watch?v=...", 2000)}
             </ProductFormField>
 
             <ProductFormField label="Product Brochure / Datasheet">
-              <label className="flex h-[38px] cursor-pointer items-center justify-center gap-2 rounded-[5px] border border-[#c4c3e9] border-dashed bg-[#fbfaff]">
-                <FileText size={13} className="text-[#3024c8]" />
+              {form.catalogue_url && !isUploadingCatalogue ? (
+                <div className="flex h-[38px] items-center gap-2 rounded-[5px] border border-[#c4c3e9] bg-[#fbfaff] px-3">
+                  <FileCheck2 size={13} className="shrink-0 text-[#1f9d55]" />
 
-                <span className="font-semibold text-[#3024c8] text-[8px]">Click to upload</span>
+                  <span className="min-w-0 flex-1 truncate font-semibold text-[#30355c] text-[8px]">
+                    {catalogueFileName ?? getFileNameFromUrl(form.catalogue_url)}
+                  </span>
 
-                <span className="text-[#777c94] text-[8px]">or drag and drop</span>
+                  <button type="button" onClick={removeCatalogue} aria-label="Remove brochure">
+                    <X size={12} className="text-red-500" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex h-[38px] cursor-pointer items-center justify-center gap-2 rounded-[5px] border border-[#c4c3e9] border-dashed bg-[#fbfaff]">
+                  {isUploadingCatalogue ? (
+                    <Loader2 size={13} className="animate-spin text-[#3024c8]" />
+                  ) : (
+                    <FileText size={13} className="text-[#3024c8]" />
+                  )}
 
-                <input type="file" accept=".pdf" className="hidden" />
-              </label>
+                  <span className="font-semibold text-[#3024c8] text-[8px]">
+                    {isUploadingCatalogue ? "Uploading..." : "Click to upload PDF"}
+                  </span>
+
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    className="hidden"
+                    disabled={isUploadingCatalogue}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+
+                      event.target.value = "";
+
+                      if (file) {
+                        uploadCatalogue(file);
+                      }
+                    }}
+                  />
+                </label>
+              )}
             </ProductFormField>
-          </div>
-
-          <div className="mt-4">
-            <ProductFormField label="Tags / Keywords">
-              <input
-                value={form.tags}
-                onChange={(event) => updateField("tags", event.target.value)}
-                placeholder="Enter tags separated by commas"
-                className={productInputClass}
-              />
-            </ProductFormField>
-
-            <p className="mt-1 text-[#878ba0] text-[6px]">
-              Example: cooler, industrial, desert cooler, energy efficient
-            </p>
           </div>
         </ProductFormSection>
       </div>
 
       <div className="mt-4 flex justify-end gap-3">
         <Link
-          href="/supplier/dashboard/products"
+          href={backHref}
           className="!text-[#3024c8] flex h-[38px] min-w-[90px] items-center justify-center rounded-[5px] border border-[#bdb9ea] font-bold text-[9px]"
         >
           Cancel
@@ -482,14 +661,85 @@ export function SupplierProductFormPage({ mode, product }: SupplierProductFormPa
 
         <button
           type="button"
-          onClick={handleSubmit}
-          className="flex h-[38px] min-w-[125px] items-center justify-center gap-2 rounded-[5px] bg-[#2819bd] px-5 font-bold text-[9px] text-white"
+          onClick={saveProduct}
+          disabled={isSaving || isUploading || (isEdit && !product)}
+          className="flex h-[38px] min-w-[125px] items-center justify-center gap-2 rounded-[5px] bg-[#2819bd] px-5 font-bold text-[9px] text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Check size={12} />
+          {isSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
 
-          {isEdit ? "Update Product" : "Save Product"}
+          {isSaving ? "Saving..." : isEdit ? "Update Product" : "Save Product"}
         </button>
       </div>
     </section>
+  );
+}
+
+function ImagesInput({ disabled, onSelect }: { disabled: boolean; onSelect: (files: File[]) => void }) {
+  return (
+    <input
+      type="file"
+      accept=".jpg,.jpeg,.png"
+      multiple
+      disabled={disabled}
+      className="hidden"
+      onChange={(event) => {
+        const files = Array.from(event.target.files ?? []);
+
+        // Allow re-selecting the same files later.
+        event.target.value = "";
+
+        if (files.length > 0) {
+          onSelect(files);
+        }
+      }}
+    />
+  );
+}
+
+function ImageTile({
+  image,
+  onRemove,
+  onSetPrimary,
+}: {
+  image: ProductImageItem;
+  onRemove?: () => void;
+  onSetPrimary?: () => void;
+}) {
+  return (
+    <div
+      className={`relative h-[110px] overflow-hidden rounded-[7px] border bg-[#fafafa] ${image.isPrimary ? "border-[#3024c8]" : "border-[#e0e1ed]"}`}
+    >
+      {image.previewUrl ? (
+        <Image src={image.previewUrl} alt={image.name} fill className="object-contain p-2" />
+      ) : (
+        <ProductImage src={image.url} alt={image.name} className="object-contain p-2" />
+      )}
+
+      {image.isPrimary ? (
+        <span className="absolute bottom-1.5 left-1.5 rounded-[3px] bg-[#3024c8] px-1.5 py-0.5 font-bold text-[6px] text-white">
+          Primary
+        </span>
+      ) : onSetPrimary ? (
+        <button
+          type="button"
+          onClick={onSetPrimary}
+          aria-label="Set as primary image"
+          className="absolute bottom-1.5 left-1.5 flex h-[20px] w-[20px] items-center justify-center rounded-full bg-white shadow"
+        >
+          <Star size={10} className="text-[#3024c8]" />
+        </button>
+      ) : null}
+
+      {onRemove ? (
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label="Remove image"
+          className="absolute top-2 right-2 flex h-[20px] w-[20px] items-center justify-center rounded-full bg-white shadow"
+        >
+          <X size={10} className="text-[#3024c8]" />
+        </button>
+      ) : null}
+    </div>
   );
 }
