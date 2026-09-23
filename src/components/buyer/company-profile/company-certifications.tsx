@@ -7,6 +7,11 @@ export function CompanyCertifications({
 }: {
   certifications: CompanyCertification[];
 }) {
+  // Don't render the section if no certifications are available.
+  if (!certifications.length) {
+    return null;
+  }
+
   return (
     <div className="rounded-[8px] border border-[#e2e3ee] bg-white p-3 sm:p-4">
       <h2 className="font-bold text-[#171570] text-[12px]">
@@ -31,10 +36,6 @@ export function CompanyCertifications({
 
             <p className="mt-2 font-bold text-[#191571] text-[9px]">
               {certification.title}
-            </p>
-
-            <p className="mt-1 text-[#656a82] text-[7px] leading-[1.35]">
-              {certification.subtitle}
             </p>
           </div>
         ))}

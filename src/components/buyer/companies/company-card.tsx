@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import {
@@ -9,13 +8,17 @@ import {
   UsersRound,
 } from "lucide-react";
 
+import { SafeImage } from "@/components/common/safe-image";
+
 import type { DirectoryCompany } from "@/types/company-directory";
 
 interface CompanyCardProps {
   company: DirectoryCompany;
 }
 
-export function CompanyCard({ company }: CompanyCardProps) {
+export function CompanyCard({
+  company,
+}: CompanyCardProps) {
   return (
     <div className="relative flex min-h-0 flex-col rounded-[8px] border border-[#e2e3ed] bg-white p-3 sm:min-h-[260px] sm:p-4">
       {/* Badge */}
@@ -37,9 +40,9 @@ export function CompanyCard({ company }: CompanyCardProps) {
         <div className="flex justify-center sm:block">
           <div className="mt-6 flex h-[90px] w-[90px] items-center justify-center overflow-hidden rounded-full border border-[#e3e4ee] bg-white p-3 sm:mt-3 sm:h-[105px] sm:w-[105px]">
             <div className="relative h-full w-full">
-              <Image
+              <SafeImage
                 src={company.logo}
-                alt={company.name}
+                alt={`${company.name} logo`}
                 fill
                 sizes="105px"
                 className="object-contain"
@@ -65,19 +68,25 @@ export function CompanyCard({ company }: CompanyCardProps) {
             </span>
           </div>
 
-          <p className="mt-2 text-[9px] leading-[1.5] text-[#464b67]">
-            {company.description}
+          <p className="mt-2 line-clamp-3 text-[9px] leading-[1.5] text-[#464b67]">
+            {company.description || "-"}
           </p>
 
           <div className="mt-2 flex flex-wrap justify-center gap-2 sm:justify-start">
-            {company.businessTypes.map((type) => (
-              <span
-                key={type}
-                className="rounded-[4px] bg-[#f2f0ff] px-2 py-[4px] font-bold text-[8px] text-[#2920bb]"
-              >
-                {type}
+            {company.businessTypes.length > 0 ? (
+              company.businessTypes.map((type) => (
+                <span
+                  key={type}
+                  className="rounded-[4px] bg-[#f2f0ff] px-2 py-[4px] font-bold text-[8px] text-[#2920bb]"
+                >
+                  {type}
+                </span>
+              ))
+            ) : (
+              <span className="rounded-[4px] bg-[#f2f0ff] px-2 py-[4px] font-bold text-[8px] text-[#2920bb]">
+                -
               </span>
-            ))}
+            )}
           </div>
         </div>
       </div>
@@ -108,20 +117,22 @@ export function CompanyCard({ company }: CompanyCardProps) {
         <span className="font-bold text-[#171765]">
           Main Products:
         </span>{" "}
-        {company.mainProducts.join(", ")}
+        {company.mainProducts.length > 0
+          ? company.mainProducts.join(", ")
+          : "-"}
       </p>
 
       {/* Actions */}
       <div className="mt-4 grid grid-cols-1 gap-2 pt-1 sm:mt-auto sm:grid-cols-2 sm:gap-4 sm:pt-3">
         <Link
-          href={`/companies/${company.id}`}
+          href={`/companies/${company.slug}`}
           className="!text-[#251bb2] flex h-[34px] items-center justify-center rounded-[5px] border border-[#3829dc] bg-white font-bold text-[9px] transition hover:bg-[#f5f4ff]"
         >
           View Profile
         </Link>
 
         <Link
-          href={`/companies/${company.id}/inquiry`}
+          href={`/companies/${company.slug}/inquiry`}
           className="!text-white flex h-[34px] items-center justify-center gap-2 rounded-[5px] bg-[#2116a5] font-bold text-[9px] transition hover:bg-[#3022c6]"
         >
           <Send size={12} />

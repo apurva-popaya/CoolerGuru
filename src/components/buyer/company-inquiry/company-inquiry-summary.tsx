@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 import {
   BriefcaseBusiness,
   Clock3,
@@ -7,6 +5,7 @@ import {
   UsersRound,
 } from "lucide-react";
 
+import { SafeImage } from "@/components/common/safe-image";
 import type { CompanyProfile } from "@/types/company-profile";
 
 interface CompanyInquirySummaryProps {
@@ -26,7 +25,7 @@ export function CompanyInquirySummary({
         {/* Logo */}
         <div className="mx-auto flex h-[90px] w-[90px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#dfe1eb] bg-white p-3 sm:mx-0 sm:h-[105px] sm:w-[105px]">
           <div className="relative h-full w-full">
-            <Image
+            <SafeImage
               src={company.logo}
               alt={company.name}
               fill

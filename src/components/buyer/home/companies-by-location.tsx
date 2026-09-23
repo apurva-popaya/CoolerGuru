@@ -8,32 +8,32 @@ import { Container } from "@/components/common/container";
 const locations = [
   {
     city: "Ahmedabad",
-    count: "1000+ Companies",
+    // count: "1000+ Companies",
     image: "/images/home/locations/ahmedabad.png",
   },
   {
     city: "Delhi",
-    count: "1500+ Companies",
+    // count: "1500+ Companies",
     image: "/images/home/locations/delhi.png",
   },
   {
     city: "Mumbai",
-    count: "1600+ Companies",
+    // count: "1600+ Companies",
     image: "/images/home/locations/mumbai.png",
   },
   {
     city: "Pune",
-    count: "800+ Companies",
+    // count: "800+ Companies",
     image: "/images/home/locations/pune.png",
   },
   {
     city: "Surat",
-    count: "800+ Companies",
+    // count: "800+ Companies",
     image: "/images/home/locations/surat.png",
   },
   {
     city: "Coimbatore",
-    count: "500+ Companies",
+    // count: "500+ Companies",
     image: "/images/home/locations/coimbatore.png",
   },
 ];
@@ -50,7 +50,7 @@ export function CompaniesByLocation() {
           {locations.map((location) => (
             <Link
               key={location.city}
-              href={`/companies?location=${encodeURIComponent(location.city)}`}
+              href={`/companies?city=${encodeURIComponent(location.city)}`}
               className="flex min-w-0 flex-col items-center justify-center text-center"
             >
               <div className="relative h-[52px] w-[52px] sm:h-[58px] sm:w-[58px]">
@@ -67,9 +67,9 @@ export function CompaniesByLocation() {
                 {location.city}
               </h3>
 
-              <p className="mt-[2px] font-medium text-[#6a6e87] text-[9px] sm:text-[10px]">
+              {/* <p className="mt-[2px] font-medium text-[#6a6e87] text-[9px] sm:text-[10px]">
                 {location.count}
-              </p>
+              </p> */}
             </Link>
           ))}
 

@@ -9,6 +9,10 @@ export function CompanyBrochure({
 }: {
   company: CompanyProfile;
 }) {
+  if (!company.brochureUrl) {
+    return null;
+  }
+
   return (
     <div className="rounded-[8px] border border-[#e2e3ee] bg-white p-3 sm:p-4">
       <h2 className="font-bold text-[#171570] text-[12px]">
@@ -22,17 +26,19 @@ export function CompanyBrochure({
 
         <div className="min-w-0">
           <p className="break-words font-bold text-[#1a1675] text-[9px] leading-[1.3]">
-            {company.brochureTitle}
+            Company Brochure
           </p>
 
           <p className="mt-1 text-[#686d85] text-[8px]">
-            PDF Document - {company.brochureSize}
+            PDF Document
           </p>
         </div>
       </div>
 
       <Link
         href={company.brochureUrl}
+        target="_blank"
+        rel="noopener noreferrer"
         className="!text-white mt-4 flex h-[34px] items-center justify-center gap-2 rounded-[4px] bg-[#2116a5] font-bold text-[9px] transition hover:bg-[#3022c6]"
       >
         <Download size={12} />

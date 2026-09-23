@@ -46,7 +46,7 @@ export function CompanyInquiryPage({
           />
 
           <Link
-            href={`/companies/${company.id}`}
+            href={`/companies/${company.slug}`}
             className="max-w-[160px] shrink-0 truncate transition hover:text-[#2118ad] sm:max-w-none"
           >
             {company.name}
@@ -75,7 +75,7 @@ export function CompanyInquiryPage({
 
         {/* Content */}
         <div className="mt-5 grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_390px] lg:gap-6">
-          <CompanyInquiryForm companySlug={company.id} />
+          <CompanyInquiryForm companySlug={company.slug} />
 
           <div className="space-y-5">
             <CompanyInquirySummary company={company} />

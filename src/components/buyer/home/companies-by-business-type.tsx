@@ -14,37 +14,37 @@ import { Container } from "@/components/common/container";
 const businessTypes = [
   {
     title: "Manufacturers",
-    count: "2000+ Companies",
+    // count: "2000+ Companies",
     href: "/companies?businessType=manufacturer",
     icon: Factory,
   },
   {
     title: "Distributors",
-    count: "1500+ Companies",
+    // count: "1500+ Companies",
     href: "/companies?businessType=distributor",
     icon: PackageCheck,
   },
   {
     title: "Exporters",
-    count: "300+ Companies",
+    // count: "300+ Companies",
     href: "/companies?businessType=exporter",
     icon: UserRound,
   },
   {
     title: "Suppliers",
-    count: "3000+ Companies",
+    // count: "3000+ Companies",
     href: "/companies?businessType=supplier",
     icon: Store,
   },
   {
     title: "OEMs",
-    count: "500+ Companies",
+    // count: "500+ Companies",
     href: "/companies?businessType=oem",
     icon: Boxes,
   },
   {
     title: "Wholesalers",
-    count: "300+ Companies",
+    // count: "300+ Companies",
     href: "/companies?businessType=wholesaler",
     icon: Handshake,
   },
@@ -77,9 +77,9 @@ export function CompaniesByBusinessType() {
                     {item.title}
                   </h3>
 
-                  <p className="mt-[2px] truncate font-medium text-[#6a6e87] text-[8px] sm:text-[10px]">
+                  {/* <p className="mt-[2px] truncate font-medium text-[#6a6e87] text-[8px] sm:text-[10px]">
                     {item.count}
-                  </p>
+                  </p> */}
                 </div>
               </Link>
             );

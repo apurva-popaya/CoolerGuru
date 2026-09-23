@@ -3,7 +3,6 @@ import {
   Globe,
   Mail,
   Phone,
-  UserRound,
 } from "lucide-react";
 
 import type { CompanyProfile } from "@/types/company-profile";
@@ -13,37 +12,50 @@ export function CompanyContactInfo({
 }: {
   company: CompanyProfile;
 }) {
+  const hasContactInfo =
+    company.phone ||
+    company.email ||
+    company.website ||
+    company.businessHours;
+
+  // Don't render the section if there is no contact information.
+  if (!hasContactInfo) {
+    return null;
+  }
+
   return (
     <InfoBox title="Contact Information">
-      <InfoRow
-        icon={<UserRound size={13} />}
-        label="Contact Person"
-        value={company.contactPerson}
-      />
+      {company.phone && (
+        <InfoRow
+          icon={<Phone size={13} />}
+          label="Phone"
+          value={company.phone}
+        />
+      )}
 
-      <InfoRow
-        icon={<Phone size={13} />}
-        label="Phone"
-        value={company.phone}
-      />
+      {company.email && (
+        <InfoRow
+          icon={<Mail size={13} />}
+          label="Email"
+          value={company.email}
+        />
+      )}
 
-      <InfoRow
-        icon={<Mail size={13} />}
-        label="Email"
-        value={company.email}
-      />
+      {company.website && (
+        <InfoRow
+          icon={<Globe size={13} />}
+          label="Website"
+          value={company.website}
+        />
+      )}
 
-      <InfoRow
-        icon={<Globe size={13} />}
-        label="Website"
-        value={company.website}
-      />
-
-      <InfoRow
-        icon={<Clock3 size={13} />}
-        label="Business Hours"
-        value={company.businessHours}
-      />
+      {company.businessHours && (
+        <InfoRow
+          icon={<Clock3 size={13} />}
+          label="Business Hours"
+          value={company.businessHours}
+        />
+      )}
     </InfoBox>
   );
 }
@@ -61,7 +73,9 @@ function InfoBox({
         {title}
       </h2>
 
-      <div className="mt-4 space-y-3">{children}</div>
+      <div className="mt-4 space-y-3">
+        {children}
+      </div>
     </div>
   );
 }
@@ -77,9 +91,13 @@ function InfoRow({
 }) {
   return (
     <div className="grid grid-cols-[20px_85px_minmax(0,1fr)] items-start gap-2 sm:grid-cols-[20px_95px_minmax(0,1fr)]">
-      <span className="text-[#2b20c8]">{icon}</span>
+      <span className="text-[#2b20c8]">
+        {icon}
+      </span>
 
-      <span className="text-[#656a82] text-[8px]">{label}</span>
+      <span className="text-[#656a82] text-[8px]">
+        {label}
+      </span>
 
       <span className="break-words font-medium text-[#34395b] text-[8px]">
         {value}

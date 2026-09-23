@@ -1,325 +1,232 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import * as React from "react";
 
-import Link from "next/link";
-
-import { Check, ChevronDown, ChevronRight } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import { Container } from "@/components/common/container";
-import { directoryCompanies } from "@/data/companies-directory";
+
+import {
+  getCompanies,
+  type CompaniesPagination as CompaniesPaginationData,
+} from "@/lib/api/companies-api";
+
+import { mapApiCompanyToDirectoryCompany } from "@/lib/mappers/company-mapper";
+
 import type { DirectoryCompany } from "@/types/company-directory";
 
-import { CompaniesPagination } from "./companies-pagination";
 import { CompanyCard } from "./company-card";
-import { type CompanyTab, CompanyTabs } from "./company-tabs";
+import {
+  CompanyTabs,
+  type CompanyTab,
+} from "./company-tabs";
+import { CompaniesPagination } from "./companies-pagination";
 
-type SortOption =
-  | "featured"
-  | "verified"
-  | "premium"
-  | "name-asc"
-  | "name-desc"
-  | "experience-high"
-  | "products-high";
-
-interface SortItem {
-  value: SortOption;
-  label: string;
-}
-
-const sortOptions: SortItem[] = [
-  {
-    value: "featured",
-    label: "Featured First",
-  },
-  {
-    value: "verified",
-    label: "Verified First",
-  },
-  {
-    value: "premium",
-    label: "Premium First",
-  },
-  {
-    value: "name-asc",
-    label: "Company Name A - Z",
-  },
-  {
-    value: "name-desc",
-    label: "Company Name Z - A",
-  },
-  {
-    value: "experience-high",
-    label: "Years in Business: High to Low",
-  },
-  {
-    value: "products-high",
-    label: "Products: High to Low",
-  },
-];
-
-const PAGE_SIZE = 6;
-const TOTAL_COMPANY_COUNT = 1254;
+const PAGE_SIZE = 12;
 
 export function CompaniesPage() {
-  const [activeTab, setActiveTab] = useState<CompanyTab>("all");
-  const [sortOpen, setSortOpen] = useState(false);
-  const [sortBy, setSortBy] = useState<SortOption>("featured");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [companies, setCompanies] =
+    React.useState<DirectoryCompany[]>([]);
 
-  const selectedSortLabel =
-    sortOptions.find((option) => option.value === sortBy)?.label ?? "Featured First";
+  const [pagination, setPagination] =
+    React.useState<CompaniesPaginationData>({
+      page: 1,
+      limit: PAGE_SIZE,
+      totalItems: 0,
+      totalPages: 1,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    });
 
-  const filteredCompanies = useMemo(() => {
-    return directoryCompanies.filter((company) => matchesTab(company, activeTab));
-  }, [activeTab]);
+  const [activeTab, setActiveTab] =
+    React.useState<CompanyTab>("all");
 
-  const sortedCompanies = useMemo(() => {
-    return [...filteredCompanies].sort((a, b) => sortCompanies(a, b, sortBy));
-  }, [filteredCompanies, sortBy]);
+  const [loading, setLoading] =
+    React.useState(true);
 
-  const actualPageCount = Math.max(
-    Math.ceil(sortedCompanies.length / PAGE_SIZE),
-    1,
+  const [error, setError] =
+    React.useState<string | null>(null);
+
+  const fetchCompanies = React.useCallback(
+    async (page: number) => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response =
+          await getCompanies(
+            page,
+            PAGE_SIZE,
+          );
+
+        const mappedCompanies =
+          response.data.companies.map(
+            mapApiCompanyToDirectoryCompany,
+          );
+
+        setCompanies(mappedCompanies);
+
+        setPagination(
+          response.data.pagination,
+        );
+      } catch (err) {
+        console.error(
+          "Failed to fetch companies:",
+          err,
+        );
+
+        setError(
+          "Unable to load companies. Please try again.",
+        );
+
+        setCompanies([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
   );
 
-  const safePage = Math.min(currentPage, actualPageCount);
+  React.useEffect(() => {
+    fetchCompanies(1);
+  }, [fetchCompanies]);
 
-  const startIndex = (safePage - 1) * PAGE_SIZE;
+  function handlePageChange(page: number) {
+    if (
+      page < 1 ||
+      page > pagination.totalPages ||
+      page === pagination.page
+    ) {
+      return;
+    }
 
-  const visibleCompanies = sortedCompanies.slice(
-    startIndex,
-    startIndex + PAGE_SIZE,
-  );
-
-  function handleTabChange(tab: CompanyTab) {
-    setActiveTab(tab);
-    setCurrentPage(1);
+    fetchCompanies(page);
   }
 
-  function handleSortChange(value: SortOption) {
-    setSortBy(value);
-    setSortOpen(false);
-    setCurrentPage(1);
+  function handleTabChange(
+    tab: CompanyTab,
+  ) {
+    setActiveTab(tab);
+
+    /*
+     * Currently `/companies` does not expose
+     * filter query parameters in the API contract.
+     *
+     * So only the "All Companies" tab is backed
+     * directly by the API for now.
+     */
   }
 
   return (
-    <section className="bg-white py-4 sm:py-5">
+    <main className="bg-[#f8f8fc] py-5 sm:py-7">
       <Container>
-        <div className="w-full">
-          {/* Breadcrumb */}
-          <div className="mb-3 flex min-w-0 items-center gap-1.5 overflow-hidden text-[10px] text-[#666b83]">
-            <Link
-              href="/"
-              className="shrink-0 transition hover:text-[#2118ad]"
-            >
-              Home
-            </Link>
+        {/* Header */}
+        <div className="mb-5">
+          <h1 className="font-bold text-[#15157d] text-[22px] sm:text-[26px]">
+            Companies
+          </h1>
 
-            <ChevronRight size={12} className="shrink-0" />
+          <p className="mt-1 text-[11px] text-[#626780] sm:text-[12px]">
+            Discover verified manufacturers,
+            suppliers, exporters and other
+            industry companies.
+          </p>
+        </div>
 
-            <span className="truncate font-medium text-[#2118ad]">
-              Companies
-            </span>
-          </div>
+        {/* Tabs */}
+        <CompanyTabs
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          totalCompanies={
+            pagination.totalItems
+          }
+        />
 
-          {/* Heading + Sort */}
-          <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="min-w-0">
-              <h1 className="font-bold text-[24px] leading-tight text-[#171570] sm:text-[30px]">
-                Air Cooler Companies
-              </h1>
+        {/* Content */}
+        <div className="mt-5">
+          {loading ? (
+            <div className="flex min-h-[300px] items-center justify-center">
+              <div className="flex items-center gap-2 text-[#2116a5]">
+                <Loader2 className="size-5 animate-spin" />
 
-              <p className="mt-1 max-w-[500px] font-medium text-[10px] leading-[1.5] text-[#444b69] sm:text-[11px]">
-                Discover trusted manufacturers, suppliers, exporters and
-                industry businesses across India.
-              </p>
-            </div>
-
-            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:w-auto lg:flex-col lg:items-end">
-              <p className="font-bold text-[10px] text-[#2118ad] sm:text-[11px]">
-                {TOTAL_COMPANY_COUNT.toLocaleString()} Companies Found
-              </p>
-
-              {/* Sort */}
-              <div className="flex w-full items-center gap-2 sm:w-auto">
-                <span className="shrink-0 font-semibold text-[10px] text-[#34395d]">
-                  Sort by:
+                <span className="font-medium text-[12px]">
+                  Loading companies...
                 </span>
-
-                <div className="relative min-w-0 flex-1 sm:flex-none">
-                  <button
-                    type="button"
-                    onClick={() => setSortOpen((previous) => !previous)}
-                    className="flex h-[38px] w-full min-w-0 items-center justify-between gap-3 rounded-[6px] border border-[#dedff0] bg-white px-3 font-semibold text-[10px] text-[#383d5f] transition hover:border-[#bbb8eb] sm:min-w-[180px]"
-                  >
-                    <span className="truncate whitespace-nowrap">
-                      {selectedSortLabel}
-                    </span>
-
-                    <ChevronDown
-                      size={14}
-                      className={
-                        sortOpen
-                          ? "shrink-0 rotate-180 text-[#2118ad] transition-transform duration-200"
-                          : "shrink-0 text-[#2118ad] transition-transform duration-200"
-                      }
-                    />
-                  </button>
-
-                  {sortOpen && (
-                    <div className="absolute top-[44px] right-0 z-50 w-[230px] max-w-[calc(100vw-32px)] overflow-hidden rounded-[8px] border border-[#dedff0] bg-white py-1.5 shadow-[0_10px_30px_rgba(31,24,150,0.13)]">
-                      {sortOptions.map((option) => {
-                        const active = sortBy === option.value;
-
-                        return (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => handleSortChange(option.value)}
-                            className={
-                              active
-                                ? "flex w-full items-center justify-between gap-3 bg-[#f1efff] px-4 py-2.5 text-left font-medium text-[10px] text-[#2118ad] transition"
-                                : "flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left font-medium text-[10px] text-[#3e4262] transition hover:bg-[#f8f8ff]"
-                            }
-                          >
-                            <span className="truncate">
-                              {option.label}
-                            </span>
-
-                            {active && (
-                              <Check
-                                size={13}
-                                strokeWidth={2.5}
-                                className="shrink-0 text-[#2118ad]"
-                              />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
-          </div>
+          ) : error ? (
+            <div className="flex min-h-[300px] flex-col items-center justify-center rounded-[8px] border border-[#e2e3ed] bg-white px-4 text-center">
+              <p className="font-semibold text-[#15157d] text-[13px]">
+                {error}
+              </p>
 
-          {/* Tabs */}
-          <CompanyTabs
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-          />
-
-          {/* Companies */}
-          {visibleCompanies.length > 0 ? (
-            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-              {visibleCompanies.map((company) => (
-                <CompanyCard
-                  key={company.id}
-                  company={company}
-                />
-              ))}
+              <button
+                type="button"
+                onClick={() =>
+                  fetchCompanies(
+                    pagination.page,
+                  )
+                }
+                className="mt-3 rounded-[5px] bg-[#2116a5] px-4 py-2 font-semibold text-[10px] text-white hover:bg-[#3022c6]"
+              >
+                Try Again
+              </button>
             </div>
-          ) : (
-            <div className="mt-4 flex min-h-[220px] flex-col items-center justify-center rounded-[8px] border border-dashed border-[#dedff0] bg-[#fafaff] px-4 text-center sm:min-h-[260px]">
-              <h3 className="font-bold text-[14px] text-[#171570]">
-                No companies found
-              </h3>
-
-              <p className="mt-2 text-[10px] text-[#666b82]">
-                No companies match the selected filter.
+          ) : companies.length === 0 ? (
+            <div className="flex min-h-[300px] items-center justify-center rounded-[8px] border border-[#e2e3ed] bg-white">
+              <p className="text-[12px] text-[#696d85]">
+                No companies found.
               </p>
             </div>
-          )}
+          ) : (
+            <>
+              {/* Result count */}
+              <div className="mb-3 flex items-center justify-between">
+                <p className="font-semibold text-[#535873] text-[10px]">
+                  Showing{" "}
+                  <span className="text-[#2116a5]">
+                    {companies.length}
+                  </span>{" "}
+                  companies
+                </p>
 
-          {/* Pagination */}
-          <CompaniesPagination
-            currentPage={safePage}
-            totalPages={actualPageCount}
-            onPageChange={setCurrentPage}
-          />
+                <p className="text-[10px] text-[#777b91]">
+                  {pagination.totalItems}{" "}
+                  total companies
+                </p>
+              </div>
+
+              {/* Company Grid */}
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {companies.map(
+                  (company) => (
+                    <CompanyCard
+                      key={company.id}
+                      company={company}
+                    />
+                  ),
+                )}
+              </div>
+
+              {/* Pagination */}
+              {pagination.totalPages >
+                1 && (
+                <CompaniesPagination
+                  currentPage={
+                    pagination.page
+                  }
+                  totalPages={
+                    pagination.totalPages
+                  }
+                  onPageChange={
+                    handlePageChange
+                  }
+                />
+              )}
+            </>
+          )}
         </div>
       </Container>
-    </section>
+    </main>
   );
-}
-
-function matchesTab(company: DirectoryCompany, tab: CompanyTab) {
-  switch (tab) {
-    case "verified":
-      return Boolean(company.isVerified);
-
-    case "premium":
-      return Boolean(company.isPremium);
-
-    case "manufacturers":
-      return hasBusinessType(company, "Manufacturer");
-
-    case "suppliers":
-      return hasBusinessType(company, "Supplier");
-
-    case "exporters":
-      return hasBusinessType(company, "Exporter");
-
-    default:
-      return true;
-  }
-}
-
-function hasBusinessType(company: DirectoryCompany, type: string) {
-  return company.businessTypes.some(
-    (businessType) =>
-      businessType.toLowerCase() === type.toLowerCase(),
-  );
-}
-
-function sortCompanies(
-  a: DirectoryCompany,
-  b: DirectoryCompany,
-  sortBy: SortOption,
-) {
-  switch (sortBy) {
-    case "verified":
-      return (
-        Number(Boolean(b.isVerified)) -
-        Number(Boolean(a.isVerified))
-      );
-
-    case "premium":
-      return (
-        Number(Boolean(b.isPremium)) -
-        Number(Boolean(a.isPremium))
-      );
-
-    case "name-asc":
-      return a.name.localeCompare(b.name);
-
-    case "name-desc":
-      return b.name.localeCompare(a.name);
-
-    case "experience-high":
-      return (
-        extractNumber(b.yearsInBusiness) -
-        extractNumber(a.yearsInBusiness)
-      );
-
-    case "products-high":
-      return (
-        extractNumber(b.productCount) -
-        extractNumber(a.productCount)
-      );
-
-    default:
-      return (
-        Number(Boolean(b.isPremium)) -
-        Number(Boolean(a.isPremium))
-      );
-  }
-}
-
-function extractNumber(value: string) {
-  const result = value.match(/\d+/);
-
-  return result ? Number(result[0]) : 0;
 }

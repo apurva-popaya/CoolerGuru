@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { SafeImage } from "@/components/common/safe-image";
 import Link from "next/link";
 
 import {
@@ -27,13 +27,13 @@ export function SimilarCompanies({
             className="grid min-w-0 grid-cols-[80px_minmax(0,1fr)] gap-3 rounded-[7px] border border-[#e3e4ed] p-3 sm:grid-cols-[85px_minmax(0,1fr)]"
           >
             <div className="relative h-[75px] w-[75px] sm:h-[85px] sm:w-[85px]">
-              <Image
-                src={company.logo}
-                alt={company.name}
-                fill
-                sizes="85px"
-                className="object-contain"
-              />
+              <SafeImage
+  src={company.logo}
+  alt={company.name}
+  fill
+  sizes="85px"
+  className="object-contain"
+/>
             </div>
 
             <div className="min-w-0">
@@ -71,11 +71,11 @@ export function SimilarCompanies({
               </p>
 
               <Link
-                href={`/companies/${company.id}`}
-                className="!text-white mt-3 flex h-[28px] w-full max-w-[120px] items-center justify-center rounded-[4px] bg-[#2116a5] font-bold text-[8px] transition hover:bg-[#3022c6]"
-              >
-                View Profile
-              </Link>
+  href={`/companies/${company.slug}`}
+  className="!text-white mt-3 flex h-[28px] w-full max-w-[120px] items-center justify-center rounded-[4px] bg-[#2116a5] font-bold text-[8px] transition hover:bg-[#3022c6]"
+>
+  View Profile
+</Link>
             </div>
           </div>
         ))}

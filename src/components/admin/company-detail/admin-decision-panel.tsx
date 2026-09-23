@@ -2,24 +2,141 @@
 
 import * as React from "react";
 
-import { Check, ClipboardCheck, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+import {
+  Check,
+  ClipboardCheck,
+  X,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
-import type { CompanyDetailData } from "./company-detail-data";
-import { RejectCompanyDialog } from "./reject-company-dialog";
+import {
+  reviewAdminCompanyVerification,
+} from "@/lib/api/admin-companies-api";
 
-export function AdminDecisionPanel({ company }: { company: CompanyDetailData }) {
-  const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false);
+import {
+  getApiErrorMessage,
+} from "@/lib/api/get-api-error-message";
 
-  const canReview = company.verificationStatus === "Pending" || company.verificationStatus === "Under Verification";
+import type {
+  CompanyDetailData,
+} from "./company-detail-data";
+
+import {
+  RejectCompanyDialog,
+} from "./reject-company-dialog";
+
+export function AdminDecisionPanel({
+  company,
+}: {
+  company: CompanyDetailData;
+}) {
+  const router = useRouter();
+
+  const [
+    rejectDialogOpen,
+    setRejectDialogOpen,
+  ] = React.useState(false);
+
+  const [
+    approving,
+    setApproving,
+  ] = React.useState(false);
+
+  const [
+    rejecting,
+    setRejecting,
+  ] = React.useState(false);
+
+  const [
+    error,
+    setError,
+  ] = React.useState("");
+
+  /*
+   * Backend supports PENDING as the reviewable
+   * verification state.
+   *
+   * DRAFT, VERIFIED and REJECTED should not
+   * show the decision panel.
+   */
+  const canReview =
+    company.verificationStatus ===
+    "Pending";
 
   if (!canReview) {
     return null;
   }
 
-  function handleApprove() {
-    console.log("Approve company:", company.id);
+  async function handleApprove() {
+    if (
+      approving ||
+      rejecting
+    ) {
+      return;
+    }
+
+    setApproving(true);
+    setError("");
+
+    try {
+      await reviewAdminCompanyVerification(
+        company.id,
+        {
+          status: "VERIFIED",
+
+          note:
+            "Company verification approved by admin.",
+        },
+      );
+
+      router.refresh();
+    } catch (error) {
+      setError(
+        getApiErrorMessage(error),
+      );
+    } finally {
+      setApproving(false);
+    }
+  }
+
+  async function handleReject(
+    reason: string,
+  ) {
+    if (
+      approving ||
+      rejecting
+    ) {
+      return;
+    }
+
+    setRejecting(true);
+    setError("");
+
+    try {
+      await reviewAdminCompanyVerification(
+        company.id,
+        {
+          status: "REJECTED",
+
+          note: reason,
+        },
+      );
+
+      setRejectDialogOpen(false);
+
+      router.refresh();
+    } catch (error) {
+      setError(
+        getApiErrorMessage(error),
+      );
+
+      throw error;
+    } finally {
+      setRejecting(false);
+    }
   }
 
   return (
@@ -31,7 +148,9 @@ export function AdminDecisionPanel({ company }: { company: CompanyDetailData }) 
           </div>
 
           <div>
-            <h2 className="font-bold text-[#15136f] text-[15px]">Admin Decision</h2>
+            <h2 className="font-bold text-[#15136f] text-[15px]">
+              Admin Decision
+            </h2>
 
             <p className="mt-1 text-[#5d6280] text-[11px]">
               Review the company information and verification documents before taking an action.
@@ -39,29 +158,59 @@ export function AdminDecisionPanel({ company }: { company: CompanyDetailData }) 
           </div>
         </div>
 
+        {error ? (
+          <div className="mb-3 rounded-[7px] border border-red-200 bg-red-50 p-3 text-[11px] text-red-600">
+            {error}
+          </div>
+        ) : null}
+
         <div className="space-y-2">
           <Button
             type="button"
-            onClick={handleApprove}
+            disabled={
+              approving ||
+              rejecting
+            }
+            onClick={() =>
+              void handleApprove()
+            }
             className="h-10 w-full gap-2 bg-[#2720a8] text-white hover:bg-[#15136f]"
           >
             <Check className="size-4" />
-            Approve Company
+
+            {approving
+              ? "Approving..."
+              : "Approve Company"}
           </Button>
 
           <Button
             type="button"
             variant="outline"
-            onClick={() => setRejectDialogOpen(true)}
+            disabled={
+              approving ||
+              rejecting
+            }
+            onClick={() =>
+              setRejectDialogOpen(true)
+            }
             className="h-10 w-full gap-2 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-600"
           >
             <X className="size-4" />
+
             Reject Company
           </Button>
         </div>
       </div>
 
-      <RejectCompanyDialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen} companyName={company.name} />
+      <RejectCompanyDialog
+        open={rejectDialogOpen}
+        onOpenChange={
+          setRejectDialogOpen
+        }
+        companyName={company.name}
+        submitting={rejecting}
+        onReject={handleReject}
+      />
     </>
   );
 }

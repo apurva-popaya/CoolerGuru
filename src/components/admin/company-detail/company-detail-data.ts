@@ -1,21 +1,26 @@
-import {
-  type CompanyBusinessType,
-  type CompanyVerificationStatus,
-  companiesData,
-} from "@/components/admin/companies/companies-data";
+import type {
+  AdminCompanyDetail,
+} from "@/lib/api/admin-companies-api";
+
+export type CompanyVerificationStatus =
+  | "Pending"
+  | "Verified"
+  | "Rejected"
+  | "Draft";
 
 export interface CompanyDocument {
   id: string;
   name: string;
-  fileName: string;
-  size: string;
+  url: string;
 }
 
 export interface CompanyProduct {
   id: string;
   name: string;
   category: string;
-  status: "Active" | "Inactive";
+  status:
+    | "Active"
+    | "Inactive";
   price: string;
 }
 
@@ -25,63 +30,90 @@ export interface CompanyInquiry {
   inquiry: string;
   date: string;
   response: string;
-  status: "New" | "Replied" | "Closed";
+  status:
+    | "New"
+    | "Replied"
+    | "Closed";
 }
 
 export interface CompanyDetailData {
   id: string;
+  slug: string;
+
   name: string;
+
   tagline: string;
+
   location: string;
 
-  businessType: CompanyBusinessType;
-  verificationStatus: CompanyVerificationStatus;
+  businessTypes: string[];
+
+  verificationStatus:
+    CompanyVerificationStatus;
+
+  verificationNote:
+    string | null;
 
   featured: boolean;
+
+  featuredPriority:
+    number | null;
+
   joinedDate: string;
 
+  active: boolean;
+
   supplierName: string;
+
   supplierPhone: string;
+
   supplierEmail: string;
 
   about: string;
 
   gstNumber: string;
+
   panNumber: string;
+
   registrationNumber: string;
 
   companyType: string;
+
   yearsInBusiness: string;
+
   employeeSize: string;
 
   website: string;
-  serviceAreas: string[];
+
+  certifications: string[];
 
   registeredAddress: string;
+
   city: string;
+
   state: string;
+
   pincode: string;
 
   businessHours: string;
+
   contactEmail: string;
+
   contactPhone: string;
 
   productsCount: number;
-  activeProducts: number;
-  inactiveProducts: number;
 
   inquiriesReceived: number;
+
   sellerResponses: number;
+
   profileViews: number;
+
   savedByBuyers: number;
 
   verificationSubmitted: string;
-  verifiedBy?: string;
-  lastReviewed?: string;
 
   rejectionReason?: string;
-  rejectedBy?: string;
-  rejectedDate?: string;
 
   documents: CompanyDocument[];
 
@@ -92,184 +124,323 @@ export interface CompanyDetailData {
   inquiries: CompanyInquiry[];
 }
 
-const commonDocuments: CompanyDocument[] = [
-  {
-    id: "gst",
-    name: "GST Certificate",
-    fileName: "gst-certificate.pdf",
-    size: "2.1 MB",
-  },
-  {
-    id: "pan",
-    name: "PAN Document",
-    fileName: "pan-card.pdf",
-    size: "1.2 MB",
-  },
-  {
-    id: "incorporation",
-    name: "Incorporation Certificate",
-    fileName: "incorporation.pdf",
-    size: "1.8 MB",
-  },
-  {
-    id: "brochure",
-    name: "Company Brochure",
-    fileName: "company-brochure.pdf",
-    size: "4.5 MB",
-  },
-];
+function mapVerificationStatus(
+  status:
+    AdminCompanyDetail["verification_status"],
+): CompanyVerificationStatus {
+  switch (status) {
+    case "VERIFIED":
+      return "Verified";
 
-const defaultProducts: CompanyProduct[] = [
-  {
-    id: "ic-5000",
-    name: "Industrial Air Cooler IC-5000",
-    category: "Industrial Air Coolers",
-    status: "Active",
-    price: "₹ 45,000",
-  },
-  {
-    id: "dc-pro",
-    name: "Desert Cooler DC-Pro",
-    category: "Desert Air Coolers",
-    status: "Active",
-    price: "₹ 28,500",
-  },
-  {
-    id: "honeycomb-pad",
-    name: "Honeycomb Cooling Pad",
-    category: "Air Cooler Components",
-    status: "Active",
-    price: "₹ 1,250",
-  },
-  {
-    id: "tower-x1",
-    name: "Tower Air Cooler X1",
-    category: "Tower Air Coolers",
-    status: "Inactive",
-    price: "₹ 12,800",
-  },
-];
+    case "REJECTED":
+      return "Rejected";
 
-const defaultInquiries: CompanyInquiry[] = [
-  {
-    id: "inq-1",
-    buyer: "R.K. Enterprises",
-    inquiry: "Need price for 50 units IC-5000",
-    date: "May 31, 2025",
-    response: "Replied with quotation",
-    status: "Replied",
-  },
-  {
-    id: "inq-2",
-    buyer: "Sharma Traders",
-    inquiry: "Bulk order for desert coolers",
-    date: "May 29, 2025",
-    response: "Product details shared",
-    status: "Replied",
-  },
-  {
-    id: "inq-3",
-    buyer: "Global Cooling Ltd",
-    inquiry: "Export inquiry - cooling pads",
-    date: "May 28, 2025",
-    response: "Under review",
-    status: "New",
-  },
-];
+    case "PENDING":
+      return "Pending";
 
-export function getCompanyDetail(companyId: string): CompanyDetailData | null {
-  const company = companiesData.find((item) => item.id === companyId);
+    case "DRAFT":
+    default:
+      return "Draft";
+  }
+}
 
-  if (!company) {
-    return null;
+function formatDate(
+  value: string | null,
+) {
+  if (!value) {
+    return "-";
   }
 
-  const isRejected = company.verificationStatus === "Rejected";
+  const date =
+    new Date(value);
 
-  const isVerified = company.verificationStatus === "Verified";
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
+    return "-";
+  }
+
+  return date.toLocaleDateString(
+    "en-IN",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    },
+  );
+}
+
+function formatBusinessHours(
+  businessHours:
+    AdminCompanyDetail["business_hours"],
+) {
+  if (!businessHours) {
+    return "-";
+  }
+
+  const weekday =
+    businessHours.monday_to_friday;
+
+  if (!weekday) {
+    return "-";
+  }
+
+  if (
+    weekday.is_closed
+  ) {
+    return "Closed";
+  }
+
+  if (
+    !weekday.open ||
+    !weekday.close
+  ) {
+    return "-";
+  }
+
+  return `Mon - Fri: ${weekday.open} - ${weekday.close}`;
+}
+
+function buildDocuments(
+  company: AdminCompanyDetail,
+): CompanyDocument[] {
+  const documents: CompanyDocument[] = [];
+
+  if (
+    company.gst_certificate_url
+  ) {
+    documents.push({
+      id: "gst",
+      name: "GST Certificate",
+      url:
+        company.gst_certificate_url,
+    });
+  }
+
+  if (
+    company.pan_document_url
+  ) {
+    documents.push({
+      id: "pan",
+      name: "PAN Document",
+      url:
+        company.pan_document_url,
+    });
+  }
+
+  if (
+    company.incorporation_certificate_url
+  ) {
+    documents.push({
+      id: "incorporation",
+      name:
+        "Incorporation Certificate",
+      url:
+        company.incorporation_certificate_url,
+    });
+  }
+
+  if (
+    company.shop_establishment_document_url
+  ) {
+    documents.push({
+      id: "shop-establishment",
+      name:
+        "Shop Establishment Document",
+      url:
+        company.shop_establishment_document_url,
+    });
+  }
+
+  if (
+    company.brochure_url
+  ) {
+    documents.push({
+      id: "brochure",
+      name:
+        "Company Brochure",
+      url:
+        company.brochure_url,
+    });
+  }
+
+  return documents;
+}
+
+export function mapAdminCompanyDetail(
+  company: AdminCompanyDetail,
+): CompanyDetailData {
+  const supplierName =
+    company.owner.name?.trim() ||
+    [
+      company.owner.first_name,
+      company.owner.last_name,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim() ||
+    "Supplier";
+
+  const location = [
+    company.city,
+    company.state,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  const verificationStatus =
+    mapVerificationStatus(
+      company.verification_status,
+    );
 
   return {
-    id: company.id,
+    id: String(
+      company.company_id,
+    ),
+
+    slug: company.slug,
+
     name: company.name,
 
-    tagline: "Manufacturer and supplier of commercial & industrial cooling solutions",
+    tagline:
+      company.description ?? "",
 
-    location: company.location,
+    location:
+      location || "-",
 
-    businessType: company.businessType,
+    businessTypes:
+      company.business_types ?? [],
 
-    verificationStatus: company.verificationStatus,
+    verificationStatus,
 
-    featured: company.featured,
+    verificationNote:
+      company.verification_note,
 
-    joinedDate: company.joinedDate,
+    featured:
+      company.is_featured,
 
-    supplierName: "Rajesh Patel",
-    supplierPhone: "+91 98765 43210",
-    supplierEmail: "admin@coolerguru-demo.com",
+    featuredPriority:
+      company.featured_priority,
 
-    about: `${company.name} is a cooling industry business providing air coolers, components and related solutions. This static content will later be replaced by data received from the CoolerGuru company API.`,
+    joinedDate:
+      formatDate(
+        company.created_at,
+      ),
 
-    gstNumber: "24AABCA1234F1Z5",
-    panNumber: "AABCA1234D",
-    registrationNumber: "U29199GJ2013PTC075678",
+    active:
+      company.is_active,
 
-    companyType: "Private Limited",
-    yearsInBusiness: "12+ Years",
-    employeeSize: "51 - 200 employees",
+    supplierName,
 
-    website: "www.example.com",
+    supplierPhone:
+      company.owner.phone_number ||
+      "-",
 
-    serviceAreas: ["Gujarat", "Maharashtra", "Rajasthan", "Delhi NCR"],
+    supplierEmail:
+      company.owner.email ||
+      "-",
 
-    registeredAddress: "Plot No. 25, GIDC Industrial Estate, Ahmedabad, Gujarat, India",
+    about:
+      company.description ||
+      "-",
 
-    city: company.location.split(",")[0] ?? "",
+    gstNumber:
+      company.gst_number ||
+      "-",
 
-    state: company.location.split(",")[1]?.trim() ?? "",
+    panNumber:
+      company.pan_number ||
+      "-",
 
-    pincode: "382330",
+    registrationNumber:
+      company.registration_number ||
+      "-",
 
-    businessHours: "Mon - Sat: 9:00 AM - 6:00 PM",
+    companyType:
+      company.company_type ||
+      "-",
 
-    contactEmail: "info@company.com",
+    yearsInBusiness:
+      company.years_in_business ||
+      "-",
 
-    contactPhone: "+91 98765 43210",
+    employeeSize:
+      company.employee_size ||
+      "-",
 
-    productsCount: company.productsCount,
+    website:
+      company.website_url ||
+      "-",
 
-    activeProducts: Math.max(company.productsCount - 6, 0),
+    certifications:
+      company.certifications ?? [],
 
-    inactiveProducts: Math.min(company.productsCount, 6),
+    registeredAddress:
+      company.map_address ||
+      company.address ||
+      "-",
 
-    inquiriesReceived: company.inquiriesReceived,
+    city:
+      company.city || "-",
 
-    sellerResponses: Math.max(company.inquiriesReceived - 9, 0),
+    state:
+      company.state || "-",
 
-    profileViews: isVerified ? 1240 : 0,
+    pincode:
+      company.pin_code || "-",
 
-    savedByBuyers: isVerified ? 87 : 0,
+    businessHours:
+      formatBusinessHours(
+        company.business_hours,
+      ),
 
-    verificationSubmitted: "10 May 2025",
+    contactEmail:
+      company.email || "-",
 
-    verifiedBy: isVerified ? "Admin User" : undefined,
+    contactPhone:
+      company.phone_number || "-",
 
-    lastReviewed: isVerified ? "20 May 2025" : undefined,
+    productsCount:
+      company._count.products,
 
-    rejectionReason: isRejected
-      ? "Submitted GST certificate could not be verified. Supplier must upload a valid document and resubmit the company profile."
-      : undefined,
+    /*
+     * These values are not provided
+     * by the current Company Detail API.
+     */
+    inquiriesReceived: 0,
 
-    rejectedBy: isRejected ? "Admin User" : undefined,
+    sellerResponses: 0,
 
-    rejectedDate: isRejected ? "21 May 2025" : undefined,
+    profileViews: 0,
 
-    documents: commonDocuments,
+    savedByBuyers: 0,
 
-    categories: ["Air Cooler Manufacturers", "Industrial Air Coolers", "Desert Air Coolers", "Air Cooler Components"],
+    verificationSubmitted:
+      formatDate(
+        company.updated_at,
+      ),
 
-    products: defaultProducts,
+    rejectionReason:
+      verificationStatus ===
+      "Rejected"
+        ? company.verification_note ||
+          "Company verification was rejected."
+        : undefined,
 
-    inquiries: defaultInquiries,
+    documents:
+      buildDocuments(company),
+
+    /*
+     * Current Company Detail API
+     * does not return categories,
+     * products or inquiries.
+     */
+    categories: [],
+
+    products: [],
+
+    inquiries: [],
   };
 }

@@ -32,13 +32,13 @@ export function BuyerSavedProductCard({ product }: Props) {
   }
 
   return (
-    <div className="relative flex min-w-0 flex-col rounded-[8px] border border-[#e1e2ec] bg-white p-3">
+    <div className="relative flex min-w-0 flex-col rounded-xl border border-[#e1e2ec] bg-white p-3">
       {/* Remove icon */}
       <button
         type="button"
         onClick={handleRemove}
         title="Remove from saved products"
-        className="absolute top-3 right-3 z-10 flex h-[28px] w-[28px] items-center justify-center rounded-full bg-[#fff0f3] transition hover:bg-[#ffe4e9]"
+        className="absolute top-3 right-3 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-[#fff0f3] transition hover:bg-[#ffe4e9]"
       >
         <Heart
           size={14}
@@ -47,7 +47,7 @@ export function BuyerSavedProductCard({ product }: Props) {
       </button>
 
       {/* Product image */}
-      <div className="relative h-[150px] w-full sm:h-[135px]">
+      <div className="relative h-37.5 w-full sm:h-33.75">
         <Image
           src={product.image}
           alt={product.name}
@@ -58,7 +58,7 @@ export function BuyerSavedProductCard({ product }: Props) {
       </div>
 
       {/* Product name */}
-      <h2 className="mt-2 min-h-[34px] font-bold text-[#171570] text-[11px] leading-[1.3]">
+      <h2 className="mt-2 min-h-8.5 font-bold text-[#171570] text-[11px] leading-[1.3]">
         {product.name}
       </h2>
 
@@ -81,19 +81,19 @@ export function BuyerSavedProductCard({ product }: Props) {
 
       {/* Category */}
       <div className="mt-2">
-        <span className="inline-flex max-w-full truncate rounded-[4px] bg-[#f0eeff] px-2 py-[4px] font-semibold text-[#2b20bf] text-[7px]">
+        <span className="inline-flex max-w-full truncate rounded-lg bg-[#f0eeff] px-2 py-1 font-semibold text-[#2b20bf] text-[7px]">
           {product.category}
         </span>
       </div>
 
       {/* Specifications */}
-      <div className="mt-3 space-y-[5px]">
+      <div className="mt-3 space-y-1.25">
         {product.specs.map((spec, index) => (
           <div
             key={`${product.id}-${spec.label}`}
             className="flex min-w-0 items-start gap-1.5"
           >
-            <span className="mt-[1px] shrink-0 text-[#3127cb]">
+            <span className="mt-px shrink-0 text-[#3127cb]">
               {index === 0 ? (
                 <Gauge size={9} />
               ) : index === 1 ? (
@@ -129,7 +129,7 @@ export function BuyerSavedProductCard({ product }: Props) {
       <div className="mt-auto pt-3">
         <Link
           href={`/products/${product.id}`}
-          className="!text-white flex h-[32px] w-full items-center justify-center rounded-[4px] bg-[#2116a5] font-bold text-[8px] transition hover:bg-[#3022c6]"
+          className="text-white! flex h-8 w-full items-center justify-center rounded-lg bg-[#2116a5] font-bold text-[8px] transition hover:bg-[#3022c6]"
         >
           View Details
         </Link>
@@ -137,7 +137,7 @@ export function BuyerSavedProductCard({ product }: Props) {
         <button
           type="button"
           onClick={handleRemove}
-          className="mt-2 flex h-[32px] w-full items-center justify-center gap-1.5 rounded-[4px] border border-[#d9d8ef] bg-white font-bold text-[#271db6] text-[8px] transition hover:bg-[#f7f6ff]"
+          className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-[#d9d8ef] bg-white font-bold text-[#271db6] text-[8px] transition hover:bg-[#f7f6ff]"
         >
           <Trash2 size={11} />
           Remove

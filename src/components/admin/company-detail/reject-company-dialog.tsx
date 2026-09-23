@@ -2,9 +2,14 @@
 
 import * as React from "react";
 
-import { X } from "lucide-react";
+import {
+  X,
+} from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import {
+  Button,
+} from "@/components/ui/button";
+
 import {
   Dialog,
   DialogContent,
@@ -13,35 +18,106 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
+
+import {
+  Textarea,
+} from "@/components/ui/textarea";
+
+import {
+  sanitizeText,
+} from "@/lib/utils/sanitize";
 
 interface RejectCompanyDialogProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+
+  onOpenChange:
+    (open: boolean) =>
+      void;
 
   companyName: string;
+
+  submitting?: boolean;
+
+  onReject:
+    (reason: string) =>
+      Promise<void>;
 }
 
-export function RejectCompanyDialog({ open, onOpenChange, companyName }: RejectCompanyDialogProps) {
-  const [rejectionReason, setRejectionReason] = React.useState("");
+export function RejectCompanyDialog({
+  open,
+  onOpenChange,
+  companyName,
+  submitting = false,
+  onReject,
+}: RejectCompanyDialogProps) {
+  const [
+    rejectionReason,
+    setRejectionReason,
+  ] =
+    React.useState("");
 
-  function handleReject() {
-    if (!rejectionReason.trim()) {
+  const [
+    error,
+    setError,
+  ] =
+    React.useState("");
+
+  async function handleReject() {
+    const reason =
+      sanitizeText(
+        rejectionReason,
+      );
+
+    if (!reason) {
+      setError(
+        "Please enter a rejection reason.",
+      );
+
       return;
     }
 
-    console.log("Reject company:", companyName, rejectionReason);
+    setError("");
 
-    onOpenChange(false);
+    try {
+      await onReject(
+        reason,
+      );
 
-    setRejectionReason("");
+      setRejectionReason(
+        "",
+      );
+    } catch {
+      // Parent displays API error.
+    }
+  }
+
+  function handleOpenChange(
+    nextOpen: boolean,
+  ) {
+    if (submitting) {
+      return;
+    }
+
+    if (!nextOpen) {
+      setRejectionReason(
+        "",
+      );
+
+      setError("");
+    }
+
+    onOpenChange(
+      nextOpen,
+    );
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
-          <DialogTitle className="text-[#15136f]">Reject Company Verification</DialogTitle>
+          <DialogTitle className="text-[#15136f]">
+            Reject Company Verification
+          </DialogTitle>
 
           <DialogDescription>
             Provide the reason for rejecting {companyName}. This message will be visible to the supplier.
@@ -53,31 +129,38 @@ export function RejectCompanyDialog({ open, onOpenChange, companyName }: RejectC
             Rejection Reason *
           </label>
 
-          <Textarea
-            id="rejection-reason"
-            value={rejectionReason}
-            onChange={(event) => setRejectionReason(event.target.value)}
-            placeholder="Explain why this company cannot be approved..."
-            className="min-h-[130px]"
-          />
+          <Textarea id="rejection-reason" value={rejectionReason} onChange={(event) => { setRejectionReason(event.target.value); if (error) { setError(""); } }} disabled={submitting} placeholder="Explain why this company cannot be approved..." className="min-h-[130px]" />
 
-          {rejectionReason && (
+          {error ? (
+            <p className="text-[11px] font-medium text-red-600">
+              {error}
+            </p>
+          ) : null}
+
+          {rejectionReason ? (
             <div className="rounded-[8px] bg-[#fff7f7] p-3">
-              <p className="font-semibold text-[#d92d20] text-[11px]">Message sent to supplier</p>
+              <p className="font-semibold text-[#d92d20] text-[11px]">
+                Message sent to supplier
+              </p>
 
-              <p className="mt-1 text-[#5d6280] text-[12px]">{rejectionReason}</p>
+              <p className="mt-1 text-[#5d6280] text-[12px]">
+                {rejectionReason}
+              </p>
             </div>
-          )}
+          ) : null}
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" disabled={submitting} onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>
 
-          <Button variant="destructive" disabled={!rejectionReason.trim()} onClick={handleReject} className="gap-2">
+          <Button type="button" variant="destructive" disabled={!rejectionReason.trim() || submitting} onClick={() => void handleReject()} className="gap-2">
             <X className="size-4" />
-            Reject Company
+
+            {submitting
+              ? "Rejecting..."
+              : "Reject Company"}
           </Button>
         </DialogFooter>
       </DialogContent>

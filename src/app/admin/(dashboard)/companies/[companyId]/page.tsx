@@ -1,7 +1,18 @@
-import { notFound } from "next/navigation";
+import {
+  notFound,
+} from "next/navigation";
 
-import { CompanyDetail } from "@/components/admin/company-detail/company-detail";
-import { getCompanyDetail } from "@/components/admin/company-detail/company-detail-data";
+import {
+  CompanyDetail,
+} from "@/components/admin/company-detail/company-detail";
+
+import {
+  mapAdminCompanyDetail,
+} from "@/components/admin/company-detail/company-detail-data";
+
+import {
+  getAdminCompanyDetailServer,
+} from "@/lib/api/admin-companies-server-api";
 
 interface AdminCompanyDetailPageProps {
   params: Promise<{
@@ -9,14 +20,41 @@ interface AdminCompanyDetailPageProps {
   }>;
 }
 
-export default async function AdminCompanyDetailPage({ params }: AdminCompanyDetailPageProps) {
-  const { companyId } = await params;
+export default async function AdminCompanyDetailPage({
+  params,
+}: AdminCompanyDetailPageProps) {
+  const {
+    companyId,
+  } = await params;
 
-  const company = getCompanyDetail(companyId);
+  try {
+    const response =
+      await getAdminCompanyDetailServer(
+        companyId,
+      );
 
-  if (!company) {
-    notFound();
+    if (
+      !response.data?.company
+    ) {
+      notFound();
+    }
+
+    const company =
+      mapAdminCompanyDetail(
+        response.data.company,
+      );
+
+    return (
+      <CompanyDetail
+        company={company}
+      />
+    );
+  } catch (error) {
+    console.error(
+      "Admin company detail error:",
+      error,
+    );
+
+    throw error;
   }
-
-  return <CompanyDetail company={company} />;
 }

@@ -10,17 +10,39 @@ import { OtherCategories } from "@/components/buyer/home/other-categories";
 import { PremiumAdBanner } from "@/components/buyer/home/premium-ad-banner";
 import { ProductsByCategory } from "@/components/buyer/home/products-by-category";
 import { SupplierRegistrationBanner } from "@/components/buyer/home/supplier-registration-banner";
-import { getHomepage, type HomepageData } from "@/lib/api/homepage-api";
+
+import {
+  getHomepage,
+  type HomepageData,
+} from "@/lib/api/homepage-api";
+
+import {
+  getFeaturedCompanies,
+  type FeaturedCompany,
+} from "@/lib/api/featured-companies-api";
 
 export default async function BuyerHomePage() {
   let homepageData: HomepageData | null = null;
+  let featuredCompanies: FeaturedCompany[] = [];
 
   try {
-    const response = await getHomepage();
+    const [
+      homepageResponse,
+      featuredCompaniesResponse,
+    ] = await Promise.all([
+      getHomepage(),
+      getFeaturedCompanies(),
+    ]);
 
-    homepageData = response.data ?? null;
+    homepageData =
+      homepageResponse.data ?? null;
+
+    featuredCompanies =
+      featuredCompaniesResponse.data
+        ?.companies ?? [];
   } catch {
     homepageData = null;
+    featuredCompanies = [];
   }
 
   return (
@@ -33,19 +55,26 @@ export default async function BuyerHomePage() {
 
       <OtherCategories />
 
-      <FeaturedCompanies companies={homepageData?.trusted_companies} />
+      <FeaturedCompanies
+        companies={featuredCompanies}
+      />
 
       <CompaniesByBusinessType />
 
       <CompaniesByLocation />
 
-      <ProductsByCategory products={homepageData?.featured_products} />
+      <ProductsByCategory
+        products={homepageData?.featured_products}
+      />
 
       <AdvertisementSection />
 
-      <NewLaunches
+   <NewLaunches
         launches={homepageData?.new_launches}
-        newLaunchBadgeDays={homepageData?.meta.new_launch_badge_days}
+        newLaunchBadgeDays={
+          homepageData?.meta
+            .new_launch_badge_days
+        }
       />
 
       <HowItWorks />

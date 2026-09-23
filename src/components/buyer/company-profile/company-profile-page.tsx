@@ -20,32 +20,72 @@ interface CompanyProfilePageProps {
   company: CompanyProfile;
 }
 
-export function CompanyProfilePage({ company }: CompanyProfilePageProps) {
+export function CompanyProfilePage({
+  company,
+}: CompanyProfilePageProps) {
+  const hasProducts = company.products?.length > 0;
+
+  const hasCertifications =
+    company.certifications?.length > 0;
+
+  const hasSimilarCompanies =
+    company.similarCompanies?.length > 0;
+
+  const hasBrochure = Boolean(
+    company.brochureUrl?.trim(),
+  );
+
+  const hasLocation =
+    Boolean(company.mapAddress?.trim()) ||
+    Boolean(company.location?.trim());
+
   return (
     <section className="bg-white py-4 sm:py-5">
       <Container>
         {/* Breadcrumb */}
         <div className="mb-3 flex min-w-0 items-center gap-1.5 overflow-x-auto whitespace-nowrap text-[9px] text-[#666b83] sm:text-[10px]">
-          <Link href="/" className="shrink-0 hover:text-[#2118ad]">
+          <Link
+            href="/"
+            className="shrink-0 hover:text-[#2118ad]"
+          >
             Home
           </Link>
 
-          <ChevronRight size={11} className="shrink-0" />
+          <ChevronRight
+            size={11}
+            className="shrink-0"
+          />
 
-          <Link href="/companies" className="shrink-0 hover:text-[#2118ad]">
+          <Link
+            href="/companies"
+            className="shrink-0 hover:text-[#2118ad]"
+          >
             Companies
           </Link>
 
-          <ChevronRight size={11} className="shrink-0" />
+          <ChevronRight
+            size={11}
+            className="shrink-0"
+          />
 
-          <span className="truncate font-semibold text-[#2118ad]">{company.name}</span>
+          <span className="truncate font-semibold text-[#2118ad]">
+            {company.name}
+          </span>
         </div>
 
+        {/* Hero */}
         <CompanyProfileHero company={company} />
 
+        {/* Overview */}
         <CompanyOverview company={company} />
 
-        <CompanyProducts products={company.products} companyId={company.id} />
+        {/* Products */}
+        {hasProducts && (
+          <CompanyProducts
+            products={company.products}
+            companyId={company.id}
+          />
+        )}
 
         {/* Company information */}
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -57,15 +97,34 @@ export function CompanyProfilePage({ company }: CompanyProfilePageProps) {
         </div>
 
         {/* Certifications / Location / Brochure */}
-        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[0.9fr_1.1fr_0.9fr]">
-          <CompanyCertifications certifications={company.certifications} />
+        {(hasCertifications ||
+          hasLocation ||
+          hasBrochure) && (
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[0.9fr_1.1fr_0.9fr]">
+            {hasCertifications && (
+              <CompanyCertifications
+                certifications={
+                  company.certifications
+                }
+              />
+            )}
 
-          <CompanyLocation company={company} />
+            {hasLocation && (
+              <CompanyLocation company={company} />
+            )}
 
-          <CompanyBrochure company={company} />
-        </div>
+            {hasBrochure && (
+              <CompanyBrochure company={company} />
+            )}
+          </div>
+        )}
 
-        <SimilarCompanies companies={company.similarCompanies} />
+        {/* Similar companies */}
+        {hasSimilarCompanies && (
+          <SimilarCompanies
+            companies={company.similarCompanies}
+          />
+        )}
       </Container>
     </section>
   );
