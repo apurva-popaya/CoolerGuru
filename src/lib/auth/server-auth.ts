@@ -143,7 +143,7 @@ export async function getServerAuthUser(): Promise<AuthUser | null> {
     }
 
     const result = await response.json();
-    console.log("✅ [Auth Debug] API Response result:", result);
+    // console.log("✅ [Auth Debug] API Response result:", result);
 
     // Handle different backend response shapes safely:
     // 1. Direct user object at root: { user: { ... } }

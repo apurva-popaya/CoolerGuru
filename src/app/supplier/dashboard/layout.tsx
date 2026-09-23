@@ -39,11 +39,11 @@ export default async function SupplierDashboardLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
-  console.log("user--->");
+  // console.log("user--->");
   const user = await getServerAuthUser();
 
   if (!user) {
-    console.log("user--->");
+    // console.log("user--->");
     redirect("/supplier/login");
   }
 

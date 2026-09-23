@@ -1,6 +1,5 @@
-"use client";
 
-import { useState } from "react";
+"use client";
 
 import {
   SupplierFormCard,
@@ -8,20 +7,45 @@ import {
   supplierInputClass,
   supplierTextareaClass,
 } from "@/components/supplier/common/supplier-form";
+import type { CompanyFieldChangeHandler } from "@/hooks/use-company-form";
+import { COMPANY_BUSINESS_TYPES, type CompanyBusinessType } from "@/lib/api/supplier-create-profile-api";
 
-export function CompanyOverviewSection() {
-  const [companyName, setCompanyName] = useState("ABC Cooling Industries");
+const BUSINESS_TYPE_LABELS: Record<CompanyBusinessType, string> = {
+  MANUFACTURER: "Manufacturer",
+  SUPPLIER: "Supplier",
+  EXPORTER: "Exporter",
+  OEM: "OEM",
+  DISTRIBUTOR: "Distributor",
+};
 
-  const [description, setDescription] = useState(
-    "ABC Cooling Industries is a leading manufacturer and supplier of air coolers and related cooling solutions in India. We are committed to quality, innovation, and customer satisfaction.",
-  );
+type CompanyOverviewSectionProps = {
+  name: string;
+  description: string;
+  businessTypes: CompanyBusinessType[];
+  onChange: CompanyFieldChangeHandler;
+};
+
+export function CompanyOverviewSection({
+  name,
+  description,
+  businessTypes,
+  onChange,
+}: CompanyOverviewSectionProps) {
+  const toggleBusinessType = (businessType: CompanyBusinessType) => {
+    onChange(
+      "business_types",
+      businessTypes.includes(businessType)
+        ? businessTypes.filter((item) => item !== businessType)
+        : [...businessTypes, businessType],
+    );
+  };
 
   return (
     <SupplierFormCard title="1. Company Overview">
       <SupplierFormField label="Company Name" required>
         <input
-          value={companyName}
-          onChange={(event) => setCompanyName(event.target.value)}
+          value={name}
+          onChange={(event) => onChange("name", event.target.value)}
           className={supplierInputClass}
         />
       </SupplierFormField>
@@ -30,16 +54,46 @@ export function CompanyOverviewSection() {
         <SupplierFormField label="Company Description / Overview" required>
           <textarea
             value={description}
-            onChange={(event) => setDescription(event.target.value)}
+            onChange={(event) =>
+              onChange("description", event.target.value)
+            }
             maxLength={500}
             className={supplierTextareaClass}
           />
         </SupplierFormField>
 
         <div className="mt-1 flex justify-between text-[#86899d] text-[7px]">
-          <span>You can describe your company, mission, products, and strengths.</span>
+          <span>
+            You can describe your company, mission, products, and strengths.
+          </span>
+
           <span>{description.length} / 500</span>
         </div>
+      </div>
+
+      <div className="mt-4">
+        <SupplierFormField label="Business Type" required description="Select all that apply.">
+          <div className="flex flex-wrap gap-2">
+            {COMPANY_BUSINESS_TYPES.map((businessType) => {
+              const isSelected = businessTypes.includes(businessType);
+
+              return (
+                <button
+                  key={businessType}
+                  type="button"
+                  onClick={() => toggleBusinessType(businessType)}
+                  className={`h-[28px] rounded-[5px] border px-3 font-semibold text-[8px] transition ${
+                    isSelected
+                      ? "border-[#3024c9] bg-[#3024c9] text-white"
+                      : "border-[#dcdde8] bg-white text-[#555a76] hover:bg-[#f7f6ff]"
+                  }`}
+                >
+                  {BUSINESS_TYPE_LABELS[businessType]}
+                </button>
+              );
+            })}
+          </div>
+        </SupplierFormField>
       </div>
     </SupplierFormCard>
   );
