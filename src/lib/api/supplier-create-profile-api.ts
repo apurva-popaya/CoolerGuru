@@ -1,4 +1,5 @@
 import { type ApiResponse, apiRequest } from "@/lib/api/api-client";
+import { uploadFileToStorage } from "@/lib/api/file-upload-api";
 
 /* =========================================
    TYPES
@@ -139,23 +140,8 @@ export function submitCompanyForVerification() {
 
 export type CompanyUploadFolder = "logos" | "covers" | "documents" | "brochures";
 
-const DUMMY_STORAGE_BASE_URL = "https://dummy-storage.coolerguru.com";
+export { getFileNameFromUrl } from "@/lib/api/file-upload-api";
 
-/*
- * TODO: Replace with the real S3 upload once the bucket is available.
- * For now we only fake the upload and return a dummy (but valid) URL,
- * so the rest of the create-profile flow can be completed end to end.
- */
-export async function uploadCompanyFile(file: File, folder: CompanyUploadFolder): Promise<string> {
-  await new Promise((resolve) => setTimeout(resolve, 400));
-
-  const safeFileName = file.name.toLowerCase().replace(/[^a-z0-9.]+/g, "-");
-
-  return `${DUMMY_STORAGE_BASE_URL}/companies/${folder}/${Date.now()}-${safeFileName}`;
-}
-
-export function getFileNameFromUrl(url: string): string {
-  const lastSegment = url.split("/").pop() ?? url;
-
-  return decodeURIComponent(lastSegment.replace(/^\d+-/, ""));
+export function uploadCompanyFile(file: File, folder: CompanyUploadFolder): Promise<string> {
+  return uploadFileToStorage(file, `companies/${folder}`);
 }
