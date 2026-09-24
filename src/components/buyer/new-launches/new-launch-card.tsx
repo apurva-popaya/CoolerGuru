@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
-import Image from "next/image";
+import { SafeImage } from "@/components/common/safe-image";
 import Link from "next/link";
 
 import { Heart, MapPin } from "lucide-react";
@@ -13,7 +12,9 @@ interface NewLaunchCardProps {
   product: NewLaunchProduct;
 }
 
-export function NewLaunchCard({ product }: NewLaunchCardProps) {
+export function NewLaunchCard({
+  product,
+}: NewLaunchCardProps) {
   const [saved, setSaved] = useState(false);
 
   return (
@@ -28,21 +29,34 @@ export function NewLaunchCard({ product }: NewLaunchCardProps) {
       {/* Wishlist */}
       <button
         type="button"
-        aria-label={saved ? "Remove from saved products" : "Save product"}
-        onClick={() => setSaved((current) => !current)}
+        aria-label={
+          saved
+            ? "Remove from saved products"
+            : "Save product"
+        }
+        onClick={() =>
+          setSaved((current) => !current)
+        }
         className="absolute top-2.5 right-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full text-[#27227e] transition hover:bg-[#f5f4ff] hover:text-[#3424e3] sm:top-3 sm:right-3"
       >
         <Heart
           size={15}
           strokeWidth={1.8}
-          className={saved ? "fill-[#3025cf] text-[#3025cf]" : ""}
+          className={
+            saved
+              ? "fill-[#3025cf] text-[#3025cf]"
+              : ""
+          }
         />
       </button>
 
       {/* Product image */}
       <div className="relative h-[105px] w-full sm:h-[125px] lg:h-[135px]">
-        <Image
-          src={product.image}
+        <SafeImage
+          src={
+            product.image ||
+            "/images/product-placeholder.png"
+          }
           alt={product.name}
           fill
           sizes="(max-width: 640px) 45vw, (max-width: 1024px) 25vw, 220px"
@@ -62,7 +76,10 @@ export function NewLaunchCard({ product }: NewLaunchCardProps) {
 
       {/* Location */}
       <div className="mt-2 flex min-w-0 items-center gap-1.5">
-        <MapPin size={9} className="shrink-0 text-[#3025cf]" />
+        <MapPin
+          size={9}
+          className="shrink-0 text-[#3025cf]"
+        />
 
         <span className="truncate text-[#656a82] text-[7px]">
           {product.location}
@@ -71,7 +88,7 @@ export function NewLaunchCard({ product }: NewLaunchCardProps) {
 
       {/* Action */}
       <Link
-        href={`/products/${product.productId}`}
+        href={`/products/${product.slug}`}
         className="!text-[#251bb4] mt-3 flex h-[30px] items-center justify-center rounded-[4px] border border-[#3b2ce2] bg-white pt-[1px] font-bold text-[8px] transition hover:bg-[#f6f5ff] sm:mt-4 sm:h-[31px]"
       >
         View Details

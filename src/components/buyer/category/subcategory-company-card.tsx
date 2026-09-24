@@ -72,7 +72,7 @@ export function SubcategoryCompanyCard({
       </div>
 
       <Link
-        href={`/companies/${company.id}`}
+        href={`/companies/${company.slug}`}
         className="mt-4 flex h-[32px] items-center justify-center rounded-[4px] border border-[#3b2ce2] font-bold text-[#251bb5] text-[9px] transition hover:bg-[#f5f4ff]"
       >
         View Profile

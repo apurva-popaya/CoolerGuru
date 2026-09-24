@@ -3,9 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { Heart, Container as TankIcon, Wind } from "lucide-react";
+import {
+  Container as TankIcon,
+  Wind,
+} from "lucide-react";
 
-import { useFavorites } from "@/context/favorites-context";
+import { FavoriteButton } from "@/components/common/favorite-button";
 import type { SubcategoryProduct } from "@/types/subcategory-detail";
 
 interface SubcategoryProductCardProps {
@@ -15,30 +18,14 @@ interface SubcategoryProductCardProps {
 export function SubcategoryProductCard({
   product,
 }: SubcategoryProductCardProps) {
-  const { isFavorite, toggleFavorite } = useFavorites();
-
-  const liked = isFavorite(product.id, "product");
-
   return (
     <div className="relative flex min-w-0 flex-col rounded-[8px] border border-[#e1e2ec] bg-white p-3">
-      <button
-        type="button"
-        aria-label={liked ? "Remove saved product" : "Save product"}
-        onClick={() =>
-          toggleFavorite({
-            id: product.id,
-            type: "product",
-            title: product.name,
-            image: product.image,
-          })
-        }
-        className="absolute top-3 right-3 z-10 text-[#3829f2]"
-      >
-        <Heart
-          size={16}
-          className={liked ? "fill-[#3829f2]" : ""}
-        />
-      </button>
+      <FavoriteButton
+        id={String(product.productId)}
+        type="product"
+        title={product.name}
+        image={product.image}
+      />
 
       <div className="relative h-[170px] w-full sm:h-[180px] lg:h-[190px]">
         <Image
@@ -54,13 +41,16 @@ export function SubcategoryProductCard({
         {product.name}
       </h3>
 
-      <p className="mt-1 font-medium text-[#575c76] text-[8px] sm:text-[9px]">
+      <p className="mt-1 truncate font-medium text-[#575c76] text-[8px] sm:text-[9px]">
         {product.company}
       </p>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
         <div className="flex items-center gap-1.5">
-          <Wind size={12} className="text-[#2b20d4]" />
+          <Wind
+            size={12}
+            className="text-[#2b20d4]"
+          />
 
           <span className="text-[#454b6b] text-[8px] sm:text-[9px]">
             {product.airflow}
@@ -68,7 +58,10 @@ export function SubcategoryProductCard({
         </div>
 
         <div className="flex items-center gap-1.5">
-          <TankIcon size={12} className="text-[#2b20d4]" />
+          <TankIcon
+            size={12}
+            className="text-[#2b20d4]"
+          />
 
           <span className="text-[#454b6b] text-[8px] sm:text-[9px]">
             {product.tank}
@@ -77,7 +70,7 @@ export function SubcategoryProductCard({
       </div>
 
       <Link
-        href={`/products/${product.id}`}
+        href={`/products/${product.slug}`}
         className="mt-4 flex h-[34px] items-center justify-center rounded-[4px] border border-[#3b2ce2] font-bold text-[#251bb5] text-[9px] transition hover:bg-[#f5f4ff]"
       >
         View Details

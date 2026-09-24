@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 import {
@@ -12,105 +14,77 @@ import {
   Settings,
 } from "lucide-react";
 
-interface SidebarItem {
-  slug: string;
-  label: string;
-  icon:
-    | "manufacturer"
-    | "body"
-    | "component"
-    | "electrical"
-    | "factory"
-    | "material"
-    | "machinery"
-    | "oem";
-}
-
-const sidebarItems: SidebarItem[] = [
-  {
-    slug: "air-cooler-manufacturers",
-    label: "Air Cooler Manufacturers",
-    icon: "manufacturer",
-  },
-  {
-    slug: "cooler-body-manufacturers",
-    label: "Cooler Body Manufacturers",
-    icon: "body",
-  },
-  {
-    slug: "air-cooler-components",
-    label: "Air Cooler Components",
-    icon: "component",
-  },
-  {
-    slug: "electrical-components",
-    label: "Electrical Components",
-    icon: "electrical",
-  },
-  {
-    slug: "production-facility-manufacturers",
-    label: "Production Facility Manufacturers",
-    icon: "factory",
-  },
-  {
-    slug: "raw-material-suppliers",
-    label: "Raw Material Suppliers",
-    icon: "material",
-  },
-  {
-    slug: "machinery-suppliers",
-    label: "Machinery Suppliers",
-    icon: "machinery",
-  },
-  {
-    slug: "oem-contract-manufacturing",
-    label: "OEM & Contract Manufacturing",
-    icon: "oem",
-  },
-];
+import type { Category } from "@/lib/api/categories-api";
 
 interface CategorySidebarProps {
+  categories: Category[];
   activeSlug: string;
 }
 
-export function CategorySidebar({ activeSlug }: CategorySidebarProps) {
+export function CategorySidebar({
+  categories,
+  activeSlug,
+}: CategorySidebarProps) {
   const activeItem =
-    sidebarItems.find((item) => item.slug === activeSlug) ?? sidebarItems[0];
+    categories.find(
+      (category) => category.slug === activeSlug,
+    ) ?? categories[0];
 
   return (
     <>
-      {/* Desktop Sidebar */}
+      {/* ---------------------------------------------------------------- */}
+      {/* Desktop Sidebar                                                  */}
+      {/* ---------------------------------------------------------------- */}
+
       <aside className="hidden rounded-[10px] border border-[#e2e3ef] bg-white p-2 lg:block">
         <div className="flex flex-col gap-1">
-          {sidebarItems.map((item) => {
-            const active = item.slug === activeSlug;
+          {categories.map((category) => {
+            const active =
+              category.slug === activeSlug;
 
             return (
               <Link
-                key={item.slug}
-                href={`/category/${item.slug}`}
+                key={category.category_id}
+                href={`/category/${category.slug}`}
                 className={`flex min-h-[43px] items-center gap-3 rounded-[7px] px-3 py-2 font-semibold text-[11px] leading-[1.25] transition ${
                   active
                     ? "bg-[#f0edff] text-[#251bc1]"
                     : "text-[#222660] hover:bg-[#f7f7ff]"
                 }`}
               >
-                <SidebarIcon type={item.icon} />
+                <SidebarIcon
+                  slug={category.slug}
+                />
 
-                <span>{item.label}</span>
+                <span>{category.name}</span>
               </Link>
             );
           })}
         </div>
       </aside>
 
-      {/* Mobile / Tablet Category Selector */}
+      {/* ---------------------------------------------------------------- */}
+      {/* Mobile / Tablet Category Selector                                */}
+      {/* ---------------------------------------------------------------- */}
+
       <details className="group rounded-[9px] border border-[#e2e3ef] bg-white lg:hidden">
         <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 px-3.5 py-2.5 font-bold text-[#2118ad] text-[11px] [&::-webkit-details-marker]:hidden">
           <div className="flex min-w-0 items-center gap-2.5">
-            <SidebarIcon type={activeItem.icon} />
+            {activeItem ? (
+              <>
+                <SidebarIcon
+                  slug={activeItem.slug}
+                />
 
-            <span className="truncate">{activeItem.label}</span>
+                <span className="truncate">
+                  {activeItem.name}
+                </span>
+              </>
+            ) : (
+              <span className="truncate">
+                Air Cooler Categories
+              </span>
+            )}
           </div>
 
           <ChevronDown
@@ -121,22 +95,25 @@ export function CategorySidebar({ activeSlug }: CategorySidebarProps) {
 
         <div className="border-[#e8e8f1] border-t px-2 py-2">
           <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
-            {sidebarItems.map((item) => {
-              const active = item.slug === activeSlug;
+            {categories.map((category) => {
+              const active =
+                category.slug === activeSlug;
 
               return (
                 <Link
-                  key={item.slug}
-                  href={`/category/${item.slug}`}
+                  key={category.category_id}
+                  href={`/category/${category.slug}`}
                   className={`flex min-h-[40px] items-center gap-2.5 rounded-[6px] px-3 py-2 font-semibold text-[10px] ${
                     active
                       ? "bg-[#f0edff] text-[#251bc1]"
                       : "text-[#222660] hover:bg-[#f7f7ff]"
                   }`}
                 >
-                  <SidebarIcon type={item.icon} />
+                  <SidebarIcon
+                    slug={category.slug}
+                  />
 
-                  <span>{item.label}</span>
+                  <span>{category.name}</span>
                 </Link>
               );
             })}
@@ -147,32 +124,89 @@ export function CategorySidebar({ activeSlug }: CategorySidebarProps) {
   );
 }
 
-function SidebarIcon({ type }: { type: SidebarItem["icon"] }) {
-  const className = "shrink-0 text-[#2d26bd]";
+/* -------------------------------------------------------------------------- */
+/* Sidebar Icon                                                               */
+/* -------------------------------------------------------------------------- */
 
-  switch (type) {
-    case "manufacturer":
-      return <Factory size={17} className={className} />;
+function SidebarIcon({
+  slug,
+}: {
+  slug: string;
+}) {
+  const className =
+    "shrink-0 text-[#2d26bd]";
 
-    case "body":
-      return <Fan size={17} className={className} />;
+  switch (slug) {
+    case "air-cooler-manufacturers":
+      return (
+        <Factory
+          size={17}
+          className={className}
+        />
+      );
 
-    case "component":
-      return <Cog size={17} className={className} />;
+    case "cooler-body-manufacturers":
+      return (
+        <Fan
+          size={17}
+          className={className}
+        />
+      );
 
-    case "electrical":
-      return <Power size={17} className={className} />;
+    case "air-cooler-components":
+      return (
+        <Cog
+          size={17}
+          className={className}
+        />
+      );
 
-    case "factory":
-      return <Building2 size={17} className={className} />;
+    case "electrical-components":
+      return (
+        <Power
+          size={17}
+          className={className}
+        />
+      );
 
-    case "material":
-      return <Package size={17} className={className} />;
+    case "production-facility-manufacturers":
+      return (
+        <Building2
+          size={17}
+          className={className}
+        />
+      );
 
-    case "machinery":
-      return <Settings size={17} className={className} />;
+    case "raw-material-suppliers":
+      return (
+        <Package
+          size={17}
+          className={className}
+        />
+      );
 
-    case "oem":
-      return <Boxes size={17} className={className} />;
+    case "machinery-suppliers":
+      return (
+        <Settings
+          size={17}
+          className={className}
+        />
+      );
+
+    case "oem-contract-manufacturing":
+      return (
+        <Boxes
+          size={17}
+          className={className}
+        />
+      );
+
+    default:
+      return (
+        <Factory
+          size={17}
+          className={className}
+        />
+      );
   }
 }

@@ -10,14 +10,14 @@ const otherCategories = [
     title: "Air Conditioners",
     description: "Explore cooling systems for homes and businesses.",
     image: "/images/home/categories/air-conditioner.png",
-    href: "/categories/air-conditioners",
+    href: "/category/air-conditioners",
     icon: "ac",
   },
   {
-    title: "Fan Coolers",
+    title: "Fans",
     description: "Browse fast-moving cooling and ventilation options.",
     image: "/images/home/categories/fan-image.png",
-    href: "/categories/fan-coolers",
+    href: "/category/fans",
     icon: "fan",
   },
 ];

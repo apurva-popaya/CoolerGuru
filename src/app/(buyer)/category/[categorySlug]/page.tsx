@@ -1,7 +1,4 @@
-import { notFound } from "next/navigation";
-
 import { CategoryDetailPage } from "@/components/buyer/category/category-detail-page";
-import { categoryDetails } from "@/data/category-details";
 
 interface CategoryPageProps {
   params: Promise<{
@@ -9,14 +6,14 @@ interface CategoryPageProps {
   }>;
 }
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
+export default async function CategoryPage({
+  params,
+}: CategoryPageProps) {
   const { categorySlug } = await params;
 
-  const category = categoryDetails.find((item) => item.slug === categorySlug);
-
-  if (!category) {
-    notFound();
-  }
-
-  return <CategoryDetailPage category={category} />;
+  return (
+    <CategoryDetailPage
+      categorySlug={categorySlug}
+    />
+  );
 }

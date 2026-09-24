@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import { ChevronDown, Send, ShieldCheck } from "lucide-react";
 
-import { createProductInquiry } from "@/lib/api/buyer-inquiries-api";
+import { submitProductInquiry } from "@/lib/api/buyer-product-api";
 import { getApiErrorMessage } from "@/lib/api/get-api-error-message";
 import type { ProductDetail } from "@/types/product-detail";
 
@@ -49,7 +49,10 @@ export function ProductInquiryForm({
 
     const quantityNumber = Number(quantity);
 
-    if (!Number.isFinite(quantityNumber) || quantityNumber <= 0) {
+    if (
+      !Number.isFinite(quantityNumber) ||
+      quantityNumber <= 0
+    ) {
       setError("Please enter a valid quantity.");
       return;
     }
@@ -60,7 +63,9 @@ export function ProductInquiryForm({
     }
 
     if (mobileNumber.length !== 10) {
-      setError("Please enter a valid 10 digit mobile number.");
+      setError(
+        "Please enter a valid 10 digit mobile number.",
+      );
       return;
     }
 
@@ -75,22 +80,24 @@ export function ProductInquiryForm({
     }
 
     if (!requirementDetails.trim()) {
-      setError("Please enter your requirement details.");
+      setError(
+        "Please enter your requirement details.",
+      );
+      return;
+    }
+
+    if (!product.slug) {
+      setError(
+        "Unable to submit inquiry because the product slug is missing.",
+      );
       return;
     }
 
     setLoading(true);
 
     try {
-      /*
-       * Backend expects PRODUCT SLUG here.
-       *
-       * Currently product.id is used because
-       * ProductDetail currently uses id for the
-       * product identifier.
-       */
-      const response = await createProductInquiry(
-        product.id,
+      const response = await submitProductInquiry(
+        product.slug,
         {
           quantity: quantityNumber,
           quantity_unit: quantityUnit,
@@ -98,7 +105,8 @@ export function ProductInquiryForm({
           buyer_phone_number: `+91${mobileNumber}`,
           buyer_email: email.trim(),
           buyer_city_state: cityState.trim(),
-          requirement_details: requirementDetails.trim(),
+          requirement_details:
+            requirementDetails.trim(),
         },
       );
 
@@ -275,7 +283,8 @@ export function ProductInquiryForm({
             />
 
             <span className="absolute right-3 bottom-2 text-[#6b70a0] text-[8px]">
-              {requirementDetails.length}/{maxCharacters}
+              {requirementDetails.length}/
+              {maxCharacters}
             </span>
           </div>
         </FormField>
@@ -304,11 +313,13 @@ export function ProductInquiryForm({
         >
           <Send size={14} />
 
-          {loading ? "Submitting..." : "Submit Inquiry"}
+          {loading
+            ? "Submitting..."
+            : "Submit Inquiry"}
         </button>
 
         <Link
-          href={`/products/${product.id}`}
+          href={`/products/${product.slug}`}
           className="!text-[#251bb4] flex h-[40px] w-full items-center justify-center rounded-[5px] border border-[#3929dd] bg-white px-5 font-bold text-[10px] transition hover:bg-[#f6f5ff] sm:min-w-[170px] sm:flex-1"
         >
           Cancel
@@ -323,8 +334,8 @@ export function ProductInquiryForm({
         />
 
         <p className="text-[#696e84] text-[8px] leading-[1.4]">
-          The supplier will receive your inquiry by email and
-          dashboard notification.
+          The supplier will receive your inquiry by
+          email and dashboard notification.
         </p>
       </div>
     </form>

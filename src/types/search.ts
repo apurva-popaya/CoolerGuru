@@ -1,5 +1,6 @@
 export interface CompanySearchResult {
   id: string;
+  companyId: number;
   title: string;
   image: string;
   location: string;
@@ -15,6 +16,7 @@ export interface CompanySearchResult {
 
 export interface ProductSearchResult {
   id: string;
+  productId: number;
   title: string;
   image: string;
   category: string;

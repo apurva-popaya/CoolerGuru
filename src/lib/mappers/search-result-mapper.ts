@@ -51,6 +51,8 @@ export function mapSearchCompany(company: BackendSearchCompany): CompanySearchRe
   return {
     id: company.slug,
 
+    companyId: company.company_id,
+
     title: company.name,
 
     image: cleanUrl(company.company_logo_url) || FALLBACK_COMPANY_IMAGE,
@@ -91,6 +93,8 @@ export function mapSearchProduct(product: BackendSearchProduct): ProductSearchRe
 
   return {
     id: product.slug,
+
+    productId: product.product_id, 
 
     title: product.name,
 

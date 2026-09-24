@@ -1,66 +1,96 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import { ArrowRight, ChevronDown, ChevronRight, Heart, Search } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronDown,
+  ChevronRight,
+  Heart,
+  Search,
+} from "lucide-react";
 
-import { useFavorites } from "@/context/favorites-context";
-import { directoryProducts } from "@/data/products-directory";
+import {
+  getSavedProducts,
+  type SavedProduct,
+} from "@/lib/api/buyer-saved-api";
 
 import { BuyerSavedProductCard } from "./buyer-saved-product-card";
 
 type SortOption = "recent" | "name-asc" | "name-desc";
 
+const PAGE_SIZE = 12;
+
 export function BuyerSavedProductsPage() {
-  const { favorites } = useFavorites();
+  const [products, setProducts] = useState<SavedProduct[]>([]);
+  const [savedCount, setSavedCount] = useState(0);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [sortOpen, setSortOpen] = useState(false);
 
-  const savedProductFavorites = useMemo(
-    () => favorites.filter((item) => item.type === "product"),
-    [favorites],
-  );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const savedProducts = useMemo(() => {
-    return savedProductFavorites
-      .map((favorite) =>
-        directoryProducts.find((product) => product.id === favorite.id),
-      )
-      .filter(
-        (product): product is (typeof directoryProducts)[number] =>
-          Boolean(product),
-      )
-      .reverse();
-  }, [savedProductFavorites]);
+  const loadSavedProducts = useCallback(async () => {
+    setLoading(true);
+    setError("");
 
-  const visibleProducts = useMemo(() => {
-    let products = [...savedProducts];
+    try {
+      const response = await getSavedProducts({
+        search: searchQuery,
+        page: 1,
+        limit: PAGE_SIZE,
+      });
 
-    const query = searchQuery.trim().toLowerCase();
+      setProducts(response.data.products);
+      setSavedCount(response.data.saved_count);
+    } catch (error) {
+      console.error("Failed to fetch saved products:", error);
 
-    if (query) {
-      products = products.filter(
-        (product) =>
-          product.name.toLowerCase().includes(query) ||
-          product.company.toLowerCase().includes(query) ||
-          product.category.toLowerCase().includes(query),
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to load saved products.",
       );
+    } finally {
+      setLoading(false);
     }
+  }, [searchQuery]);
 
-    if (sortBy === "name-asc") {
-      products.sort((a, b) => a.name.localeCompare(b.name));
-    }
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      loadSavedProducts();
+    }, 300);
 
-    if (sortBy === "name-desc") {
-      products.sort((a, b) => b.name.localeCompare(a.name));
-    }
+    return () => clearTimeout(timeout);
+  }, [loadSavedProducts]);
 
-    return products;
-  }, [savedProducts, searchQuery, sortBy]);
+  function handleProductRemoved(productId: number) {
+    setProducts((current) =>
+      current.filter(
+        (product) => product.product_id !== productId,
+      ),
+    );
+
+    setSavedCount((current) => Math.max(0, current - 1));
+  }
+
+  const visibleProducts = [...products];
+
+  if (sortBy === "name-asc") {
+    visibleProducts.sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+  }
+
+  if (sortBy === "name-desc") {
+    visibleProducts.sort((a, b) =>
+      b.name.localeCompare(a.name),
+    );
+  }
 
   const sortLabel =
     sortBy === "name-asc"
@@ -79,13 +109,19 @@ export function BuyerSavedProductsPage() {
           </h1>
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5 font-medium text-[#666b83] text-[9px] sm:text-[10px]">
-            <Link href="/" className="transition hover:text-[#2118ad]">
+            <Link
+              href="/"
+              className="transition hover:text-[#2118ad]"
+            >
               Home
             </Link>
 
             <ChevronRight size={11} />
 
-            <Link href="/dashboard" className="transition hover:text-[#2118ad]">
+            <Link
+              href="/dashboard"
+              className="transition hover:text-[#2118ad]"
+            >
               Dashboard
             </Link>
 
@@ -108,8 +144,8 @@ export function BuyerSavedProductsPage() {
 
           <div className="min-w-0">
             <p className="font-bold text-[#171570] text-[9px] sm:text-[10px]">
-              You have {savedProductFavorites.length} saved{" "}
-              {savedProductFavorites.length === 1 ? "product" : "products"}
+              You have {savedCount} saved{" "}
+              {savedCount === 1 ? "product" : "products"}
             </p>
 
             <p className="mt-0.5 text-[#666b83] text-[7.5px] sm:text-[8px]">
@@ -124,7 +160,7 @@ export function BuyerSavedProductsPage() {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-5">
           <div className="min-w-0">
             <h2 className="font-bold text-[#171570] text-[16px] sm:text-[18px]">
-              Saved Products ({savedProductFavorites.length})
+              Saved Products ({savedCount})
             </h2>
 
             <p className="mt-0.5 text-[#555b76] text-[8px] sm:text-[9px]">
@@ -143,7 +179,9 @@ export function BuyerSavedProductsPage() {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
+                onChange={(event) =>
+                  setSearchQuery(event.target.value)
+                }
                 placeholder="Search saved products..."
                 className="min-w-0 w-full bg-transparent text-[#34395d] text-[9px] outline-none placeholder:text-[#999db2]"
               />
@@ -152,10 +190,14 @@ export function BuyerSavedProductsPage() {
             <div className="relative w-full sm:w-auto">
               <button
                 type="button"
-                onClick={() => setSortOpen((previous) => !previous)}
+                onClick={() =>
+                  setSortOpen((previous) => !previous)
+                }
                 className="flex h-[36px] w-full min-w-0 items-center justify-between gap-3 rounded-[6px] border border-[#dedff0] bg-white px-3 font-semibold text-[#34395d] text-[9px] sm:min-w-[150px]"
               >
-                <span className="truncate">{sortLabel}</span>
+                <span className="truncate">
+                  {sortLabel}
+                </span>
 
                 <ChevronDown
                   size={12}
@@ -200,19 +242,33 @@ export function BuyerSavedProductsPage() {
         </div>
       </div>
 
-      {/* Products */}
-      {visibleProducts.length > 0 ? (
+      {/* Error */}
+      {error && (
+        <div className="mt-3 rounded-[8px] border border-red-200 bg-red-50 px-4 py-3 text-red-600 text-[9px]">
+          {error}
+        </div>
+      )}
+
+      {/* Loading */}
+      {loading ? (
+        <div className="mt-3 flex min-h-[240px] items-center justify-center rounded-[9px] border border-[#e2e3ee] bg-white">
+          <p className="text-[#555b76] text-[9px]">
+            Loading saved products...
+          </p>
+        </div>
+      ) : products.length > 0 ? (
         <div className="mt-3 grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {visibleProducts.map((product) => (
             <BuyerSavedProductCard
-              key={product.id}
+              key={product.product_id}
               product={product}
+              onRemoved={handleProductRemoved}
             />
           ))}
         </div>
       ) : (
         <EmptySavedProducts
-          hasFavorites={savedProductFavorites.length > 0}
+          hasFavorites={Boolean(searchQuery.trim())}
         />
       )}
 
@@ -229,7 +285,8 @@ export function BuyerSavedProductsPage() {
             </p>
 
             <p className="mt-0.5 text-[#555b76] text-[8px] leading-[1.4] sm:text-[8.5px]">
-              Explore more products and connect with verified suppliers.
+              Explore more products and connect with verified
+              suppliers.
             </p>
           </div>
         </div>
@@ -290,7 +347,7 @@ function EmptySavedProducts({
 
         <p className="mx-auto mt-1 max-w-[300px] text-[#666b83] text-[8px] leading-[1.5] sm:text-[9px]">
           {hasFavorites
-            ? "Try searching with a different product, company or category name."
+            ? "Try searching with a different product name."
             : "Products that you save will appear here so you can easily find them later."}
         </p>
 

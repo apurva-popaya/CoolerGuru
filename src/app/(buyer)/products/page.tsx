@@ -7,8 +7,18 @@ interface ProductsPageProps {
   }>;
 }
 
-export default async function ProductsPage({ searchParams }: ProductsPageProps) {
-  const { company, category } = await searchParams;
+export default async function ProductsPage({
+  searchParams,
+}: ProductsPageProps) {
+  const {
+    company,
+    category,
+  } = await searchParams;
 
-  return <ProductsDirectoryPage companyId={company} categorySlug={category} />;
+  return (
+    <ProductsDirectoryPage
+      companyId={company}
+      categorySlug={category}
+    />
+  );
 }

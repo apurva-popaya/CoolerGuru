@@ -7,35 +7,53 @@ import type { BuyerInquiry } from "@/types/buyer-inquiry";
 interface Props {
   inquiries: BuyerInquiry[];
   loading?: boolean;
+
+  unreadInquiryNumbers?: Set<string>;
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+  return new Intl.DateTimeFormat(
+    "en-IN",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    },
+  ).format(new Date(value));
 }
 
 export function BuyerInquiriesTable({
   inquiries,
   loading = false,
+  unreadInquiryNumbers = new Set(),
 }: Props) {
   return (
     <div className="overflow-x-auto">
       <div className="min-w-[820px]">
         <div className="grid grid-cols-[0.8fr_1.25fr_1.3fr_0.55fr_0.7fr_0.65fr] items-center bg-[#f6f4ff] px-4 py-3 font-bold text-[#4d5270] text-[9px]">
-          <HeaderCell>Inquiry ID</HeaderCell>
+          <HeaderCell>
+            Inquiry ID
+          </HeaderCell>
 
-          <HeaderCell>Company</HeaderCell>
+          <HeaderCell>
+            Company
+          </HeaderCell>
 
-          <HeaderCell>Product / Requirement</HeaderCell>
+          <HeaderCell>
+            Product / Requirement
+          </HeaderCell>
 
-          <HeaderCell>Quantity</HeaderCell>
+          <HeaderCell>
+            Quantity
+          </HeaderCell>
 
-          <HeaderCell>Date</HeaderCell>
+          <HeaderCell>
+            Date
+          </HeaderCell>
 
-          <span className="text-center">Action</span>
+          <span className="text-center">
+            Action
+          </span>
         </div>
 
         {loading ? (
@@ -47,63 +65,126 @@ export function BuyerInquiriesTable({
             No inquiries found.
           </div>
         ) : (
-          inquiries.map((inquiry) => (
-            <div
-              key={inquiry.inquiry_number}
-              className="grid min-h-[58px] grid-cols-[0.8fr_1.25fr_1.3fr_0.55fr_0.7fr_0.65fr] items-center border-[#ececf2] border-t px-4"
-            >
-              <p className="font-medium text-[#30355b] text-[8.5px]">
-                {inquiry.inquiry_number}
-              </p>
+          inquiries.map((inquiry) => {
+            const isUnread =
+              unreadInquiryNumbers.has(
+                String(
+                  inquiry.inquiry_number,
+                ),
+              );
 
-              <div className="min-w-0">
-                <p className="truncate font-bold text-[#171570] text-[9px]">
-                  {inquiry.company?.name ?? "Supplier"}
-                </p>
-
-                <p className="mt-0.5 truncate text-[#686d84] text-[7.5px]">
-                  {[inquiry.company?.city, inquiry.company?.state]
-                    .filter(Boolean)
-                    .join(", ") || "-"}
-                </p>
-              </div>
-
-              <p className="truncate pr-4 text-[#454a67] text-[8.5px]">
-                {inquiry.product_requirement}
-              </p>
-
-              <p className="text-[#454a67] text-[8.5px]">
-                {inquiry.quantity} {inquiry.quantity_unit}
-              </p>
-
-              <p className="text-[#454a67] text-[8.5px]">
-                {formatDate(inquiry.created_at)}
-              </p>
-
-              <div className="flex justify-center">
-                <Link
-                  href={`/dashboard/inquiries/${encodeURIComponent(
-                    inquiry.inquiry_number,
-                  )}`}
-                  className="!text-[#251bb4] flex h-[30px] min-w-[95px] items-center justify-center rounded-[4px] border border-[#3829dc] bg-white px-3 font-bold text-[8px] transition hover:bg-[#f6f5ff]"
+            return (
+              <div
+                key={inquiry.inquiry_number}
+                className={`grid min-h-[58px] grid-cols-[0.8fr_1.25fr_1.3fr_0.55fr_0.7fr_0.65fr] items-center border-[#ececf2] border-t px-4 ${
+                  isUnread
+                    ? "bg-[#faf9ff]"
+                    : "bg-white"
+                }`}
+              >
+                {/* Inquiry ID */}
+                <p
+                  className={
+                    isUnread
+                      ? "font-bold text-[#252a50] text-[8.5px]"
+                      : "font-medium text-[#30355b] text-[8.5px]"
+                  }
                 >
-                  View Inquiry
-                </Link>
+                  {inquiry.inquiry_number}
+                </p>
+
+                {/* Company */}
+                <div className="min-w-0">
+                  <p
+                    className={
+                      isUnread
+                        ? "truncate font-bold text-[#171570] text-[9px]"
+                        : "truncate font-medium text-[#171570] text-[9px]"
+                    }
+                  >
+                    {inquiry.company?.name ??
+                      "Supplier"}
+                  </p>
+
+                  <p className="mt-0.5 truncate text-[#686d84] text-[7.5px]">
+                    {[
+                      inquiry.company?.city,
+                      inquiry.company?.state,
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || "-"}
+                  </p>
+                </div>
+
+                {/* Product */}
+                <p
+                  className={
+                    isUnread
+                      ? "truncate pr-4 font-semibold text-[#353a5c] text-[8.5px]"
+                      : "truncate pr-4 text-[#454a67] text-[8.5px]"
+                  }
+                >
+                  {inquiry.product_requirement}
+                </p>
+
+                {/* Quantity */}
+                <p
+                  className={
+                    isUnread
+                      ? "font-semibold text-[#353a5c] text-[8.5px]"
+                      : "text-[#454a67] text-[8.5px]"
+                  }
+                >
+                  {inquiry.quantity}{" "}
+                  {inquiry.quantity_unit}
+                </p>
+
+                {/* Date */}
+                <p
+                  className={
+                    isUnread
+                      ? "font-semibold text-[#353a5c] text-[8.5px]"
+                      : "text-[#454a67] text-[8.5px]"
+                  }
+                >
+                  {formatDate(
+                    inquiry.created_at,
+                  )}
+                </p>
+
+                {/* Action */}
+                <div className="flex justify-center">
+                  <Link
+                    href={`/dashboard/inquiries/${encodeURIComponent(
+                      inquiry.inquiry_number,
+                    )}`}
+                    className="!text-[#251bb4] flex h-[30px] min-w-[95px] items-center justify-center rounded-[4px] border border-[#3829dc] bg-white px-3 font-bold text-[8px] transition hover:bg-[#f6f5ff]"
+                  >
+                    View Inquiry
+                  </Link>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
   );
 }
 
-function HeaderCell({ children }: { children: React.ReactNode }) {
+function HeaderCell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex items-center gap-1.5">
       <span>{children}</span>
 
-      <ChevronsUpDown size={10} className="text-[#898da2]" />
+      <ChevronsUpDown
+        size={10}
+        className="text-[#898da2]"
+      />
     </div>
   );
 }

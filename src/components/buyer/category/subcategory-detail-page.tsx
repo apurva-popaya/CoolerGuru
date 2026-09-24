@@ -4,10 +4,13 @@ import { useState } from "react";
 
 import Link from "next/link";
 
-import { ChevronDown, ChevronRight, Share2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Share2,
+} from "lucide-react";
 
 import { Container } from "@/components/common/container";
-import { categoryDetails } from "@/data/category-details";
 import type { SubcategoryDetail } from "@/types/subcategory-detail";
 
 import { SubcategoryCompanyCard } from "./subcategory-company-card";
@@ -17,18 +20,16 @@ import { SubcategoryTabs } from "./subcategory-tabs";
 
 interface SubcategoryDetailPageProps {
   subcategory: SubcategoryDetail;
+  parentCategorySlug: string;
 }
 
 export function SubcategoryDetailPage({
   subcategory,
+  parentCategorySlug,
 }: SubcategoryDetailPageProps) {
-  const [activeTab, setActiveTab] = useState<"products" | "companies">(
-    "products",
-  );
-
-  const parentCategory = categoryDetails.find(
-    (category) => category.slug === subcategory.categorySlug,
-  );
+  const [activeTab, setActiveTab] = useState<
+    "products" | "companies"
+  >("products");
 
   return (
     <section className="bg-white py-4 sm:py-6">
@@ -42,16 +43,22 @@ export function SubcategoryDetailPage({
             Home
           </Link>
 
-          <ChevronRight size={12} className="shrink-0 text-[#777b92]" />
+          <ChevronRight
+            size={12}
+            className="shrink-0 text-[#777b92]"
+          />
 
           <Link
-            href={`/category/${subcategory.categorySlug}`}
+            href={`/category/${parentCategorySlug}`}
             className="min-w-0 max-w-[35%] truncate transition hover:text-[#2118ad] sm:max-w-none"
           >
-            {parentCategory?.title ?? "Category"}
+            Air Coolers
           </Link>
 
-          <ChevronRight size={12} className="shrink-0 text-[#777b92]" />
+          <ChevronRight
+            size={12}
+            className="shrink-0 text-[#777b92]"
+          />
 
           <span className="min-w-0 truncate font-semibold text-[#2118ad]">
             {subcategory.title}
@@ -86,7 +93,7 @@ export function SubcategoryDetailPage({
           monthlySearches={subcategory.monthlySearches}
         />
 
-        {/* Tabs + Results */}
+        {/* Tabs */}
         <div className="mt-5">
           <SubcategoryTabs
             productCount={subcategory.productCount}
@@ -95,31 +102,37 @@ export function SubcategoryDetailPage({
             onTabChange={setActiveTab}
           />
 
+          {/* Products */}
           {activeTab === "products" && (
             <>
               <div className="rounded-b-[8px] border border-[#e2e3ee] bg-[#fdfdff] px-3 pt-3 pb-4 sm:px-4 sm:pt-4 sm:pb-5">
                 <ResultsToolbar
-                  text={`Showing 1–${subcategory.products.length} of ${subcategory.productCount.replace("+", "")} products`}
+                  text={`Showing 1–${subcategory.products.length} of ${subcategory.productCount} products`}
                 />
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 lg:gap-4">
-                  {subcategory.products.map((product) => (
-                    <SubcategoryProductCard
-                      key={product.id}
-                      product={product}
-                    />
-                  ))}
-                </div>
+                {subcategory.products.length === 0 ? (
+                  <EmptyState text="No products found in this subcategory." />
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 lg:gap-4">
+                    {subcategory.products.map((product) => (
+                      <SubcategoryProductCard
+                        key={product.productId}
+                        product={product}
+                      />
+                    ))}
+                  </div>
+                )}
 
-                <div className="mt-5 flex justify-center">
-                  <Link
-                    href={`/search?category=${subcategory.slug}`}
-                    className="flex h-[36px] w-full max-w-[320px] items-center justify-center rounded-[5px] border border-[#3828dc] px-4 font-bold text-[#251bb4] text-[9px] transition hover:bg-[#f5f4ff] sm:text-[10px]"
-                  >
-                    View All Products (
-                    {subcategory.productCount.replace("+", "")})
-                  </Link>
-                </div>
+                {subcategory.products.length > 0 && (
+                  <div className="mt-5 flex justify-center">
+                    <Link
+                      href={`/search?category=${subcategory.categorySlug}`}
+                      className="flex h-[36px] w-full max-w-[320px] items-center justify-center rounded-[5px] border border-[#3828dc] px-4 font-bold text-[#251bb4] text-[9px] transition hover:bg-[#f5f4ff] sm:text-[10px]"
+                    >
+                      View All Products ({subcategory.productCount})
+                    </Link>
+                  </div>
+                )}
               </div>
 
               {/* Companies */}
@@ -130,10 +143,39 @@ export function SubcategoryDetailPage({
 
                 <p className="mt-1 text-[#555a77] text-[9px]">
                   Showing 1–{subcategory.companies.length} of{" "}
-                  {subcategory.companyCount.replace("+", "")} companies
+                  {subcategory.companyCount} companies
                 </p>
 
-                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 lg:gap-4">
+                {subcategory.companies.length === 0 ? (
+                  <EmptyState
+                    className="mt-3"
+                    text="No companies found for this subcategory."
+                  />
+                ) : (
+                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 lg:gap-4">
+                    {subcategory.companies.map((company) => (
+                      <SubcategoryCompanyCard
+                        key={company.id}
+                        company={company}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Companies tab */}
+          {activeTab === "companies" && (
+            <div className="rounded-b-[8px] border border-[#e2e3ee] bg-[#fdfdff] px-3 pt-3 pb-4 sm:px-4 sm:pt-4 sm:pb-5">
+              <ResultsToolbar
+                text={`Showing 1–${subcategory.companies.length} of ${subcategory.companyCount} companies`}
+              />
+
+              {subcategory.companies.length === 0 ? (
+                <EmptyState text="No companies found for this subcategory." />
+              ) : (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 lg:gap-4">
                   {subcategory.companies.map((company) => (
                     <SubcategoryCompanyCard
                       key={company.id}
@@ -141,24 +183,7 @@ export function SubcategoryDetailPage({
                     />
                   ))}
                 </div>
-              </div>
-            </>
-          )}
-
-          {activeTab === "companies" && (
-            <div className="rounded-b-[8px] border border-[#e2e3ee] bg-[#fdfdff] px-3 pt-3 pb-4 sm:px-4 sm:pt-4 sm:pb-5">
-              <ResultsToolbar
-                text={`Showing 1–${subcategory.companies.length} of ${subcategory.companyCount.replace("+", "")} companies`}
-              />
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 lg:gap-4">
-                {subcategory.companies.map((company) => (
-                  <SubcategoryCompanyCard
-                    key={company.id}
-                    company={company}
-                  />
-                ))}
-              </div>
+              )}
             </div>
           )}
         </div>
@@ -187,6 +212,22 @@ function ResultsToolbar({ text }: { text: string }) {
           <ChevronDown size={12} />
         </button>
       </div>
+    </div>
+  );
+}
+
+function EmptyState({
+  text,
+  className = "",
+}: {
+  text: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`rounded-[8px] border border-dashed border-[#dfe0eb] bg-white px-5 py-10 text-center text-[#6b7088] text-[9px] ${className}`}
+    >
+      {text}
     </div>
   );
 }

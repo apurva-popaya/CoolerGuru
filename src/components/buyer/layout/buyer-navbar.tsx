@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -16,7 +21,19 @@ import {
 } from "lucide-react";
 
 import { WideContainer } from "@/components/common/wide-container";
-import { getCurrentUser, logoutUser } from "@/lib/api/auth-session-api";
+
+import {
+  getCurrentUser,
+  logoutUser,
+} from "@/lib/api/auth-session-api";
+
+import {
+  getBuyerNotificationUnreadCount,
+} from "@/lib/api/buyer-notifications-api";
+
+import {
+  BUYER_NOTIFICATIONS_UPDATED,
+} from "@/lib/buyer-notification-events";
 
 type SearchType = "all" | "products" | "companies";
 
@@ -26,15 +43,26 @@ interface SearchOption {
 }
 
 const searchOptions: SearchOption[] = [
-  { value: "all", label: "All" },
-  { value: "products", label: "Products" },
-  { value: "companies", label: "Companies" },
+  {
+    value: "all",
+    label: "All",
+  },
+  {
+    value: "products",
+    label: "Products",
+  },
+  {
+    value: "companies",
+    label: "Companies",
+  },
 ];
 
 const placeholders: Record<SearchType, string> = {
   all: "Search companies, products, brands or categories...",
-  products: "Search products like Industrial Air Cooler, Motor, Pump...",
-  companies: "Search companies like ABC Cooling, Arctic Cooling...",
+  products:
+    "Search products like Industrial Air Cooler, Motor, Pump...",
+  companies:
+    "Search companies like ABC Cooling, Arctic Cooling...",
 };
 
 export function BuyerNavbar() {
@@ -45,14 +73,155 @@ export function BuyerNavbar() {
   const [buyerName, setBuyerName] = useState("Buyer");
   const [loggingOut, setLoggingOut] = useState(false);
 
-  const [searchType, setSearchType] = useState<SearchType>("all");
-  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
+
+  const [searchType, setSearchType] =
+    useState<SearchType>("all");
+
+  const [searchDropdownOpen, setSearchDropdownOpen] =
+    useState(false);
+
   const [searchQuery, setSearchQuery] = useState("");
+
   const [profileOpen, setProfileOpen] = useState(false);
 
-  const searchDropdownRef = useRef<HTMLDivElement>(null);
-  const profileDropdownRef = useRef<HTMLDivElement>(null);
+  const searchDropdownRef =
+    useRef<HTMLDivElement>(null);
 
+  const profileDropdownRef =
+    useRef<HTMLDivElement>(null);
+
+  /**
+   * Load unread notification count.
+   */
+  const loadNotificationCount = useCallback(async () => {
+    try {
+      const response =
+        await getBuyerNotificationUnreadCount();
+
+      setNotificationCount(
+        response.data.unread_count,
+      );
+    } catch (error) {
+      console.error(
+        "Buyer notification count error:",
+        error,
+      );
+
+      // Keep existing value if API fails.
+    }
+  }, []);
+
+  /**
+   * Check authentication and load notification count
+   * only for logged-in buyers.
+   */
+  useEffect(() => {
+    let active = true;
+
+    async function initializeBuyerNavbar() {
+      try {
+        const response = await getCurrentUser();
+
+        if (!active) {
+          return;
+        }
+
+        const user = response.user;
+
+        if (user?.active_portal !== "BUYER") {
+          setIsLoggedIn(false);
+          setBuyerName("Buyer");
+          setNotificationCount(0);
+          setAuthChecked(true);
+
+          return;
+        }
+
+        const fullName =
+          user.name?.trim() ||
+          [user.first_name, user.last_name]
+            .filter(Boolean)
+            .join(" ")
+            .trim() ||
+          "Buyer";
+
+        setBuyerName(fullName);
+        setIsLoggedIn(true);
+        setAuthChecked(true);
+
+        await loadNotificationCount();
+      } catch {
+        if (!active) {
+          return;
+        }
+
+        setIsLoggedIn(false);
+        setBuyerName("Buyer");
+        setNotificationCount(0);
+        setAuthChecked(true);
+      }
+    }
+
+    void initializeBuyerNavbar();
+
+    return () => {
+      active = false;
+    };
+  }, [loadNotificationCount]);
+
+  /**
+   * Refresh notification count whenever another
+   * component marks a notification as read.
+   */
+  useEffect(() => {
+    function handleNotificationsUpdated() {
+      void loadNotificationCount();
+    }
+
+    window.addEventListener(
+      BUYER_NOTIFICATIONS_UPDATED,
+      handleNotificationsUpdated,
+    );
+
+    return () => {
+      window.removeEventListener(
+        BUYER_NOTIFICATIONS_UPDATED,
+        handleNotificationsUpdated,
+      );
+    };
+  }, [loadNotificationCount]);
+
+  /**
+   * Refresh when browser/tab becomes visible again.
+   * Useful when the buyer opens an inquiry and returns.
+   */
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (
+        document.visibilityState === "visible" &&
+        isLoggedIn
+      ) {
+        void loadNotificationCount();
+      }
+    }
+
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibilityChange,
+    );
+
+    return () => {
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibilityChange,
+      );
+    };
+  }, [isLoggedIn, loadNotificationCount]);
+
+  /**
+   * Close dropdowns when clicking outside.
+   */
   useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
       const target = event.target as Node;
@@ -72,60 +241,23 @@ export function BuyerNavbar() {
       }
     }
 
-    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener(
+      "mousedown",
+      handleOutsideClick,
+    );
 
     return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick,
+      );
     };
   }, []);
 
-  useEffect(() => {
-    let active = true;
-
-    async function loadBuyerAuth() {
-      try {
-        const response = await getCurrentUser();
-
-        if (!active) {
-          return;
-        }
-
-        const user = response.user;
-
-        if (user?.active_portal !== "BUYER") {
-          setIsLoggedIn(false);
-          setBuyerName("Buyer");
-          setAuthChecked(true);
-          return;
-        }
-
-        const fullName =
-          user.name?.trim() ||
-          [user.first_name, user.last_name].filter(Boolean).join(" ").trim() ||
-          "Buyer";
-
-        setBuyerName(fullName);
-        setIsLoggedIn(true);
-        setAuthChecked(true);
-      } catch {
-        if (active) {
-          setIsLoggedIn(false);
-          setBuyerName("Buyer");
-          setAuthChecked(true);
-        }
-      }
-    }
-
-    void loadBuyerAuth();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const selectedSearchOption = searchOptions.find(
-    (option) => option.value === searchType,
-  );
+  const selectedSearchOption =
+    searchOptions.find(
+      (option) => option.value === searchType,
+    );
 
   const searchTypeWidth =
     searchType === "all"
@@ -144,7 +276,8 @@ export function BuyerNavbar() {
     }
 
     const globalSearchType =
-      searchType === "products" || searchType === "companies"
+      searchType === "products" ||
+      searchType === "companies"
         ? searchType
         : "all";
 
@@ -152,14 +285,6 @@ export function BuyerNavbar() {
 
     params.set("q", query);
     params.set("type", globalSearchType);
-
-    if (
-      searchType !== "all" &&
-      searchType !== "products" &&
-      searchType !== "companies"
-    ) {
-      params.set("scope", searchType);
-    }
 
     router.push(`/search?${params.toString()}`);
   }
@@ -184,12 +309,16 @@ export function BuyerNavbar() {
 
       setIsLoggedIn(false);
       setBuyerName("Buyer");
+      setNotificationCount(0);
       setProfileOpen(false);
 
       router.replace("/login");
       router.refresh();
     } catch (error) {
-      console.error("Buyer logout failed:", error);
+      console.error(
+        "Buyer logout failed:",
+        error,
+      );
     } finally {
       setLoggingOut(false);
     }
@@ -214,7 +343,6 @@ export function BuyerNavbar() {
           {/* Desktop Search */}
           <div className="hidden flex-1 lg:block">
             <div className="mx-auto flex h-[46px] max-w-[760px] overflow-visible rounded-[8px] border border-[#dedff0] bg-white">
-              {/* Search Type */}
               <div
                 ref={searchDropdownRef}
                 className={`relative shrink-0 transition-all duration-200 ${searchTypeWidth}`}
@@ -222,16 +350,22 @@ export function BuyerNavbar() {
                 <button
                   type="button"
                   onClick={() =>
-                    setSearchDropdownOpen((previous) => !previous)
+                    setSearchDropdownOpen(
+                      (previous) => !previous,
+                    )
                   }
                   className="flex h-full w-full items-center justify-between gap-2 rounded-l-[8px] border-[#dedff0] border-r bg-[#fafaff] px-4 font-semibold text-[#2720a8] text-[14px] transition hover:bg-[#f5f3ff]"
                 >
-                  <span>{selectedSearchOption?.label}</span>
+                  <span>
+                    {selectedSearchOption?.label}
+                  </span>
 
                   <ChevronDown
                     size={16}
                     className={`shrink-0 transition-transform ${
-                      searchDropdownOpen ? "rotate-180" : ""
+                      searchDropdownOpen
+                        ? "rotate-180"
+                        : ""
                     }`}
                   />
                 </button>
@@ -239,15 +373,20 @@ export function BuyerNavbar() {
                 {searchDropdownOpen && (
                   <div className="absolute top-[52px] left-0 z-[300] w-full min-w-[155px] overflow-hidden rounded-[8px] border border-[#dedff0] bg-white p-1.5 shadow-[0_10px_30px_rgba(28,22,110,0.14)]">
                     {searchOptions.map((option) => {
-                      const active = searchType === option.value;
+                      const active =
+                        searchType === option.value;
 
                       return (
                         <button
                           key={option.value}
                           type="button"
                           onClick={() => {
-                            setSearchType(option.value);
-                            setSearchDropdownOpen(false);
+                            setSearchType(
+                              option.value,
+                            );
+                            setSearchDropdownOpen(
+                              false,
+                            );
                             setSearchQuery("");
                           }}
                           className={`flex w-full items-center rounded-[6px] px-3 py-2.5 text-left font-medium text-[13px] transition ${
@@ -264,24 +403,29 @@ export function BuyerNavbar() {
                 )}
               </div>
 
-              {/* Search Input */}
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
+                onChange={(event) =>
+                  setSearchQuery(event.target.value)
+                }
                 onKeyDown={handleSearchKeyDown}
-                placeholder={placeholders[searchType]}
+                placeholder={
+                  placeholders[searchType]
+                }
                 className="min-w-0 flex-1 px-4 text-[#11163d] text-[13px] outline-none placeholder:text-[#9a9db3] xl:px-5 xl:text-[14px]"
               />
 
-              {/* Search Button */}
               <button
                 type="button"
                 onClick={handleSearch}
                 aria-label="Search"
                 className="flex w-[58px] shrink-0 items-center justify-center rounded-r-[8px] bg-[#21159b] text-white transition-colors hover:bg-[#3022c6] sm:w-[62px]"
               >
-                <Search size={21} strokeWidth={2} />
+                <Search
+                  size={21}
+                  strokeWidth={2}
+                />
               </button>
             </div>
           </div>
@@ -308,26 +452,49 @@ export function BuyerNavbar() {
               <>
                 {/* Notification */}
                 <Link
-                  href="/dashboard"
-                  aria-label="Notifications"
+                  href="/dashboard/inquiries"
+                  aria-label={`Notifications${
+                    notificationCount > 0
+                      ? `, ${notificationCount} unread`
+                      : ""
+                  }`}
                   className="relative flex h-[36px] w-[36px] items-center justify-center text-[#171570] sm:h-[40px] sm:w-[40px]"
                 >
-                  <Bell size={21} className="sm:h-[23px] sm:w-[23px]" strokeWidth={1.9} />
+                  <Bell
+                    size={21}
+                    className="sm:h-[23px] sm:w-[23px]"
+                    strokeWidth={1.9}
+                  />
 
-                  <span className="absolute top-0 right-0 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[#3021c9] px-1 font-bold text-[7px] text-white sm:h-[18px] sm:min-w-[18px] sm:text-[8px]">
-                    3
-                  </span>
+                  {notificationCount > 0 && (
+                    <span className="absolute top-0 right-0 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[#3021c9] px-1 font-bold text-[7px] text-white sm:h-[18px] sm:min-w-[18px] sm:text-[8px]">
+                      {notificationCount > 99
+                        ? "99+"
+                        : notificationCount}
+                    </span>
+                  )}
                 </Link>
 
                 {/* Profile */}
-                <div ref={profileDropdownRef} className="relative">
+                <div
+                  ref={profileDropdownRef}
+                  className="relative"
+                >
                   <button
                     type="button"
-                    onClick={() => setProfileOpen((previous) => !previous)}
+                    onClick={() =>
+                      setProfileOpen(
+                        (previous) => !previous,
+                      )
+                    }
                     className="flex items-center gap-2 rounded-[6px] px-1.5 py-1.5 transition hover:bg-[#f8f7ff] sm:gap-2.5 sm:px-2 sm:py-2"
                   >
                     <div className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#dedeea] text-[#171570] sm:h-[37px] sm:w-[37px]">
-                      <UserRound size={22} className="sm:h-[25px] sm:w-[25px]" strokeWidth={2} />
+                      <UserRound
+                        size={22}
+                        className="sm:h-[25px] sm:w-[25px]"
+                        strokeWidth={2}
+                      />
                     </div>
 
                     <span className="hidden whitespace-nowrap font-bold text-[#15154f] text-[13px] xl:block">
@@ -337,7 +504,9 @@ export function BuyerNavbar() {
                     <ChevronDown
                       size={15}
                       className={`text-[#171570] transition-transform ${
-                        profileOpen ? "rotate-180" : ""
+                        profileOpen
+                          ? "rotate-180"
+                          : ""
                       }`}
                     />
                   </button>
@@ -346,7 +515,10 @@ export function BuyerNavbar() {
                     <div className="absolute top-[48px] right-0 z-[300] w-[270px] overflow-hidden rounded-[10px] border border-[#dedfe9] bg-white shadow-[0_10px_30px_rgba(18,20,80,0.16)] sm:top-[54px] sm:w-[285px]">
                       <div className="flex items-center gap-3 px-4 py-4 sm:px-5 sm:py-5">
                         <div className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-full bg-[#dedeea] text-[#171570] sm:h-[54px] sm:w-[54px]">
-                          <UserRound size={32} className="sm:h-[35px] sm:w-[35px]" />
+                          <UserRound
+                            size={32}
+                            className="sm:h-[35px] sm:w-[35px]"
+                          />
                         </div>
 
                         <div className="min-w-0">
@@ -364,16 +536,26 @@ export function BuyerNavbar() {
 
                       <DropdownLink
                         href="/dashboard"
-                        icon={<UserRound size={20} />}
+                        icon={
+                          <UserRound size={20} />
+                        }
                         label="Dashboard / Profile"
-                        onClick={() => setProfileOpen(false)}
+                        onClick={() =>
+                          setProfileOpen(false)
+                        }
                       />
 
                       <DropdownLink
                         href="/dashboard/inquiries"
-                        icon={<MessageSquareText size={20} />}
+                        icon={
+                          <MessageSquareText
+                            size={20}
+                          />
+                        }
                         label="My Inquiries"
-                        onClick={() => setProfileOpen(false)}
+                        onClick={() =>
+                          setProfileOpen(false)
+                        }
                       />
 
                       <div className="border-[#e5e6ee] border-t" />
@@ -386,7 +568,9 @@ export function BuyerNavbar() {
                       >
                         <LogOut size={21} />
 
-                        {loggingOut ? "Logging out..." : "Logout"}
+                        {loggingOut
+                          ? "Logging out..."
+                          : "Logout"}
                       </button>
                     </div>
                   )}
@@ -403,7 +587,9 @@ export function BuyerNavbar() {
           <input
             type="text"
             value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
+            onChange={(event) =>
+              setSearchQuery(event.target.value)
+            }
             onKeyDown={handleSearchKeyDown}
             placeholder={placeholders[searchType]}
             className="min-w-0 flex-1 px-3 text-[11px] outline-none placeholder:text-[#9a9db3] sm:text-sm"
@@ -415,7 +601,10 @@ export function BuyerNavbar() {
             aria-label="Search"
             className="flex w-[48px] shrink-0 items-center justify-center bg-[#21159b] text-white sm:w-[50px]"
           >
-            <Search size={19} className="sm:h-[20px] sm:w-[20px]" />
+            <Search
+              size={19}
+              className="sm:h-[20px] sm:w-[20px]"
+            />
           </button>
         </div>
       </div>
@@ -442,7 +631,9 @@ function DropdownLink({
       onClick={onClick}
       className="flex items-center gap-4 px-5 py-3.5 font-medium text-[#242448] text-[13px] transition hover:bg-[#f8f7ff] sm:px-6 sm:py-4"
     >
-      <span className="text-[#25254d]">{icon}</span>
+      <span className="text-[#25254d]">
+        {icon}
+      </span>
 
       {label}
     </Link>

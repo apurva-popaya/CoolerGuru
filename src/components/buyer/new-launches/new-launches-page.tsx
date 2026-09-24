@@ -1,6 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 
 import Link from "next/link";
 
@@ -13,30 +17,176 @@ import {
 } from "lucide-react";
 
 import { Container } from "@/components/common/container";
-import { newLaunchProducts } from "@/data/new-launches";
+import {
+  getNewLaunches,
+  type NewLaunchSort,
+} from "@/lib/api/buyer-product-api";
+import type { ApiProduct } from "@/lib/api/buyer-product-api";
+
+import type { NewLaunchProduct } from "@/types/new-launch";
 
 import { NewLaunchCard } from "./new-launch-card";
 import { NewLaunchPagination } from "./new-launch-pagination";
 
-type SortOption = "latest" | "name-asc" | "name-desc";
+type SortOption = NewLaunchSort;
+
+function mapApiProductToNewLaunchProduct(
+  product: ApiProduct,
+): NewLaunchProduct {
+  return {
+    id: String(product.product_id),
+
+    productId: String(product.product_id),
+
+    slug: product.slug,
+
+    name: product.name,
+
+    company: product.company.name,
+
+    location:
+      [
+        product.company.city,
+        product.company.state,
+      ]
+        .filter(Boolean)
+        .join(", ") || "-",
+
+    image:
+      product.primary_image?.image_url ??
+      "/images/product-placeholder.png",
+
+    isNew: product.is_new ?? true,
+  };
+}
 
 export function NewLaunchesPage() {
-  const [sortBy, setSortBy] = useState<SortOption>("latest");
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [sortBy, setSortBy] =
+    useState<SortOption>("latest");
 
-  const products = useMemo(() => {
-    const result = [...newLaunchProducts];
+  const [view, setView] = useState<
+    "grid" | "list"
+  >("grid");
 
-    if (sortBy === "name-asc") {
-      result.sort((a, b) => a.name.localeCompare(b.name));
+  const [page, setPage] = useState(1);
+
+  const [limit, setLimit] = useState(12);
+
+  const [products, setProducts] = useState<
+    NewLaunchProduct[]
+  >([]);
+
+  const [totalItems, setTotalItems] =
+    useState(0);
+
+  const [totalPages, setTotalPages] =
+    useState(0);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const fetchNewLaunches =
+    useCallback(async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response =
+          await getNewLaunches(
+            sortBy,
+            page,
+            limit,
+          );
+
+        if (!response.success) {
+          throw new Error(
+            response.message ||
+              "Failed to fetch new launches.",
+          );
+        }
+
+        const mappedProducts =
+          response.data.products.map(
+            mapApiProductToNewLaunchProduct,
+          );
+
+        setProducts(mappedProducts);
+
+        setTotalItems(
+          response.data.pagination.totalItems,
+        );
+
+        setTotalPages(
+          response.data.pagination.totalPages,
+        );
+      } catch (error) {
+        console.error(
+          "Failed to fetch new launches:",
+          error,
+        );
+
+        setProducts([]);
+        setTotalItems(0);
+        setTotalPages(0);
+
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Something went wrong while loading new launches.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    }, [sortBy, page, limit]);
+
+  useEffect(() => {
+    fetchNewLaunches();
+  }, [fetchNewLaunches]);
+
+  function handleSortChange(
+    value: SortOption,
+  ) {
+    setSortBy(value);
+    setPage(1);
+  }
+
+  function handlePageChange(
+    nextPage: number,
+  ) {
+    if (
+      nextPage < 1 ||
+      nextPage > totalPages
+    ) {
+      return;
     }
 
-    if (sortBy === "name-desc") {
-      result.sort((a, b) => b.name.localeCompare(a.name));
-    }
+    setPage(nextPage);
 
-    return result;
-  }, [sortBy]);
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
+
+  function handleLimitChange(
+    nextLimit: number,
+  ) {
+    setLimit(nextLimit);
+    setPage(1);
+  }
+
+  const startItem =
+    totalItems === 0
+      ? 0
+      : (page - 1) * limit + 1;
+
+  const endItem = Math.min(
+    page * limit,
+    totalItems,
+  );
 
   return (
     <section className="bg-white py-4 sm:py-5">
@@ -50,7 +200,10 @@ export function NewLaunchesPage() {
             Home
           </Link>
 
-          <ChevronRight size={11} className="shrink-0 text-[#777b92]" />
+          <ChevronRight
+            size={11}
+            className="shrink-0 text-[#777b92]"
+          />
 
           <span className="shrink-0 font-semibold text-[#2118ad]">
             New Launches
@@ -66,15 +219,19 @@ export function NewLaunchesPage() {
             </h1>
 
             <p className="mt-1 max-w-[620px] text-[#4d526e] text-[10px] leading-[1.5] sm:text-[11px]">
-              Explore the latest products launched by verified companies in
-              the cooling industry.
+              Explore the latest products
+              launched by verified companies
+              in the cooling industry.
             </p>
           </div>
 
           {/* Innovation card */}
           <div className="flex w-full items-center gap-3 rounded-[8px] border border-[#dedff0] bg-white px-4 py-3 sm:px-5 sm:py-4 lg:w-[390px] lg:min-w-[390px]">
             <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-[#f1efff] text-[#3325df] sm:h-[42px] sm:w-[42px]">
-              <Rocket size={19} className="sm:h-[21px] sm:w-[21px]" />
+              <Rocket
+                size={19}
+                className="sm:h-[21px] sm:w-[21px]"
+              />
             </div>
 
             <div className="min-w-0">
@@ -83,7 +240,8 @@ export function NewLaunchesPage() {
               </p>
 
               <p className="mt-1 text-[#5f647c] text-[8px] leading-[1.4]">
-                Discover the newest cooling solutions from trusted
+                Discover the newest cooling
+                solutions from trusted
                 manufacturers.
               </p>
             </div>
@@ -96,9 +254,13 @@ export function NewLaunchesPage() {
           <p className="font-medium text-[#353a5d] text-[9px] sm:text-[10px]">
             Showing{" "}
             <span className="font-bold">
-              1 to {products.length}
+              {startItem} to {endItem}
             </span>{" "}
-            of <span className="font-bold">48</span> new launches
+            of{" "}
+            <span className="font-bold">
+              {totalItems}
+            </span>{" "}
+            new launches
           </p>
 
           {/* Controls */}
@@ -108,7 +270,10 @@ export function NewLaunchesPage() {
               <select
                 value={sortBy}
                 onChange={(event) =>
-                  setSortBy(event.target.value as SortOption)
+                  handleSortChange(
+                    event.target
+                      .value as SortOption,
+                  )
                 }
                 className="h-[36px] w-full appearance-none rounded-[5px] border border-[#dedff0] bg-white px-3 pr-8 font-semibold text-[#171570] text-[9px] outline-none sm:min-w-[185px]"
               >
@@ -135,7 +300,9 @@ export function NewLaunchesPage() {
             <button
               type="button"
               aria-label="Grid view"
-              onClick={() => setView("grid")}
+              onClick={() =>
+                setView("grid")
+              }
               className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[5px] border transition ${
                 view === "grid"
                   ? "border-[#2116a5] bg-[#2116a5] text-white"
@@ -149,7 +316,9 @@ export function NewLaunchesPage() {
             <button
               type="button"
               aria-label="List view"
-              onClick={() => setView("list")}
+              onClick={() =>
+                setView("list")
+              }
               className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[5px] border transition ${
                 view === "list"
                   ? "border-[#2116a5] bg-[#2116a5] text-white"
@@ -163,7 +332,44 @@ export function NewLaunchesPage() {
 
         {/* Products */}
         <div className="border-x border-[#e2e3ee] bg-white px-2 pb-3 sm:px-3">
-          {view === "grid" ? (
+          {loading ? (
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-6">
+              {Array.from({
+                length: limit,
+              }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-[250px] animate-pulse rounded-[8px] border border-[#e1e2ec] bg-[#f7f7fb]"
+                />
+              ))}
+            </div>
+          ) : error ? (
+            <div className="flex min-h-[250px] items-center justify-center">
+              <div className="text-center">
+                <p className="font-semibold text-[#171570] text-[11px]">
+                  Failed to load new launches.
+                </p>
+
+                <p className="mt-1 text-[#666b82] text-[9px]">
+                  {error}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={fetchNewLaunches}
+                  className="mt-3 rounded-[5px] bg-[#2116a5] px-4 py-2 font-bold text-[9px] text-white"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="flex min-h-[250px] items-center justify-center">
+              <p className="text-[#666b82] text-[10px]">
+                No new launches found.
+              </p>
+            </div>
+          ) : view === "grid" ? (
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-6">
               {products.map((product) => (
                 <NewLaunchCard
@@ -188,10 +394,20 @@ export function NewLaunchesPage() {
         <div className="border-x border-b border-[#e2e3ee] bg-white px-3 pt-2 pb-4 sm:px-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-[#434866] text-[8px] sm:text-[9px]">
-              Showing 1 to {products.length} of 48 new launches
+              Showing {startItem} to {endItem} of{" "}
+              {totalItems} new launches
             </p>
 
-            <NewLaunchPagination />
+            <NewLaunchPagination
+              page={page}
+              totalPages={totalPages}
+              limit={limit}
+              totalItems={totalItems}
+              onPageChange={handlePageChange}
+              onLimitChange={
+                handleLimitChange
+              }
+            />
           </div>
         </div>
       </Container>

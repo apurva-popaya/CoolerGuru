@@ -75,7 +75,9 @@ function Step({
       </div>
 
       <div>
-        <p className="font-bold text-[#171570] text-[8px]">{title}</p>
+        <p className="font-bold text-[#171570] text-[8px]">
+          {title}
+        </p>
 
         <p className="mt-0.5 max-w-[190px] text-[#5c6078] text-[7px] leading-[1.4]">
           {description}

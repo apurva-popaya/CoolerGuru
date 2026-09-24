@@ -9,10 +9,14 @@ interface SafeImageProps extends Omit<ImageProps, "src"> {
   fallbackSrc?: string;
 }
 
-const DEFAULT_FALLBACK = "/images/placeholders/image-placeholder.png";
+const DEFAULT_FALLBACK =
+  "/images/placeholders/image-placeholder.png";
 
 function isRemoteUrl(value: string) {
-  return value.startsWith("http://") || value.startsWith("https://");
+  return (
+    value.startsWith("http://") ||
+    value.startsWith("https://")
+  );
 }
 
 function canUseRemoteUrl(value: string) {
@@ -24,14 +28,22 @@ function canUseRemoteUrl(value: string) {
     const url = new URL(value);
 
     /*
-     * For now reject example.com
-     * placeholder URLs coming from backend.
+     * Temporary backend image domains.
      *
-     * Later remove this condition when
-     * backend provides actual S3/CDN URLs.
+     * These will eventually be replaced by
+     * proper S3/CDN URLs from the backend.
      */
-    if (url.hostname === "example.com") {
-      return false;
+    const allowedTemporaryHosts = [
+      "dummy-storage.coolerguru.com",
+      "example.com",
+    ];
+
+    if (
+      allowedTemporaryHosts.includes(
+        url.hostname,
+      )
+    ) {
+      return true;
     }
 
     return true;
@@ -40,26 +52,80 @@ function canUseRemoteUrl(value: string) {
   }
 }
 
-export function SafeImage({ src, fallbackSrc = DEFAULT_FALLBACK, alt, onError, ...props }: SafeImageProps) {
-  const initialSrc = src && canUseRemoteUrl(src) ? src : fallbackSrc;
+export function SafeImage({
+  src,
+  fallbackSrc = DEFAULT_FALLBACK,
+  alt,
+  onError,
+  ...props
+}: SafeImageProps) {
+  const initialSrc =
+    src && canUseRemoteUrl(src)
+      ? src
+      : fallbackSrc;
 
-  const [imageSrc, setImageSrc] = useState(initialSrc);
+  const [imageSrc, setImageSrc] =
+    useState(initialSrc);
 
   useEffect(() => {
-    setImageSrc(src && canUseRemoteUrl(src) ? src : fallbackSrc);
+    setImageSrc(
+      src && canUseRemoteUrl(src)
+        ? src
+        : fallbackSrc,
+    );
   }, [src, fallbackSrc]);
 
+  /*
+   * Local images can use next/image optimization.
+   */
+  if (!isRemoteUrl(imageSrc)) {
+    return (
+      <Image
+        {...props}
+        src={imageSrc}
+        alt={alt}
+        onError={(event) => {
+          if (imageSrc !== fallbackSrc) {
+            setImageSrc(fallbackSrc);
+          }
+
+          onError?.(event);
+        }}
+      />
+    );
+  }
+
+  /*
+   * Temporary remote backend images.
+   *
+   * Use normal <img> so Next.js does not require
+   * the hostname to be configured in next.config.
+   */
   return (
-    <Image
-      {...props}
+    <img
       src={imageSrc}
       alt={alt}
+      width={
+        typeof props.width === "number"
+          ? props.width
+          : undefined
+      }
+      height={
+        typeof props.height === "number"
+          ? props.height
+          : undefined
+      }
+      className={props.className}
       onError={(event) => {
         if (imageSrc !== fallbackSrc) {
           setImageSrc(fallbackSrc);
         }
 
-        onError?.(event);
+        onError?.(
+          event as unknown as React.SyntheticEvent<
+            HTMLImageElement
+          >,
+        );
       }}
     />
   );
