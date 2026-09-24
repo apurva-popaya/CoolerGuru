@@ -294,7 +294,7 @@ export function ProductsDirectoryPage({
                 href={`/companies/${companyId}`}
                 className="max-w-[180px] truncate transition hover:text-[#2118ad] sm:max-w-none"
               >
-                {companyName}
+                {companyName} 
               </Link>
 
               <ChevronRight

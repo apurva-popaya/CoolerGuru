@@ -35,14 +35,12 @@ export function ProductMainInfo({
     <Hash key="hsn" size={12} />,
   ];
 
-  const inquiryHref = `/products/${product.id}/inquiry${
-    product.companyId
-      ? `?company=${encodeURIComponent(product.companyId)}`
-      : ""
-  }`;
+  const productSlug = product.slug || product.id;
 
-  const companyHref = product.companyId
-    ? `/companies/${product.companyId}`
+  const inquiryHref = `/products/${encodeURIComponent(productSlug)}/inquiry`;
+
+  const companyHref = product.companySlug
+    ? `/companies/${encodeURIComponent(product.companySlug)}`
     : "/companies";
 
   const hasCatalogue = Boolean(product.catalogueUrl);

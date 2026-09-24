@@ -132,14 +132,14 @@ export function BuyerSavedCompanyCard({
           </div>
 
           <Link
-            href={`/companies/${company.company_id}`}
+            href={`/companies/${company.slug || company.company_id}`}
             className="!text-white flex h-[32px] items-center justify-center rounded-[4px] bg-[#2116a5] font-bold text-[8px] transition hover:bg-[#3022c6]"
           >
             View Profile
           </Link>
 
           <Link
-            href={`/companies/${company.company_id}/inquiry`}
+            href={`/companies/${company.slug || company.company_id}/inquiry`}
             className="!text-[#251bb4] flex h-[32px] items-center justify-center gap-1.5 rounded-[4px] border border-[#d9d8ef] bg-white font-bold text-[8px] transition hover:bg-[#f7f6ff]"
           >
             <Send size={10} />

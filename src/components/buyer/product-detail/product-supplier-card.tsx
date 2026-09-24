@@ -10,12 +10,12 @@ export function ProductSupplierCard({
 }: {
   product: ProductDetail;
 }) {
-  const companyHref = product.companyId
-    ? `/companies/${product.companyId}`
+  const companyHref = product.companySlug
+    ? `/companies/${encodeURIComponent(product.companySlug)}`
     : "/companies";
 
-  const inquiryHref = product.companyId
-    ? `/companies/${product.companyId}/inquiry`
+  const inquiryHref = product.companySlug
+    ? `/companies/${encodeURIComponent(product.companySlug)}/inquiry`
     : "/companies";
 
   const businessTypes =

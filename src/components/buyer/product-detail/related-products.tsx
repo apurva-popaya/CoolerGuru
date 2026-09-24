@@ -99,14 +99,14 @@ export function RelatedProducts({
             {/* Actions */}
             <div className="col-span-2 grid grid-cols-1 gap-2 min-[400px]:grid-cols-2">
               <Link
-                href={`/products/${product.slug ?? product.id}`}
+                href={`/products/${product.slug || product.id}`}
                 className="!text-white flex h-[27px] items-center justify-center rounded-[4px] bg-[#2116a5] font-bold text-[7px] transition hover:bg-[#181080]"
               >
                 View Details
               </Link>
 
               <Link
-                href={`/products/${product.slug ?? product.id}/inquiry`}
+                href={`/products/${product.slug || product.id}/inquiry`}
                 className="!text-[#251bb4] flex h-[27px] items-center justify-center rounded-[4px] border border-[#3829dc] font-bold text-[7px] transition hover:bg-[#f7f6ff]"
               >
                 Send Inquiry

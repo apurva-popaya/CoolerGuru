@@ -184,7 +184,7 @@ export function BuyerSavedProductCard({
       {/* Actions */}
       <div className="mt-auto pt-3">
         <Link
-          href={`/products/${product.product_id}`}
+          href={`/products/${product.slug || product.product_id}`}
           className="!text-white flex h-8 w-full items-center justify-center rounded-lg bg-[#2116a5] font-bold text-[8px] transition hover:bg-[#3022c6]"
         >
           View Details
