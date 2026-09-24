@@ -141,14 +141,9 @@ export function SupplierCompanyProfilePage() {
           shopEstablishmentDocumentUrl={form.shop_establishment_document_url}
           fileInfo={fileInfo}
           uploadingFields={uploadingFields}
-          documents={documents}
-          isUploadingDocuments={isUploadingDocuments}
-          removingDocumentIds={removingDocumentIds}
           onChange={updateField}
           onFileSelect={uploadFile}
           onFileRemove={removeFile}
-          onDocumentsAdd={addDocuments}
-          onDocumentRemove={removeDocument}
         />
 
         <ContactInformationSection
@@ -175,13 +170,17 @@ export function SupplierCompanyProfilePage() {
         longitude={form.longitude}
         yearsInBusiness={form.years_in_business}
         employeeSize={form.employee_size}
-        certifications={form.certifications}
+        documents={documents}
+        isUploadingDocuments={isUploadingDocuments}
+        removingDocumentIds={removingDocumentIds}
         brochureUrl={form.brochure_url}
         brochureFileName={fileInfo.brochure_url?.name}
         isBrochureUploading={uploadingFields.includes("brochure_url")}
         onChange={updateField}
         onFileSelect={uploadFile}
         onFileRemove={removeFile}
+        onDocumentsAdd={addDocuments}
+        onDocumentRemove={removeDocument}
       />
 
       {/* Actions */}

@@ -13,6 +13,7 @@ import type {
   CompanyFileRemoveHandler,
   CompanyFileSelectHandler,
 } from "@/hooks/use-company-form";
+import { MAX_FILES_PER_REQUEST, type UploadedFileRecord } from "@/lib/api/file-upload-api";
 import type { CreateCompanyRequest } from "@/lib/api/supplier-create-profile-api";
 
 type CompanyAdditionalDetailsProps = {
@@ -30,7 +31,11 @@ type CompanyAdditionalDetailsProps = {
 
   yearsInBusiness: string;
   employeeSize: string;
-  certifications: string[];
+
+  documents: UploadedFileRecord[];
+  isUploadingDocuments: boolean;
+  removingDocumentIds: string[];
+
   brochureUrl: string;
   brochureFileName?: string;
   isBrochureUploading: boolean;
@@ -38,6 +43,8 @@ type CompanyAdditionalDetailsProps = {
   onChange: CompanyFieldChangeHandler;
   onFileSelect: CompanyFileSelectHandler;
   onFileRemove: CompanyFileRemoveHandler;
+  onDocumentsAdd: (files: File[]) => void;
+  onDocumentRemove: (fileId: string) => void;
 };
 
 export function CompanyAdditionalDetails({
@@ -52,13 +59,17 @@ export function CompanyAdditionalDetails({
   longitude,
   yearsInBusiness,
   employeeSize,
-  certifications,
+  documents,
+  isUploadingDocuments,
+  removingDocumentIds,
   brochureUrl,
   brochureFileName,
   isBrochureUploading,
   onChange,
   onFileSelect,
   onFileRemove,
+  onDocumentsAdd,
+  onDocumentRemove,
 }: CompanyAdditionalDetailsProps) {
   const updateBusinessHour = (
     day: keyof CreateCompanyRequest["business_hours"],
@@ -87,30 +98,6 @@ export function CompanyAdditionalDetails({
         close: isClosed ? null : businessHours[day].close ?? "18:00",
       },
     });
-  };
-
-  const addCertification = () => {
-    const certification = window.prompt("Enter certification name");
-
-    if (!certification?.trim()) {
-      return;
-    }
-
-    if (certifications.includes(certification.trim())) {
-      return;
-    }
-
-    onChange("certifications", [
-      ...certifications,
-      certification.trim(),
-    ]);
-  };
-
-  const removeCertification = (certification: string) => {
-    onChange(
-      "certifications",
-      certifications.filter((item) => item !== certification),
-    );
   };
 
   return (
@@ -327,28 +314,24 @@ export function CompanyAdditionalDetails({
         {/* 10. Certifications */}
         <SupplierFormCard title="10. Certifications">
           <p className="mb-2 text-[#777b92] text-[8px]">
-            Add your company certifications
+            Upload certificates or any other documents that help verify your business (up to{" "}
+            {MAX_FILES_PER_REQUEST} at a time).
           </p>
 
-          <div className="flex flex-wrap gap-2">
-            {certifications.map((certification) => (
-              <CertificationBadge
-                key={certification}
-                text={certification}
-                onRemove={() =>
-                  removeCertification(certification)
-                }
-              />
-            ))}
-
-            <button
-              type="button"
-              onClick={addCertification}
-              className="rounded-[4px] border border-dashed border-[#bfc0eb] px-2 py-1.5 font-semibold text-[#2d22bf] text-[7px]"
-            >
-              + Add
-            </button>
-          </div>
+          <FileUploadField
+            category="company_document"
+            multiple
+            label="Upload Documents"
+            items={documents.map((document) => ({
+              key: document.fileId,
+              url: document.url,
+              name: document.originalFilename,
+            }))}
+            isUploading={isUploadingDocuments}
+            busyKeys={removingDocumentIds}
+            onSelect={onDocumentsAdd}
+            onRemove={(item) => onDocumentRemove(item.key)}
+          />
         </SupplierFormCard>
       </div>
 
@@ -453,30 +436,5 @@ function BusinessHourRow({
         Closed
       </label>
     </div>
-  );
-}
-
-type CertificationBadgeProps = {
-  text: string;
-  onRemove: () => void;
-};
-
-function CertificationBadge({
-  text,
-  onRemove,
-}: CertificationBadgeProps) {
-  return (
-    <span className="flex items-center gap-1 rounded-[4px] bg-[#f0eeff] px-2 py-1.5 font-semibold text-[#2d22bf] text-[7px]">
-      {text}
-
-      <button
-        type="button"
-        onClick={onRemove}
-        className="text-[9px] text-red-500"
-        aria-label={`Remove ${text}`}
-      >
-        ×
-      </button>
-    </span>
   );
 }

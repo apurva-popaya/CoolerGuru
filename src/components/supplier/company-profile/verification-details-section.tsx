@@ -17,7 +17,6 @@ import {
   type CompanyFileRemoveHandler,
   type CompanyFileSelectHandler,
 } from "@/hooks/use-company-form";
-import { MAX_FILES_PER_REQUEST, type UploadedFileRecord } from "@/lib/api/file-upload-api";
 
 type VerificationDetailsSectionProps = {
   companyType: string;
@@ -32,14 +31,9 @@ type VerificationDetailsSectionProps = {
   shopEstablishmentDocumentUrl: string;
   fileInfo: Partial<Record<CompanyFileField, CompanyFileInfo>>;
   uploadingFields: CompanyFileField[];
-  documents: UploadedFileRecord[];
-  isUploadingDocuments: boolean;
-  removingDocumentIds: string[];
   onChange: CompanyFieldChangeHandler;
   onFileSelect: CompanyFileSelectHandler;
   onFileRemove: CompanyFileRemoveHandler;
-  onDocumentsAdd: (files: File[]) => void;
-  onDocumentRemove: (fileId: string) => void;
 };
 
 export function VerificationDetailsSection({
@@ -55,14 +49,9 @@ export function VerificationDetailsSection({
   shopEstablishmentDocumentUrl,
   fileInfo,
   uploadingFields,
-  documents,
-  isUploadingDocuments,
-  removingDocumentIds,
   onChange,
   onFileSelect,
   onFileRemove,
-  onDocumentsAdd,
-  onDocumentRemove,
 }: VerificationDetailsSectionProps) {
   const renderDocumentUpload = (field: CompanyFileField, label: string, fileUrl: string) => {
     const isBusy = uploadingFields.includes(field);
@@ -231,30 +220,6 @@ export function VerificationDetailsSection({
             {renderDocumentUpload("incorporation_certificate_url", "Upload Certificate", incorporationCertificateUrl)}
           </SupplierFormField>
         </div>
-      </div>
-
-      <div className="mt-5">
-        <SupplierSectionHeading>Supporting Documents</SupplierSectionHeading>
-
-        <p className="mt-1 text-[#656a83] text-[7px]">
-          Optional. Add any other documents that help verify your business (up to {MAX_FILES_PER_REQUEST} at a time).
-        </p>
-
-        <FileUploadField
-          className="mt-3"
-          category="company_document"
-          multiple
-          label="Upload Documents"
-          items={documents.map((document) => ({
-            key: document.fileId,
-            url: document.url,
-            name: document.originalFilename,
-          }))}
-          isUploading={isUploadingDocuments}
-          busyKeys={removingDocumentIds}
-          onSelect={onDocumentsAdd}
-          onRemove={(item) => onDocumentRemove(item.key)}
-        />
       </div>
     </SupplierFormCard>
   );
