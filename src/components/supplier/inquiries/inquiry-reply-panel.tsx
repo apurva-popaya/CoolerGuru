@@ -4,7 +4,21 @@ import { useState } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { CheckCircle2, FileText, Paperclip, Send, X } from "lucide-react";
+import { CheckCircle2, FileText, Loader2, Paperclip, Send, X } from "lucide-react";
+
+import {
+  getUploadAccept,
+  getUploadErrorMessage,
+  getUploadHint,
+  type UploadCategory,
+  uploadFile,
+  validateUploadFile,
+} from "@/lib/api/file-upload-api";
+import { replyToSellerInquiry } from "@/lib/api/seller-inquiries-api";
+import type { SellerInquiryReplyPayload } from "@/types/seller-inquiry-api";
+
+// No inquiry-specific upload category exists; company_document accepts PDF and images.
+const ATTACHMENT_CATEGORY: UploadCategory = "company_document";
 
 interface InquiryReplyPanelProps {
   inquiryId: string;
@@ -20,50 +34,75 @@ export function InquiryReplyPanel({ inquiryId, buyerName, companyName }: Inquiry
   const [validity, setValidity] = useState("");
   const [deliveryTime, setDeliveryTime] = useState("");
   const [paymentTerms, setPaymentTerms] = useState("");
-  const [attachmentName, setAttachmentName] = useState<string | null>(null);
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSendReply = () => {
-    if (!message.trim()) {
+  const detailHref = `/supplier/dashboard/inquiries/${encodeURIComponent(inquiryId)}`;
+
+  const handleAttachmentChange = (file: File | undefined) => {
+    if (!file) {
       return;
     }
 
-    /*
-      Later backend:
+    const validationError = validateUploadFile(file, ATTACHMENT_CATEGORY);
 
-      POST /api/v1/seller/inquiries/:inquiry_number/replies
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
 
-      Body can contain:
+    setError("");
+    setAttachment(file);
+  };
 
-      {
-        message,
-        quotationReference,
-        validity,
-        deliveryTime,
-        paymentTerms,
-        attachment
+  const handleSendReply = async () => {
+    const trimmedMessage = message.trim();
+
+    if (!trimmedMessage || submitting) {
+      return;
+    }
+
+    setSubmitting(true);
+    setError("");
+
+    try {
+      // Empty optional fields become undefined and are dropped by JSON.stringify.
+      const payload: SellerInquiryReplyPayload = {
+        message: trimmedMessage,
+        quotation_reference_number: optionalText(quotationReference),
+        quotation_validity: optionalText(validity),
+        expected_delivery: optionalText(deliveryTime),
+        payment_terms: optionalText(paymentTerms),
+      };
+
+      if (attachment) {
+        const uploaded = await uploadFile(attachment, ATTACHMENT_CATEGORY);
+
+        payload.attachment_url = uploaded.url;
+        payload.attachment_name = attachment.name;
+        payload.attachment_mime_type = uploaded.mimeType || attachment.type;
+        payload.attachment_size = uploaded.size || attachment.size;
       }
-    */
 
-    console.log({
-      inquiryId,
-      message,
-      quotationReference,
-      validity,
-      deliveryTime,
-      paymentTerms,
-      attachmentName,
-    });
+      await replyToSellerInquiry(inquiryId, payload);
 
-    setSubmitted(true);
+      setSubmitted(true);
 
-    setTimeout(() => {
-      router.push(`/supplier/dashboard/inquiries/${inquiryId}`);
-    }, 900);
+      setTimeout(() => {
+        router.push(detailHref);
+        router.refresh();
+      }, 900);
+    } catch (err) {
+      setError(getUploadErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
-    router.push(`/supplier/dashboard/inquiries/${inquiryId}`);
+    router.push(detailHref);
   };
 
   if (submitted) {
@@ -180,26 +219,26 @@ export function InquiryReplyPanel({ inquiryId, buyerName, companyName }: Inquiry
         <div className="mt-5">
           <h3 className="font-bold text-[#303558] text-[9px]">Attach Quotation / Document</h3>
 
-          {!attachmentName ? (
+          {!attachment ? (
             <label className="mt-2 flex h-[70px] cursor-pointer items-center justify-center gap-3 rounded-[6px] border border-[#c6c4ec] border-dashed bg-[#fbfaff] transition hover:bg-[#f7f6ff]">
               <Paperclip size={17} className="text-[#3024ca]" />
 
               <div>
                 <p className="font-semibold text-[#3024ca] text-[9px]">Click to upload quotation or document</p>
 
-                <p className="mt-1 text-[#85899f] text-[8px]">PDF, JPG or PNG up to 10MB</p>
+                <p className="mt-1 text-[#85899f] text-[8px]">{getUploadHint(ATTACHMENT_CATEGORY)}</p>
               </div>
 
               <input
                 type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
+                accept={getUploadAccept(ATTACHMENT_CATEGORY)}
+                disabled={submitting}
                 className="hidden"
                 onChange={(event) => {
-                  const file = event.target.files?.[0];
+                  handleAttachmentChange(event.target.files?.[0]);
 
-                  if (file) {
-                    setAttachmentName(file.name);
-                  }
+                  // Allow re-selecting the same file after removing it.
+                  event.target.value = "";
                 }}
               />
             </label>
@@ -209,11 +248,12 @@ export function InquiryReplyPanel({ inquiryId, buyerName, companyName }: Inquiry
                 <FileText size={14} className="text-[#3024ca]" />
               </div>
 
-              <p className="min-w-0 flex-1 truncate font-semibold text-[#3b405e] text-[9px]">{attachmentName}</p>
+              <p className="min-w-0 flex-1 truncate font-semibold text-[#3b405e] text-[9px]">{attachment.name}</p>
 
               <button
                 type="button"
-                onClick={() => setAttachmentName(null)}
+                onClick={() => setAttachment(null)}
+                disabled={submitting}
                 aria-label="Remove attachment"
                 className="flex h-[24px] w-[24px] items-center justify-center rounded text-[#555b76] hover:bg-[#f3f2ff]"
               >
@@ -223,6 +263,12 @@ export function InquiryReplyPanel({ inquiryId, buyerName, companyName }: Inquiry
           )}
         </div>
 
+        {error ? (
+          <p role="alert" className="mt-4 rounded-[6px] border border-red-200 bg-red-50 px-3 py-2 text-[9px] text-red-600">
+            {error}
+          </p>
+        ) : null}
+
         {/* Bottom Actions */}
         <div className="mt-6 flex items-center justify-between border-[#ececf3] border-t pt-4">
           <p className="text-[#777c94] text-[9px]">Your reply will be added to the inquiry conversation history.</p>
@@ -231,7 +277,8 @@ export function InquiryReplyPanel({ inquiryId, buyerName, companyName }: Inquiry
             <button
               type="button"
               onClick={handleCancel}
-              className="flex h-[36px] min-w-[90px] items-center justify-center rounded-[5px] border border-[#cbc8eb] bg-white font-bold text-[#3024ca] text-[10px]"
+              disabled={submitting}
+              className="flex h-[36px] min-w-[90px] items-center justify-center rounded-[5px] border border-[#cbc8eb] bg-white font-bold text-[#3024ca] text-[10px] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Cancel
             </button>
@@ -239,11 +286,12 @@ export function InquiryReplyPanel({ inquiryId, buyerName, companyName }: Inquiry
             <button
               type="button"
               onClick={handleSendReply}
-              disabled={!message.trim()}
+              disabled={!message.trim() || submitting}
+              aria-busy={submitting}
               className="flex h-[36px] min-w-[125px] items-center justify-center gap-2 rounded-[5px] bg-[#2819bd] px-5 font-bold text-[10px] text-white transition hover:bg-[#3426d3] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Send size={12} />
-              Send Reply
+              {submitting ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+              {submitting ? "Sending..." : "Send Reply"}
             </button>
           </div>
         </div>
@@ -272,6 +320,10 @@ function Field({
       {children}
     </div>
   );
+}
+
+function optionalText(value: string) {
+  return value.trim() || undefined;
 }
 
 const inputClass =

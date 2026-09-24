@@ -35,9 +35,9 @@ export function InquiryActions({ inquiryNumber, status, onClosed }: InquiryActio
 
       onClosed?.();
     } catch (error) {
-      console.error("Close inquiry error:", error);
+      console.warn("Close inquiry error:", error);
 
-      setMessage("Unable to close inquiry.");
+      setMessage(error instanceof Error && error.message ? error.message : "Unable to close inquiry.");
     } finally {
       setClosing(false);
     }

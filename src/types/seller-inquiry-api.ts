@@ -311,6 +311,20 @@ export interface SellerInquiryCloseResponse {
    REPLY RESPONSE
 ========================================= */
 
+export interface SellerInquiryReplyPayload {
+  message: string;
+
+  quotation_reference_number?: string;
+  quotation_validity?: string;
+  expected_delivery?: string;
+  payment_terms?: string;
+
+  attachment_url?: string;
+  attachment_name?: string;
+  attachment_mime_type?: string;
+  attachment_size?: number;
+}
+
 export interface SellerInquiryReplyResponse {
   success: boolean;
   message: string;

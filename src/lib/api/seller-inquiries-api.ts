@@ -3,6 +3,7 @@ import type {
   SellerInquiriesResponse,
   SellerInquiryCloseResponse,
   SellerInquiryDetailResponse,
+  SellerInquiryReplyPayload,
   SellerInquiryReplyResponse,
   SellerInquirySummaryResponse,
 } from "@/types/seller-inquiry-api";
@@ -53,7 +54,7 @@ export function getSellerInquiryDetail(inquiryNumber: string) {
 
 export function closeSellerInquiry(inquiryNumber: string) {
   return apiRequest<SellerInquiryCloseResponse>(`/seller/inquiries/${encodeURIComponent(inquiryNumber)}/close`, {
-    method: "POST",
+    method: "PATCH",
   });
 }
 
@@ -61,12 +62,10 @@ export function closeSellerInquiry(inquiryNumber: string) {
    REPLY
 ========================================= */
 
-export function replyToSellerInquiry(inquiryNumber: string, message: string) {
+export function replyToSellerInquiry(inquiryNumber: string, payload: SellerInquiryReplyPayload) {
   return apiRequest<SellerInquiryReplyResponse>(`/seller/inquiries/${encodeURIComponent(inquiryNumber)}/replies`, {
     method: "POST",
 
-    body: JSON.stringify({
-      message,
-    }),
+    body: JSON.stringify(payload),
   });
 }
