@@ -8,7 +8,10 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, ShieldCheck, Smartphone } from "lucide-react";
 
 import { Container } from "@/components/common/container";
-import { sendSupplierOtp, verifySupplierOtp } from "@/lib/api/supplier-auth-api";
+import {
+  sendSupplierLoginOtp,
+  verifySupplierLoginOtp,
+} from "@/lib/api/supplier-auth-api";
 
 export default function SupplierLoginForm() {
   const router = useRouter();
@@ -48,7 +51,7 @@ export default function SupplierLoginForm() {
     setSuccessMessage("");
 
     try {
-      const response = await sendSupplierOtp(mobile);
+      const response = await sendSupplierLoginOtp(mobile);
 
       resetOtp();
 
@@ -128,7 +131,7 @@ export default function SupplierLoginForm() {
     try {
       const otpValue = otp.join("");
 
-      const response = await verifySupplierOtp(mobile, otpValue);
+      const response = await verifySupplierLoginOtp(mobile, otpValue);
 
       console.log("Supplier authenticated:", response);
 
