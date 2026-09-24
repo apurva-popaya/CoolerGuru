@@ -30,8 +30,11 @@ export function SupplierCompanyProfilePage() {
   const {
     form,
     company,
-    filePreviews,
+    fileInfo,
     uploadingFields,
+    documents,
+    isUploadingDocuments,
+    removingDocumentIds,
     isLoading,
     isSaving,
     isSubmitting,
@@ -39,6 +42,8 @@ export function SupplierCompanyProfilePage() {
     updateField,
     uploadFile,
     removeFile,
+    addDocuments,
+    removeDocument,
     saveDraft,
     submitForVerification,
   } = useCompanyForm();
@@ -112,8 +117,6 @@ export function SupplierCompanyProfilePage() {
         <CompanyMediaSection
           companyLogoUrl={form.company_logo_url}
           coverImageUrl={form.cover_image_url}
-          logoPreview={filePreviews.company_logo_url}
-          coverPreview={filePreviews.cover_image_url}
           isLogoUploading={uploadingFields.includes("company_logo_url")}
           isCoverUploading={uploadingFields.includes("cover_image_url")}
           onFileSelect={uploadFile}
@@ -136,11 +139,16 @@ export function SupplierCompanyProfilePage() {
           }
           shopEstablishmentNumber={form.shop_establishment_number}
           shopEstablishmentDocumentUrl={form.shop_establishment_document_url}
-          filePreviews={filePreviews}
+          fileInfo={fileInfo}
           uploadingFields={uploadingFields}
+          documents={documents}
+          isUploadingDocuments={isUploadingDocuments}
+          removingDocumentIds={removingDocumentIds}
           onChange={updateField}
           onFileSelect={uploadFile}
           onFileRemove={removeFile}
+          onDocumentsAdd={addDocuments}
+          onDocumentRemove={removeDocument}
         />
 
         <ContactInformationSection
@@ -169,7 +177,7 @@ export function SupplierCompanyProfilePage() {
         employeeSize={form.employee_size}
         certifications={form.certifications}
         brochureUrl={form.brochure_url}
-        brochureFileName={filePreviews.brochure_url?.name}
+        brochureFileName={fileInfo.brochure_url?.name}
         isBrochureUploading={uploadingFields.includes("brochure_url")}
         onChange={updateField}
         onFileSelect={uploadFile}

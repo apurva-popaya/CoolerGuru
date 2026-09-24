@@ -1,5 +1,4 @@
 import { type ApiResponse, apiRequest } from "@/lib/api/api-client";
-import { uploadFileToStorage } from "@/lib/api/file-upload-api";
 import type { Category } from "@/types/category";
 
 /* =========================================
@@ -240,10 +239,6 @@ export function restoreSellerProduct(slug: string) {
   return apiRequest<SellerProductResponse>(`/seller/products/${encodeURIComponent(slug)}/restore`, {
     method: "PATCH",
   });
-}
-
-export function uploadProductFile(file: File, folder: "images" | "catalogues"): Promise<string> {
-  return uploadFileToStorage(file, `products/${folder}`);
 }
 
 /* =========================================

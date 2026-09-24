@@ -64,7 +64,7 @@ export function SupplierDashboardSidebar() {
         })}
       </nav>
 
-      <VerificationStatusCard status={verificationStatus} />
+      {/* <VerificationStatusCard status={verificationStatus} /> */}
     </aside>
   );
 }

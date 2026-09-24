@@ -7,12 +7,23 @@ import { useRouter } from "next/navigation";
 
 import { ArrowLeft, ImageIcon, Info, Lightbulb } from "lucide-react";
 
+import { FileUploadField } from "@/components/common/file-upload-field";
+import { SafeImage } from "@/components/common/safe-image";
 import { StatusBadge } from "@/components/common/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { ApiError } from "@/lib/api/api-client";
 import { createCategory, getCategoryBySlug, updateCategory } from "@/lib/api/categories-api";
+import {
+  deleteFile,
+  getUploadErrorMessage,
+  listAllFiles,
+  MAX_UPLOAD_SIZE_MB,
+  replaceFile,
+  uploadFile,
+} from "@/lib/api/file-upload-api";
 import { getApiErrorMessage } from "@/lib/api/get-api-error-message";
 import { sanitizeText } from "@/lib/utils/sanitize";
 import type { Category } from "@/types/category";
@@ -137,6 +148,20 @@ export function CategoryForm({ mode, operation = "ADD", mainCategorySlug, catego
 
   const [error, setError] = React.useState("");
 
+  // Set in edit mode; uploads with categoryId are linked to the saved category.
+  const [editCategoryId, setEditCategoryId] = React.useState<number | undefined>();
+
+  const [imageUrl, setImageUrl] = React.useState("");
+
+  const [imageFileId, setImageFileId] = React.useState<string | undefined>();
+
+  const [imageName, setImageName] = React.useState<string | undefined>();
+
+  // Edit mode: only send `image` when the admin changed it.
+  const [imageDirty, setImageDirty] = React.useState(false);
+
+  const [imageBusy, setImageBusy] = React.useState(false);
+
   React.useEffect(() => {
     async function loadData() {
       setLoading(true);
@@ -177,6 +202,25 @@ export function CategoryForm({ mode, operation = "ADD", mainCategorySlug, catego
           setDisplayOrder(String(item.sort_order ?? 0));
 
           setStatus(item.is_active === false ? "Inactive" : "Active");
+
+          setEditCategoryId(item.category_id);
+
+          setImageUrl(item.image ?? "");
+
+          // GET /categories returns the url only; find its fileId for replace/delete.
+          if (item.image) {
+            try {
+              const files = await listAllFiles({ category: "category_image", categoryId: item.category_id });
+
+              const file = files.find((candidate) => candidate.url === item.image);
+
+              setImageFileId(file?.fileId);
+              setImageName(file?.originalFilename ?? undefined);
+            } catch (lookupError) {
+              // Not fatal: without a fileId a new upload replaces the image on save.
+              console.error("Category image lookup failed:", lookupError);
+            }
+          }
         }
       } catch (error) {
         setError(getApiErrorMessage(error));
@@ -196,10 +240,58 @@ export function CategoryForm({ mode, operation = "ADD", mainCategorySlug, catego
     }
   }
 
+  /*
+   * An existing upload is replaced in place (same fileId, new url; the backend
+   * also updates a saved category). Otherwise upload a new file.
+   */
+  async function handleImageSelect(file: File) {
+    setImageBusy(true);
+    setError("");
+
+    try {
+      const uploaded = imageFileId
+        ? await replaceFile(imageFileId, file)
+        : await uploadFile(file, "category_image", editCategoryId ? { categoryId: editCategoryId } : {});
+
+      setImageUrl(uploaded.url);
+      setImageFileId(uploaded.fileId);
+      setImageName(file.name);
+      setImageDirty(true);
+    } catch (uploadError) {
+      setError(getUploadErrorMessage(uploadError));
+    } finally {
+      setImageBusy(false);
+    }
+  }
+
+  async function handleImageRemove() {
+    if (imageFileId) {
+      setImageBusy(true);
+      setError("");
+
+      try {
+        // The backend also clears a saved category image.
+        await deleteFile(imageFileId);
+      } catch (deleteError) {
+        if (!(deleteError instanceof ApiError && deleteError.status === 404)) {
+          setError(getUploadErrorMessage(deleteError));
+          return;
+        }
+      } finally {
+        setImageBusy(false);
+      }
+    }
+
+    setImageUrl("");
+    setImageFileId(undefined);
+    setImageName(undefined);
+    setImageDirty(true);
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
-    if (submitting || !name.trim() || !slug.trim()) {
+    if (submitting || imageBusy || !name.trim() || !slug.trim()) {
       return;
     }
 
@@ -224,6 +316,8 @@ export function CategoryForm({ mode, operation = "ADD", mainCategorySlug, catego
           is_active: status === "Active",
 
           can_have_children: mode !== "SUBCATEGORY",
+
+          ...(imageDirty ? { image: imageUrl || null } : {}),
         });
       } else {
         let parentId: number | null = null;
@@ -258,6 +352,8 @@ export function CategoryForm({ mode, operation = "ADD", mainCategorySlug, catego
           sort_order: Number(displayOrder),
 
           is_featured: false,
+
+          image: imageUrl || undefined,
         });
 
         /*
@@ -405,21 +501,18 @@ export function CategoryForm({ mode, operation = "ADD", mainCategorySlug, catego
               <label className="font-semibold text-[#15136f] text-[13px]">{labels.imageLabel}</label>
 
               <div className="mt-2 grid gap-4 md:grid-cols-2">
-                <label className="flex min-h-[170px] cursor-pointer flex-col items-center justify-center rounded-[9px] border border-[#cfd2e3] border-dashed bg-[#fcfcff] px-5 text-center">
-                  <ImageIcon className="size-8 text-[#5d6280]" />
-
-                  <p className="mt-3 font-semibold text-[#15136f] text-[13px]">
-                    {operation === "EDIT" ? "Replace category image" : "Upload category image"}
-                  </p>
-
-                  <p className="mt-1 text-[11px] text-muted-foreground">PNG, JPG or SVG (Max 2MB)</p>
-
-                  <span className="mt-4 rounded-[6px] border border-border bg-white px-4 py-2 font-medium text-[#15136f] text-[12px]">
-                    Choose File
-                  </span>
-
-                  <input type="file" accept=".png,.jpg,.jpeg,.svg" className="hidden" disabled />
-                </label>
+                <FileUploadField
+                  size="md"
+                  category="category_image"
+                  label="Upload category image"
+                  items={imageUrl ? [{ key: "category-image", url: imageUrl, name: imageName }] : []}
+                  isUploading={imageBusy && !imageUrl}
+                  busyKeys={imageBusy ? ["category-image"] : []}
+                  disabled={submitting}
+                  onSelect={([file]) => handleImageSelect(file)}
+                  onReplace={(_item, file) => handleImageSelect(file)}
+                  onRemove={handleImageRemove}
+                />
 
                 <div className="rounded-[9px] border border-[#cfe0ff] bg-[#f5f9ff] p-4">
                   <div className="flex items-center gap-2 text-[#2563eb]">
@@ -429,10 +522,10 @@ export function CategoryForm({ mode, operation = "ADD", mainCategorySlug, catego
                   </div>
 
                   <ul className="mt-4 list-disc space-y-2 pl-5 text-[#5d6280] text-[11px] leading-5">
-                    <li>Image upload API integration is pending.</li>
                     <li>Recommended size: 512 × 512 px</li>
-                    <li>Supported formats: JPG, PNG, SVG</li>
-                    <li>Maximum file size: 2MB</li>
+                    <li>Supported formats: JPG, PNG, WEBP</li>
+                    <li>Maximum file size: {MAX_UPLOAD_SIZE_MB}MB</li>
+                    <li>Images are converted to WEBP automatically.</li>
                   </ul>
                 </div>
               </div>
@@ -484,7 +577,7 @@ export function CategoryForm({ mode, operation = "ADD", mainCategorySlug, catego
                 <Link href="/admin/categories">Cancel</Link>
               </Button>
 
-              <Button type="submit" disabled={submitting} className="bg-[#2720a8] px-6 text-white hover:bg-[#15136f]">
+              <Button type="submit" disabled={submitting || imageBusy} className="bg-[#2720a8] px-6 text-white hover:bg-[#15136f]">
                 {submitting ? "Saving..." : labels.submitLabel}
               </Button>
             </div>
@@ -500,8 +593,12 @@ export function CategoryForm({ mode, operation = "ADD", mainCategorySlug, catego
             </p>
 
             <div className="mt-5 rounded-[9px] border border-border p-5">
-              <div className="flex size-[95px] items-center justify-center rounded-[8px] bg-[#edf3ff]">
-                <ImageIcon className="size-8 text-[#5d6280]" />
+              <div className="relative flex size-[95px] items-center justify-center overflow-hidden rounded-[8px] bg-[#edf3ff]">
+                {imageUrl ? (
+                  <SafeImage src={imageUrl} alt={name || "Category image"} fill sizes="95px" className="object-cover" />
+                ) : (
+                  <ImageIcon className="size-8 text-[#5d6280]" />
+                )}
               </div>
 
               <h3 className="mt-4 font-bold text-[#15136f] text-[18px]">{name || labels.previewLabel}</h3>

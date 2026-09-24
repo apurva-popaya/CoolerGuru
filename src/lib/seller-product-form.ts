@@ -22,7 +22,8 @@ export interface ProductImageItem {
   id: string;
   url: string;
   name: string;
-  previewUrl?: string;
+  // From /uploads; missing for images that were not uploaded through it.
+  fileId?: string;
   isPrimary: boolean;
 }
 
@@ -89,9 +90,6 @@ export type ProductTextField = Exclude<TextField, "availability_status">;
 ========================================= */
 
 export const MAX_PRODUCT_IMAGES = 10;
-
-export const MAX_IMAGE_SIZE_MB = 5;
-export const MAX_CATALOGUE_SIZE_MB = 10;
 
 export const initialProductForm: ProductFormState = {
   name: "",

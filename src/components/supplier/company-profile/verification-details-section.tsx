@@ -1,20 +1,23 @@
 "use client";
 
-import { FileCheck2, Info, Loader2, Upload, X } from "lucide-react";
+import { Info } from "lucide-react";
 
+import { FileUploadField } from "@/components/common/file-upload-field";
 import {
   SupplierFormCard,
   SupplierFormField,
   SupplierSectionHeading,
   supplierInputClass,
 } from "@/components/supplier/common/supplier-form";
-import type {
-  CompanyFieldChangeHandler,
-  CompanyFileField,
-  CompanyFilePreview,
-  CompanyFileSelectHandler,
+import {
+  COMPANY_FILE_CATEGORIES,
+  type CompanyFieldChangeHandler,
+  type CompanyFileField,
+  type CompanyFileInfo,
+  type CompanyFileRemoveHandler,
+  type CompanyFileSelectHandler,
 } from "@/hooks/use-company-form";
-import { getFileNameFromUrl } from "@/lib/api/supplier-create-profile-api";
+import { MAX_FILES_PER_REQUEST, type UploadedFileRecord } from "@/lib/api/file-upload-api";
 
 type VerificationDetailsSectionProps = {
   companyType: string;
@@ -27,11 +30,16 @@ type VerificationDetailsSectionProps = {
   incorporationCertificateUrl: string;
   shopEstablishmentNumber: string;
   shopEstablishmentDocumentUrl: string;
-  filePreviews: Partial<Record<CompanyFileField, CompanyFilePreview>>;
+  fileInfo: Partial<Record<CompanyFileField, CompanyFileInfo>>;
   uploadingFields: CompanyFileField[];
+  documents: UploadedFileRecord[];
+  isUploadingDocuments: boolean;
+  removingDocumentIds: string[];
   onChange: CompanyFieldChangeHandler;
   onFileSelect: CompanyFileSelectHandler;
-  onFileRemove: (field: CompanyFileField) => void;
+  onFileRemove: CompanyFileRemoveHandler;
+  onDocumentsAdd: (files: File[]) => void;
+  onDocumentRemove: (fileId: string) => void;
 };
 
 export function VerificationDetailsSection({
@@ -45,22 +53,33 @@ export function VerificationDetailsSection({
   incorporationCertificateUrl,
   shopEstablishmentNumber,
   shopEstablishmentDocumentUrl,
-  filePreviews,
+  fileInfo,
   uploadingFields,
+  documents,
+  isUploadingDocuments,
+  removingDocumentIds,
   onChange,
   onFileSelect,
   onFileRemove,
+  onDocumentsAdd,
+  onDocumentRemove,
 }: VerificationDetailsSectionProps) {
-  const renderDocumentUpload = (field: CompanyFileField, label: string, fileUrl: string) => (
-    <DocumentUpload
-      label={label}
-      fileUrl={fileUrl}
-      fileName={filePreviews[field]?.name}
-      isUploading={uploadingFields.includes(field)}
-      onFileChange={(file) => onFileSelect(field, file)}
-      onRemove={() => onFileRemove(field)}
-    />
-  );
+  const renderDocumentUpload = (field: CompanyFileField, label: string, fileUrl: string) => {
+    const isBusy = uploadingFields.includes(field);
+
+    return (
+      <FileUploadField
+        category={COMPANY_FILE_CATEGORIES[field]}
+        label={label}
+        items={fileUrl ? [{ key: field, url: fileUrl, name: fileInfo[field]?.name }] : []}
+        isUploading={isBusy && !fileUrl}
+        busyKeys={isBusy ? [field] : []}
+        onSelect={([file]) => onFileSelect(field, file)}
+        onReplace={(_item, file) => onFileSelect(field, file)}
+        onRemove={() => onFileRemove(field)}
+      />
+    );
+  };
 
   return (
     <SupplierFormCard title="3. Verification Details">
@@ -213,61 +232,30 @@ export function VerificationDetailsSection({
           </SupplierFormField>
         </div>
       </div>
-    </SupplierFormCard>
-  );
-}
 
-type DocumentUploadProps = {
-  label: string;
-  fileUrl: string;
-  fileName?: string;
-  isUploading: boolean;
-  onFileChange: (file: File) => void;
-  onRemove: () => void;
-};
+      <div className="mt-5">
+        <SupplierSectionHeading>Supporting Documents</SupplierSectionHeading>
 
-function DocumentUpload({ label, fileUrl, fileName, isUploading, onFileChange, onRemove }: DocumentUploadProps) {
-  if (fileUrl && !isUploading) {
-    return (
-      <div className="flex h-[40px] items-center gap-2 rounded-[5px] border border-[#c6c5eb] bg-[#fbfaff] px-3">
-        <FileCheck2 size={13} className="shrink-0 text-[#1f9d55]" />
+        <p className="mt-1 text-[#656a83] text-[7px]">
+          Optional. Add any other documents that help verify your business (up to {MAX_FILES_PER_REQUEST} at a time).
+        </p>
 
-        <span className="min-w-0 flex-1 truncate font-semibold text-[#30355c] text-[7px]">
-          {fileName ?? getFileNameFromUrl(fileUrl)}
-        </span>
-
-        <button type="button" onClick={onRemove} className="shrink-0" aria-label={`Remove ${label}`}>
-          <X size={12} className="text-red-500" />
-        </button>
+        <FileUploadField
+          className="mt-3"
+          category="company_document"
+          multiple
+          label="Upload Documents"
+          items={documents.map((document) => ({
+            key: document.fileId,
+            url: document.url,
+            name: document.originalFilename,
+          }))}
+          isUploading={isUploadingDocuments}
+          busyKeys={removingDocumentIds}
+          onSelect={onDocumentsAdd}
+          onRemove={(item) => onDocumentRemove(item.key)}
+        />
       </div>
-    );
-  }
-
-  return (
-    <label className="flex h-[40px] cursor-pointer items-center gap-2 rounded-[5px] border border-[#c6c5eb] border-dashed bg-[#fbfaff] px-3 transition hover:bg-[#f7f6ff]">
-      {isUploading ? (
-        <Loader2 size={13} className="shrink-0 animate-spin text-[#3024c8]" />
-      ) : (
-        <Upload size={13} className="shrink-0 text-[#3024c8]" />
-      )}
-
-      <span className="font-semibold text-[#3024c8] text-[7px]">{isUploading ? "Uploading..." : label}</span>
-
-      <input
-        type="file"
-        accept=".pdf,.jpg,.jpeg,.png"
-        className="hidden"
-        disabled={isUploading}
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-
-          event.target.value = "";
-
-          if (file) {
-            onFileChange(file);
-          }
-        }}
-      />
-    </label>
+    </SupplierFormCard>
   );
 }

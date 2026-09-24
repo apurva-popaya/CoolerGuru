@@ -2,15 +2,18 @@
 
 import Image from "next/image";
 
-import { Loader2 } from "lucide-react";
-
+import { FileUploadField } from "@/components/common/file-upload-field";
 import {
   SupplierFormCard,
   SupplierFormField,
   supplierInputClass,
 } from "@/components/supplier/common/supplier-form";
-import type { CompanyFieldChangeHandler, CompanyFileSelectHandler } from "@/hooks/use-company-form";
-import { type CreateCompanyRequest, getFileNameFromUrl } from "@/lib/api/supplier-create-profile-api";
+import type {
+  CompanyFieldChangeHandler,
+  CompanyFileRemoveHandler,
+  CompanyFileSelectHandler,
+} from "@/hooks/use-company-form";
+import type { CreateCompanyRequest } from "@/lib/api/supplier-create-profile-api";
 
 type CompanyAdditionalDetailsProps = {
   websiteUrl: string;
@@ -34,7 +37,7 @@ type CompanyAdditionalDetailsProps = {
 
   onChange: CompanyFieldChangeHandler;
   onFileSelect: CompanyFileSelectHandler;
-  onFileRemove: (field: "brochure_url") => void;
+  onFileRemove: CompanyFileRemoveHandler;
 };
 
 export function CompanyAdditionalDetails({
@@ -352,64 +355,16 @@ export function CompanyAdditionalDetails({
       {/* 11. Brochure */}
       <div className="mt-4">
         <SupplierFormCard title="11. Company Brochure (PDF)">
-          <div className="grid grid-cols-[1fr_1.2fr] gap-4">
-            {brochureUrl ? (
-              <div className="flex h-[54px] items-center gap-3 rounded-[6px] border border-[#dfe0eb] px-3">
-                <div className="flex h-[30px] w-[30px] items-center justify-center rounded bg-[#ffeded] font-bold text-[8px] text-red-500">
-                  PDF
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-[#30355c] text-[9px]">
-                    {brochureFileName ?? getFileNameFromUrl(brochureUrl)}
-                  </p>
-
-                  <p className="mt-1 text-[#8b8fa3] text-[8px]">
-                    Uploaded
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => onFileRemove("brochure_url")}
-                  className="font-semibold text-[8px] text-red-500"
-                >
-                  Remove
-                </button>
-              </div>
-            ) : (
-              <div className="flex h-[54px] items-center rounded-[6px] border border-[#dfe0eb] px-3 text-[#8b8fa3] text-[8px]">
-                No brochure uploaded
-              </div>
-            )}
-
-            <label className="flex h-[54px] cursor-pointer items-center justify-center gap-2 rounded-[6px] border border-[#bfc0eb] border-dashed bg-[#fbfaff] font-semibold text-[#3024c4] text-[9px]">
-              {isBrochureUploading ? (
-                <>
-                  <Loader2 size={12} className="animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                "Click to upload or drag and drop"
-              )}
-
-              <input
-                type="file"
-                accept=".pdf,application/pdf"
-                className="hidden"
-                disabled={isBrochureUploading}
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-
-                  event.target.value = "";
-
-                  if (file) {
-                    onFileSelect("brochure_url", file);
-                  }
-                }}
-              />
-            </label>
-          </div>
+          <FileUploadField
+            className="max-w-[520px]"
+            category="company_brochure"
+            items={brochureUrl ? [{ key: "brochure_url", url: brochureUrl, name: brochureFileName }] : []}
+            isUploading={isBrochureUploading && !brochureUrl}
+            busyKeys={isBrochureUploading ? ["brochure_url"] : []}
+            onSelect={([file]) => onFileSelect("brochure_url", file)}
+            onReplace={(_item, file) => onFileSelect("brochure_url", file)}
+            onRemove={() => onFileRemove("brochure_url")}
+          />
         </SupplierFormCard>
       </div>
     </>
