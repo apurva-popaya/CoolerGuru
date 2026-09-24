@@ -1,6 +1,4 @@
-import {
-  cookies,
-} from "next/headers";
+import { cookies } from "next/headers";
 
 import type {
   AdminCompanyDetailResponse,
@@ -11,8 +9,7 @@ const API_BASE_URL =
   "http://localhost:8000/api/v1";
 
 async function getCookieHeader() {
-  const cookieStore =
-    await cookies();
+  const cookieStore = await cookies();
 
   return cookieStore
     .getAll()
@@ -29,24 +26,21 @@ export async function getAdminCompanyDetailServer(
   const cookieHeader =
     await getCookieHeader();
 
-  const response =
-    await fetch(
-      `${API_BASE_URL}/admin/companies/${encodeURIComponent(String(companyId))}`,
-      {
-        method: "GET",
+  const response = await fetch(
+    `${API_BASE_URL}/admin/companies/${encodeURIComponent(
+      String(companyId),
+    )}`,
+    {
+      method: "GET",
 
-        headers: {
-          Accept:
-            "application/json",
-
-          Cookie:
-            cookieHeader,
-        },
-
-        cache:
-          "no-store",
+      headers: {
+        Accept: "application/json",
+        Cookie: cookieHeader,
       },
-    );
+
+      cache: "no-store",
+    },
+  );
 
   const result =
     (await response.json()) as AdminCompanyDetailResponse;

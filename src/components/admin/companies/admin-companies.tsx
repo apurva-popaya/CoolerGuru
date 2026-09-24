@@ -9,73 +9,270 @@ import {
   type SortingState,
   useTable,
 } from "@tanstack/react-table";
-import { Download } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 
 import { DataTable } from "@/components/common/data-table/data-table";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { dataTableFeatures } from "@/lib/data-table-features";
+import {
+  getAdminCompanies,
+  type AdminCompanyVerificationStatus,
+} from "@/lib/api/admin-companies-api";
 
-import { companiesColumns } from "./companies-columns";
-import { companiesData } from "./companies-data";
-import { CompaniesFilters } from "./companies-filters";
-import { CompaniesStats } from "./companies-stats";
+import {
+  companiesColumns,
+} from "./companies-columns";
+
+import {
+  CompaniesFilters,
+} from "./companies-filters";
+
+import {
+  CompaniesStats,
+} from "./companies-stats";
+
+import {
+  mapAdminCompanyToRow,
+  type CompanyRow,
+} from "./companies-data";
 
 export function AdminCompanies() {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [companies, setCompanies] =
+    React.useState<CompanyRow[]>([]);
 
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [loading, setLoading] =
+    React.useState(true);
 
-  const [columnVisibility, setColumnVisibility] = React.useState<ColumnVisibilityState>({
-    search: false,
-  });
+  const [error, setError] =
+    React.useState<string | null>(null);
 
-  const [pagination, setPagination] = React.useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
+  const [totalItems, setTotalItems] =
+    React.useState(0);
 
-  const [rowSelection, setRowSelection] = React.useState({});
+  const [paginationInfo, setPaginationInfo] =
+    React.useState({
+      page: 1,
+      limit: 10,
+      totalItems: 0,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    });
 
-  const table = useTable({
-    features: dataTableFeatures,
+  const [sorting, setSorting] =
+    React.useState<SortingState>([]);
 
-    data: companiesData,
+  const [columnFilters, setColumnFilters] =
+    React.useState<ColumnFiltersState>([]);
 
-    columns: companiesColumns,
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<ColumnVisibilityState>({
+      search: false,
+    });
 
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      pagination,
-      rowSelection,
-    },
+  const [pagination, setPagination] =
+    React.useState<PaginationState>({
+      pageIndex: 0,
+      pageSize: 10,
+    });
 
-    getRowId: (row) => row.id,
+  const [rowSelection, setRowSelection] =
+    React.useState({});
 
-    autoResetPageIndex: false,
+  const loadCompanies =
+    React.useCallback(
+      async () => {
+        try {
+          setLoading(true);
+          setError(null);
 
-    onSortingChange: setSorting,
+          const verificationFilter =
+            columnFilters.find(
+              (filter) =>
+                filter.id ===
+                "verificationStatus",
+            )?.value;
 
-    onColumnFiltersChange: setColumnFilters,
+          let verification_status:
+            | AdminCompanyVerificationStatus
+            | undefined;
 
-    onColumnVisibilityChange: setColumnVisibility,
+          if (
+            verificationFilter ===
+            "Pending"
+          ) {
+            verification_status =
+              "PENDING";
+          } else if (
+            verificationFilter ===
+            "Under Verification"
+          ) {
+            verification_status =
+              "UNDER_VERIFICATION";
+          } else if (
+            verificationFilter ===
+            "Verified"
+          ) {
+            verification_status =
+              "VERIFIED";
+          } else if (
+            verificationFilter ===
+            "Rejected"
+          ) {
+            verification_status =
+              "REJECTED";
+          } else if (
+            verificationFilter ===
+            "Draft"
+          ) {
+            verification_status =
+              "DRAFT";
+          }
 
-    onPaginationChange: setPagination,
+          const response =
+            await getAdminCompanies({
+              verification_status,
 
-    onRowSelectionChange: setRowSelection,
-  });
+              page:
+                pagination.pageIndex + 1,
 
-  const total = companiesData.length;
+              limit:
+                pagination.pageSize,
+            });
 
-  const verified = companiesData.filter((company) => company.verificationStatus === "Verified").length;
+          const apiCompanies =
+            response.data?.companies ?? [];
 
-  const underVerification = companiesData.filter(
-    (company) => company.verificationStatus === "Under Verification" || company.verificationStatus === "Pending",
-  ).length;
+          const mappedCompanies =
+            apiCompanies.map(
+              mapAdminCompanyToRow,
+            );
 
-  const rejected = companiesData.filter((company) => company.verificationStatus === "Rejected").length;
+          setCompanies(
+            mappedCompanies,
+          );
+
+          if (
+            response.data?.pagination
+          ) {
+            setPaginationInfo(
+              response.data.pagination,
+            );
+
+            setTotalItems(
+              response.data.pagination
+                .totalItems,
+            );
+          } else {
+            setTotalItems(
+              mappedCompanies.length,
+            );
+          }
+        } catch (err) {
+          console.error(
+            "Failed to fetch admin companies:",
+            err,
+          );
+
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to fetch companies.",
+          );
+
+          setCompanies([]);
+        } finally {
+          setLoading(false);
+        }
+      },
+      [
+        pagination.pageIndex,
+        pagination.pageSize,
+        columnFilters,
+      ],
+    );
+
+  React.useEffect(() => {
+    loadCompanies();
+  }, [loadCompanies]);
+
+  const table =
+    useTable({
+      features:
+        dataTableFeatures,
+
+      data: companies,
+
+      columns:
+        companiesColumns,
+
+      state: {
+        sorting,
+        columnFilters,
+        columnVisibility,
+        pagination,
+        rowSelection,
+      },
+
+      getRowId: (row) =>
+        row.id,
+
+      autoResetPageIndex:
+        false,
+
+      manualPagination:
+        true,
+
+      pageCount:
+        paginationInfo.totalPages,
+
+      onSortingChange:
+        setSorting,
+
+      onColumnFiltersChange:
+        setColumnFilters,
+
+      onColumnVisibilityChange:
+        setColumnVisibility,
+
+      onPaginationChange:
+        setPagination,
+
+      onRowSelectionChange:
+        setRowSelection,
+    });
+
+  /*
+   * Stats are based on the API data returned for the
+   * current filter/page, except total which comes from
+   * API pagination.
+   *
+   * If the backend later provides dedicated statistics,
+   * we can replace these calculations directly.
+   */
+  const verified =
+    companies.filter(
+      (company) =>
+        company.rawVerificationStatus ===
+        "VERIFIED",
+    ).length;
+
+  const underVerification =
+    companies.filter(
+      (company) =>
+        company.rawVerificationStatus ===
+          "UNDER_VERIFICATION" ||
+        company.rawVerificationStatus ===
+          "PENDING",
+    ).length;
+
+  const rejected =
+    companies.filter(
+      (company) =>
+        company.rawVerificationStatus ===
+        "REJECTED",
+    ).length;
 
   return (
     <div className="space-y-5">
@@ -83,32 +280,71 @@ export function AdminCompanies() {
         title="All Companies"
         description="View and manage all companies registered on CoolerGuru."
         action={
-          <Button variant="outline" className="h-10 gap-2 border-[#cfcdf5] bg-white text-[#2720a8]">
+          <Button
+            variant="outline"
+            className="h-10 gap-2 border-[#cfcdf5] bg-white text-[#2720a8]"
+          >
             <Download className="size-4" />
+
             Export Companies
           </Button>
         }
       />
 
-      <CompaniesStats total={total} verified={verified} underVerification={underVerification} rejected={rejected} />
+      <CompaniesStats
+        total={totalItems}
+        verified={verified}
+        underVerification={
+          underVerification
+        }
+        rejected={rejected}
+      />
 
-      <CompaniesFilters table={table} />
+      <CompaniesFilters
+        table={table}
+      />
+
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">
+          {error}
+        </div>
+      )}
 
       <div>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-bold text-[#15136f] text-[17px]">
-            Companies ({table.getFilteredRowModel().rows.length})
+            Companies (
+            {totalItems}
+            )
           </h2>
+
+          {loading && (
+            <div className="flex items-center gap-2 text-[#5d6280] text-sm">
+              <Loader2 className="size-4 animate-spin" />
+
+              Loading...
+            </div>
+          )}
         </div>
 
         <DataTable
           table={table}
           emptyState={{
-            title: "No companies found",
-            description: "Try changing or resetting your filters.",
+            title: loading
+              ? "Loading companies..."
+              : "No companies found",
+
+            description: loading
+              ? "Please wait while companies are being loaded."
+              : "Try changing or resetting your filters.",
           }}
           paginationConfig={{
-            pageSizeOptions: [10, 20, 30, 50],
+            pageSizeOptions: [
+              10,
+              20,
+              30,
+              50,
+            ],
           }}
         />
       </div>
