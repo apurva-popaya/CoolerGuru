@@ -38,11 +38,7 @@ function canUseRemoteUrl(value: string) {
       "example.com",
     ];
 
-    if (
-      allowedTemporaryHosts.includes(
-        url.hostname,
-      )
-    ) {
+    if (allowedTemporaryHosts.includes(url.hostname)) {
       return true;
     }
 
@@ -57,6 +53,8 @@ export function SafeImage({
   fallbackSrc = DEFAULT_FALLBACK,
   alt,
   onError,
+  fill,
+  className,
   ...props
 }: SafeImageProps) {
   const initialSrc =
@@ -84,6 +82,8 @@ export function SafeImage({
         {...props}
         src={imageSrc}
         alt={alt}
+        fill={fill}
+        className={className}
         onError={(event) => {
           if (imageSrc !== fallbackSrc) {
             setImageSrc(fallbackSrc);
@@ -100,6 +100,9 @@ export function SafeImage({
    *
    * Use normal <img> so Next.js does not require
    * the hostname to be configured in next.config.
+   *
+   * When `fill` is provided, manually reproduce
+   * the positioning behavior of next/image fill.
    */
   return (
     <img
@@ -115,16 +118,20 @@ export function SafeImage({
           ? props.height
           : undefined
       }
-      className={props.className}
+      className={
+        fill
+          ? `absolute inset-0 h-full w-full ${
+              className ?? ""
+            }`
+          : className
+      }
       onError={(event) => {
         if (imageSrc !== fallbackSrc) {
           setImageSrc(fallbackSrc);
         }
 
         onError?.(
-          event as unknown as React.SyntheticEvent<
-            HTMLImageElement
-          >,
+          event as unknown as React.SyntheticEvent<HTMLImageElement>,
         );
       }}
     />

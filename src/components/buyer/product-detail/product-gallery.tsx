@@ -2,12 +2,16 @@
 
 import { useState } from "react";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 import { SafeImage } from "@/components/common/safe-image";
 import type { ProductDetail } from "@/types/product-detail";
 
-const PRODUCT_PLACEHOLDER = "/images/product-placeholder.png";
+const PRODUCT_PLACEHOLDER =
+  "/images/product-placeholder.png";
 
 export function ProductGallery({
   product,
@@ -23,22 +27,26 @@ export function ProductGallery({
 
   function previousImage() {
     setActiveImage((current) =>
-      current === 0 ? images.length - 1 : current - 1,
+      current === 0
+        ? images.length - 1
+        : current - 1,
     );
   }
 
   function nextImage() {
     setActiveImage((current) =>
-      current === images.length - 1 ? 0 : current + 1,
+      current === images.length - 1
+        ? 0
+        : current + 1,
     );
   }
 
   return (
     <div className="rounded-[8px] border border-[#e2e3ee] bg-white p-3 sm:p-4">
       {/* Main Image */}
-      <div className="relative h-[250px] sm:h-[310px]">
+      <div className="relative h-[250px] overflow-hidden rounded-[6px] bg-white sm:h-[310px]">
         {product.isVerifiedSupplier ? (
-          <span className="absolute top-0 left-0 z-10 rounded-[3px] bg-[#159447] px-2 py-[3px] font-bold text-[7px] text-white">
+          <span className="absolute top-2 left-2 z-20 rounded-[3px] bg-[#159447] px-2 py-[3px] font-bold text-[7px] text-white">
             Verified Supplier
           </span>
         ) : null}
@@ -49,7 +57,7 @@ export function ProductGallery({
           fill
           priority
           sizes="(max-width: 1024px) 100vw, 500px"
-          className="object-contain"
+          className="object-contain p-4 sm:p-6"
         />
 
         {/* Previous */}
@@ -58,7 +66,7 @@ export function ProductGallery({
             type="button"
             onClick={previousImage}
             aria-label="Previous product image"
-            className="absolute top-1/2 left-0 z-10 flex h-[30px] w-[30px] -translate-y-1/2 items-center justify-center rounded-full border border-[#e1e2ec] bg-white text-[#281cc4] shadow-sm"
+            className="absolute top-1/2 left-2 z-20 flex h-[30px] w-[30px] -translate-y-1/2 items-center justify-center rounded-full border border-[#e1e2ec] bg-white text-[#281cc4] shadow-sm transition hover:bg-[#f7f6ff]"
           >
             <ChevronLeft size={15} />
           </button>
@@ -70,7 +78,7 @@ export function ProductGallery({
             type="button"
             onClick={nextImage}
             aria-label="Next product image"
-            className="absolute top-1/2 right-0 z-10 flex h-[30px] w-[30px] -translate-y-1/2 items-center justify-center rounded-full border border-[#e1e2ec] bg-white text-[#281cc4] shadow-sm"
+            className="absolute top-1/2 right-2 z-20 flex h-[30px] w-[30px] -translate-y-1/2 items-center justify-center rounded-full border border-[#e1e2ec] bg-white text-[#281cc4] shadow-sm transition hover:bg-[#f7f6ff]"
           >
             <ChevronRight size={15} />
           </button>
@@ -97,7 +105,7 @@ export function ProductGallery({
                 alt={`${product.name} view ${index + 1}`}
                 fill
                 sizes="100px"
-                className="object-contain"
+                className="object-contain p-1"
               />
             </button>
           ))}
