@@ -14,9 +14,9 @@ const steps = [
   },
   {
     icon: <Mail size={17} />,
-    title: "3. Response by Email / Dashboard",
+    title: "3. Response by Dashboard",
     description:
-      "You'll receive a response in your email and your CoolerGuru dashboard.",
+      "You'll receive a response in your CoolerGuru dashboard.",
   },
   {
     icon: <Scale size={17} />,

@@ -15,9 +15,9 @@ const steps = [
   },
   {
     icon: <Mail size={17} />,
-    title: "Response by Email/Dashboard",
+    title: "Response by Dashboard",
     description:
-      "You'll receive responses via email and in your dashboard.",
+      "You'll receive responses in your dashboard.",
   },
   {
     icon: <Settings size={17} />,

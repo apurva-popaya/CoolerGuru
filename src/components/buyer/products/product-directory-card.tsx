@@ -1,4 +1,3 @@
-import { SafeImage } from "@/components/common/safe-image";
 import Link from "next/link";
 
 import {
@@ -8,6 +7,7 @@ import {
   Settings,
 } from "lucide-react";
 
+import { SafeImage } from "@/components/common/safe-image";
 import type { DirectoryProduct } from "@/types/product-directory";
 
 interface ProductDirectoryCardProps {
@@ -20,11 +20,10 @@ export function ProductDirectoryCard({
   companyId,
 }: ProductDirectoryCardProps) {
   const productDetailHref = `/products/${product.slug}`;
-
   const inquiryHref = `/products/${product.slug}/inquiry`;
 
   return (
-    <div className="relative flex min-w-0 flex-col rounded-[8px] border border-[#e1e2ec] bg-white p-3">
+    <div className="relative flex h-full min-w-0 flex-col rounded-[8px] border border-[#e1e2ec] bg-white p-3">
       {/* Status */}
       <div className="absolute top-3 left-3 z-10">
         {product.isPremium ? (
@@ -39,7 +38,7 @@ export function ProductDirectoryCard({
       </div>
 
       {/* Image */}
-      <div className="relative h-[135px] w-full sm:h-[145px]">
+      <div className="relative h-[135px] w-full shrink-0 sm:h-[145px]">
         <SafeImage
           src={product.image}
           alt={product.name}
@@ -54,6 +53,7 @@ export function ProductDirectoryCard({
         {product.name}
       </h2>
 
+      {/* Company */}
       <p className="mt-1 truncate font-semibold text-[#2b21bd] text-[8px]">
         {product.company}
       </p>
@@ -79,62 +79,63 @@ export function ProductDirectoryCard({
 
       {/* Specs */}
       <div className="mt-2 space-y-[4px]">
-        {product.specs.map(
-          (spec, index) => (
-            <div
-              key={`${product.id}-${spec.label}`}
-              className="flex items-start gap-1.5"
-            >
-              <span className="mt-[1px] shrink-0 text-[#3127cb]">
-                {index === 0 ? (
-                  <Gauge size={9} />
-                ) : index === 1 ? (
-                  <Package size={9} />
-                ) : (
-                  <Settings size={9} />
-                )}
-              </span>
+        {product.specs.map((spec, index) => (
+          <div
+            key={`${product.id}-${spec.label}`}
+            className="flex items-start gap-1.5"
+          >
+            <span className="mt-[1px] shrink-0 text-[#3127cb]">
+              {index === 0 ? (
+                <Gauge size={9} />
+              ) : index === 1 ? (
+                <Package size={9} />
+              ) : (
+                <Settings size={9} />
+              )}
+            </span>
 
-              <span className="text-[#555b73] text-[7.5px] leading-[1.3]">
-                <span className="font-semibold">
-                  {spec.label}:
-                </span>{" "}
-                {spec.value}
-              </span>
-            </div>
-          ),
-        )}
+            <span className="text-[#555b73] text-[7.5px] leading-[1.3]">
+              <span className="font-semibold">
+                {spec.label}:
+              </span>{" "}
+              {spec.value}
+            </span>
+          </div>
+        ))}
       </div>
 
-      {/* MOQ + Price */}
-      <div className="mt-3 flex items-end justify-between gap-2">
-        <p className="text-[#555b73] text-[7.5px]">
-          <span className="font-semibold">
-            MOQ:
-          </span>{" "}
-          {product.moq}
-        </p>
+      {/* Bottom section */}
+      <div className="mt-auto pt-3">
+        {/* MOQ + Price */}
+        <div className="flex items-end justify-between gap-2">
+          <p className="text-[#555b73] text-[7.5px]">
+            <span className="font-semibold">
+              MOQ:
+            </span>{" "}
+            {product.moq}
+          </p>
 
-        <p className="truncate text-right font-bold text-[#2118ad] text-[8px]">
-          {product.price}
-        </p>
-      </div>
+          <p className="truncate text-right font-bold text-[#2118ad] text-[8px]">
+            {product.price}
+          </p>
+        </div>
 
-      {/* Actions */}
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <Link
-          href={productDetailHref}
-          className="!text-white flex h-[30px] items-center justify-center rounded-[4px] bg-[#2116a5] font-bold text-[8px] transition hover:bg-[#3022c6]"
-        >
-          View Details
-        </Link>
+        {/* Actions */}
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <Link
+            href={productDetailHref}
+            className="!text-white flex h-[30px] items-center justify-center rounded-[4px] bg-[#2116a5] font-bold text-[8px] transition hover:bg-[#3022c6]"
+          >
+            View Details
+          </Link>
 
-        <Link
-          href={inquiryHref}
-          className="!text-[#251bb4] flex h-[30px] items-center justify-center rounded-[4px] border border-[#3829dc] bg-white font-bold text-[8px] transition hover:bg-[#f6f5ff]"
-        >
-          Send Inquiry
-        </Link>
+          <Link
+            href={inquiryHref}
+            className="!text-[#251bb4] flex h-[30px] items-center justify-center rounded-[4px] border border-[#3829dc] bg-white font-bold text-[8px] transition hover:bg-[#f6f5ff]"
+          >
+            Send Inquiry
+          </Link>
+        </div>
       </div>
     </div>
   );
