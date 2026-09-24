@@ -2,15 +2,19 @@
 
 import Image from "next/image";
 
-import { Loader2 } from "lucide-react";
-
+import { FileUploadField } from "@/components/common/file-upload-field";
 import {
   SupplierFormCard,
   SupplierFormField,
   supplierInputClass,
 } from "@/components/supplier/common/supplier-form";
-import type { CompanyFieldChangeHandler, CompanyFileSelectHandler } from "@/hooks/use-company-form";
-import { type CreateCompanyRequest, getFileNameFromUrl } from "@/lib/api/supplier-create-profile-api";
+import type {
+  CompanyFieldChangeHandler,
+  CompanyFileRemoveHandler,
+  CompanyFileSelectHandler,
+} from "@/hooks/use-company-form";
+import { MAX_FILES_PER_REQUEST, type UploadedFileRecord } from "@/lib/api/file-upload-api";
+import type { CreateCompanyRequest } from "@/lib/api/supplier-create-profile-api";
 
 type CompanyAdditionalDetailsProps = {
   websiteUrl: string;
@@ -27,14 +31,20 @@ type CompanyAdditionalDetailsProps = {
 
   yearsInBusiness: string;
   employeeSize: string;
-  certifications: string[];
+
+  documents: UploadedFileRecord[];
+  isUploadingDocuments: boolean;
+  removingDocumentIds: string[];
+
   brochureUrl: string;
   brochureFileName?: string;
   isBrochureUploading: boolean;
 
   onChange: CompanyFieldChangeHandler;
   onFileSelect: CompanyFileSelectHandler;
-  onFileRemove: (field: "brochure_url") => void;
+  onFileRemove: CompanyFileRemoveHandler;
+  onDocumentsAdd: (files: File[]) => void;
+  onDocumentRemove: (fileId: string) => void;
 };
 
 export function CompanyAdditionalDetails({
@@ -49,13 +59,17 @@ export function CompanyAdditionalDetails({
   longitude,
   yearsInBusiness,
   employeeSize,
-  certifications,
+  documents,
+  isUploadingDocuments,
+  removingDocumentIds,
   brochureUrl,
   brochureFileName,
   isBrochureUploading,
   onChange,
   onFileSelect,
   onFileRemove,
+  onDocumentsAdd,
+  onDocumentRemove,
 }: CompanyAdditionalDetailsProps) {
   const updateBusinessHour = (
     day: keyof CreateCompanyRequest["business_hours"],
@@ -84,30 +98,6 @@ export function CompanyAdditionalDetails({
         close: isClosed ? null : businessHours[day].close ?? "18:00",
       },
     });
-  };
-
-  const addCertification = () => {
-    const certification = window.prompt("Enter certification name");
-
-    if (!certification?.trim()) {
-      return;
-    }
-
-    if (certifications.includes(certification.trim())) {
-      return;
-    }
-
-    onChange("certifications", [
-      ...certifications,
-      certification.trim(),
-    ]);
-  };
-
-  const removeCertification = (certification: string) => {
-    onChange(
-      "certifications",
-      certifications.filter((item) => item !== certification),
-    );
   };
 
   return (
@@ -324,92 +314,40 @@ export function CompanyAdditionalDetails({
         {/* 10. Certifications */}
         <SupplierFormCard title="10. Certifications">
           <p className="mb-2 text-[#777b92] text-[8px]">
-            Add your company certifications
+            Upload certificates or any other documents that help verify your business (up to{" "}
+            {MAX_FILES_PER_REQUEST} at a time).
           </p>
 
-          <div className="flex flex-wrap gap-2">
-            {certifications.map((certification) => (
-              <CertificationBadge
-                key={certification}
-                text={certification}
-                onRemove={() =>
-                  removeCertification(certification)
-                }
-              />
-            ))}
-
-            <button
-              type="button"
-              onClick={addCertification}
-              className="rounded-[4px] border border-dashed border-[#bfc0eb] px-2 py-1.5 font-semibold text-[#2d22bf] text-[7px]"
-            >
-              + Add
-            </button>
-          </div>
+          <FileUploadField
+            category="company_document"
+            multiple
+            label="Upload Documents"
+            items={documents.map((document) => ({
+              key: document.fileId,
+              url: document.url,
+              name: document.originalFilename,
+            }))}
+            isUploading={isUploadingDocuments}
+            busyKeys={removingDocumentIds}
+            onSelect={onDocumentsAdd}
+            onRemove={(item) => onDocumentRemove(item.key)}
+          />
         </SupplierFormCard>
       </div>
 
       {/* 11. Brochure */}
       <div className="mt-4">
         <SupplierFormCard title="11. Company Brochure (PDF)">
-          <div className="grid grid-cols-[1fr_1.2fr] gap-4">
-            {brochureUrl ? (
-              <div className="flex h-[54px] items-center gap-3 rounded-[6px] border border-[#dfe0eb] px-3">
-                <div className="flex h-[30px] w-[30px] items-center justify-center rounded bg-[#ffeded] font-bold text-[8px] text-red-500">
-                  PDF
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-[#30355c] text-[9px]">
-                    {brochureFileName ?? getFileNameFromUrl(brochureUrl)}
-                  </p>
-
-                  <p className="mt-1 text-[#8b8fa3] text-[8px]">
-                    Uploaded
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => onFileRemove("brochure_url")}
-                  className="font-semibold text-[8px] text-red-500"
-                >
-                  Remove
-                </button>
-              </div>
-            ) : (
-              <div className="flex h-[54px] items-center rounded-[6px] border border-[#dfe0eb] px-3 text-[#8b8fa3] text-[8px]">
-                No brochure uploaded
-              </div>
-            )}
-
-            <label className="flex h-[54px] cursor-pointer items-center justify-center gap-2 rounded-[6px] border border-[#bfc0eb] border-dashed bg-[#fbfaff] font-semibold text-[#3024c4] text-[9px]">
-              {isBrochureUploading ? (
-                <>
-                  <Loader2 size={12} className="animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                "Click to upload or drag and drop"
-              )}
-
-              <input
-                type="file"
-                accept=".pdf,application/pdf"
-                className="hidden"
-                disabled={isBrochureUploading}
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-
-                  event.target.value = "";
-
-                  if (file) {
-                    onFileSelect("brochure_url", file);
-                  }
-                }}
-              />
-            </label>
-          </div>
+          <FileUploadField
+            className="max-w-[520px]"
+            category="company_brochure"
+            items={brochureUrl ? [{ key: "brochure_url", url: brochureUrl, name: brochureFileName }] : []}
+            isUploading={isBrochureUploading && !brochureUrl}
+            busyKeys={isBrochureUploading ? ["brochure_url"] : []}
+            onSelect={([file]) => onFileSelect("brochure_url", file)}
+            onReplace={(_item, file) => onFileSelect("brochure_url", file)}
+            onRemove={() => onFileRemove("brochure_url")}
+          />
         </SupplierFormCard>
       </div>
     </>
@@ -498,30 +436,5 @@ function BusinessHourRow({
         Closed
       </label>
     </div>
-  );
-}
-
-type CertificationBadgeProps = {
-  text: string;
-  onRemove: () => void;
-};
-
-function CertificationBadge({
-  text,
-  onRemove,
-}: CertificationBadgeProps) {
-  return (
-    <span className="flex items-center gap-1 rounded-[4px] bg-[#f0eeff] px-2 py-1.5 font-semibold text-[#2d22bf] text-[7px]">
-      {text}
-
-      <button
-        type="button"
-        onClick={onRemove}
-        className="text-[9px] text-red-500"
-        aria-label={`Remove ${text}`}
-      >
-        ×
-      </button>
-    </span>
   );
 }

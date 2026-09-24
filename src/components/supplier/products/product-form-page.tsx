@@ -1,12 +1,26 @@
 "use client";
 
-import Image from "next/image";
+import { useId } from "react";
+
 import Link from "next/link";
 
-import { Check, FileCheck2, FileText, ImagePlus, Info, Loader2, Plus, Star, Trash2, X } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  ImagePlus,
+  Info,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Star,
+  Trash2,
+  X,
+} from "lucide-react";
 
+import { FileUploadField } from "@/components/common/file-upload-field";
 import { useProductForm } from "@/hooks/use-product-form";
-import { getFileNameFromUrl } from "@/lib/api/file-upload-api";
+import { getUploadAccept, getUploadHint } from "@/lib/api/file-upload-api";
 import {
   createSpecificationRow,
   MAX_PRODUCT_IMAGES,
@@ -53,12 +67,15 @@ export function SupplierProductFormPage({ mode, slug }: SupplierProductFormPageP
     loadError,
     isUploading,
     isUploadingImages,
+    busyImageIds,
     isUploadingCatalogue,
     isSaving,
     updateField,
     addImages,
+    replaceImage,
     removeImage,
     setPrimaryImage,
+    moveImage,
     uploadCatalogue,
     removeCatalogue,
     saveProduct,
@@ -214,73 +231,65 @@ export function SupplierProductFormPage({ mode, slug }: SupplierProductFormPageP
 
         {/* 2. Product Images */}
         <ProductFormSection title="2. Product Images">
-          {isEdit ? (
-            <>
-              <p className="mb-2 text-[#777c94] text-[7px]">
-                Product images can't be changed after creation yet. Contact support to update them.
-              </p>
+          <p className="mb-2 text-[#777c94] text-[7px]">
+            {isEdit
+              ? "Changes to images are saved right away and send the product back for admin review. A product needs at least one image, so replace the last image instead of removing it."
+              : `Upload high quality images of your product (Maximum ${MAX_PRODUCT_IMAGES} images, ${getUploadHint("product_image")} each). The starred image is shown first to buyers. Use the arrows to change the order.`}
+          </p>
 
-              <div className="grid grid-cols-5 gap-3">
-                {images.map((image) => (
-                  <ImageTile key={image.id} image={image} />
-                ))}
+          {images.length === 0 ? (
+            <label className="flex h-[65px] cursor-pointer items-center justify-center gap-3 rounded-[6px] border border-[#bdbceb] border-dashed bg-[#fbfaff] focus-within:ring-2 focus-within:ring-[#3024c8]/40">
+              {isUploadingImages ? (
+                <Loader2 size={18} className="animate-spin text-[#3024c8]" />
+              ) : (
+                <ImagePlus size={18} className="text-[#3024c8]" />
+              )}
+
+              <div>
+                <p className="font-bold text-[#3024c8] text-[8px]">
+                  {isUploadingImages ? "Uploading..." : "Click to upload"}
+                  {isUploadingImages ? null : <span className="font-normal text-[#606580]"> product images</span>}
+                </p>
+
+                <p className="mt-1 text-[#8c90a5] text-[6px]">
+                  {getUploadHint("product_image")}. Recommended 1200 × 1200px.
+                </p>
               </div>
-            </>
-          ) : (
-            <>
-              <p className="mb-2 text-[#777c94] text-[7px]">
-                Upload high quality images of your product (Maximum {MAX_PRODUCT_IMAGES} images, up to 5MB each).
-                The starred image is shown first to buyers.
-              </p>
 
-              {images.length === 0 ? (
-                <label className="flex h-[65px] cursor-pointer items-center justify-center gap-3 rounded-[6px] border border-[#bdbceb] border-dashed bg-[#fbfaff]">
+              <ImagesInput disabled={isUploadingImages} onSelect={addImages} />
+            </label>
+          ) : (
+            <div className="grid grid-cols-5 gap-3">
+              {images.map((image, index) => (
+                <ImageTile
+                  key={image.id}
+                  image={image}
+                  busy={busyImageIds.includes(image.id)}
+                  // Images saved before the upload API have no fileId and can't be changed here.
+                  onReplace={image.fileId ? (file) => replaceImage(image.id, file) : undefined}
+                  onRemove={!isEdit || image.fileId ? () => removeImage(image.id) : undefined}
+                  onSetPrimary={isEdit ? undefined : () => setPrimaryImage(image.id)}
+                  onMoveLeft={!isEdit && index > 0 ? () => moveImage(image.id, -1) : undefined}
+                  onMoveRight={!isEdit && index < images.length - 1 ? () => moveImage(image.id, 1) : undefined}
+                />
+              ))}
+
+              {images.length < MAX_PRODUCT_IMAGES ? (
+                <label className="flex h-[110px] cursor-pointer flex-col items-center justify-center rounded-[7px] border border-[#c4c4ec] border-dashed bg-[#fbfaff] focus-within:ring-2 focus-within:ring-[#3024c8]/40">
                   {isUploadingImages ? (
                     <Loader2 size={18} className="animate-spin text-[#3024c8]" />
                   ) : (
-                    <ImagePlus size={18} className="text-[#3024c8]" />
+                    <Plus size={18} className="text-[#3024c8]" />
                   )}
 
-                  <div>
-                    <p className="font-bold text-[#3024c8] text-[8px]">
-                      {isUploadingImages ? "Uploading..." : "Click to upload"}
-                      {isUploadingImages ? null : <span className="font-normal text-[#606580]"> or drag and drop</span>}
-                    </p>
-
-                    <p className="mt-1 text-[#8c90a5] text-[6px]">PNG, JPG or JPEG. Recommended 1200 × 1200px.</p>
-                  </div>
+                  <span className="mt-1 font-bold text-[#3024c8] text-[7px]">
+                    {isUploadingImages ? "Uploading..." : "Add More"}
+                  </span>
 
                   <ImagesInput disabled={isUploadingImages} onSelect={addImages} />
                 </label>
-              ) : (
-                <div className="grid grid-cols-5 gap-3">
-                  {images.map((image) => (
-                    <ImageTile
-                      key={image.id}
-                      image={image}
-                      onRemove={() => removeImage(image.id)}
-                      onSetPrimary={() => setPrimaryImage(image.id)}
-                    />
-                  ))}
-
-                  {images.length < MAX_PRODUCT_IMAGES ? (
-                    <label className="flex h-[110px] cursor-pointer flex-col items-center justify-center rounded-[7px] border border-[#c4c4ec] border-dashed bg-[#fbfaff]">
-                      {isUploadingImages ? (
-                        <Loader2 size={18} className="animate-spin text-[#3024c8]" />
-                      ) : (
-                        <Plus size={18} className="text-[#3024c8]" />
-                      )}
-
-                      <span className="mt-1 font-bold text-[#3024c8] text-[7px]">
-                        {isUploadingImages ? "Uploading..." : "Add More"}
-                      </span>
-
-                      <ImagesInput disabled={isUploadingImages} onSelect={addImages} />
-                    </label>
-                  ) : null}
-                </div>
-              )}
-            </>
+              ) : null}
+            </div>
           )}
         </ProductFormSection>
 
@@ -605,47 +614,18 @@ export function SupplierProductFormPage({ mode, slug }: SupplierProductFormPageP
             </ProductFormField>
 
             <ProductFormField label="Product Brochure / Datasheet">
-              {form.catalogue_url && !isUploadingCatalogue ? (
-                <div className="flex h-[38px] items-center gap-2 rounded-[5px] border border-[#c4c3e9] bg-[#fbfaff] px-3">
-                  <FileCheck2 size={13} className="shrink-0 text-[#1f9d55]" />
-
-                  <span className="min-w-0 flex-1 truncate font-semibold text-[#30355c] text-[8px]">
-                    {catalogueFileName ?? getFileNameFromUrl(form.catalogue_url)}
-                  </span>
-
-                  <button type="button" onClick={removeCatalogue} aria-label="Remove brochure">
-                    <X size={12} className="text-red-500" />
-                  </button>
-                </div>
-              ) : (
-                <label className="flex h-[38px] cursor-pointer items-center justify-center gap-2 rounded-[5px] border border-[#c4c3e9] border-dashed bg-[#fbfaff]">
-                  {isUploadingCatalogue ? (
-                    <Loader2 size={13} className="animate-spin text-[#3024c8]" />
-                  ) : (
-                    <FileText size={13} className="text-[#3024c8]" />
-                  )}
-
-                  <span className="font-semibold text-[#3024c8] text-[8px]">
-                    {isUploadingCatalogue ? "Uploading..." : "Click to upload PDF"}
-                  </span>
-
-                  <input
-                    type="file"
-                    accept=".pdf,application/pdf"
-                    className="hidden"
-                    disabled={isUploadingCatalogue}
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-
-                      event.target.value = "";
-
-                      if (file) {
-                        uploadCatalogue(file);
-                      }
-                    }}
-                  />
-                </label>
-              )}
+              <FileUploadField
+                category="product_brochure"
+                label="Click to upload PDF"
+                items={
+                  form.catalogue_url ? [{ key: "catalogue", url: form.catalogue_url, name: catalogueFileName }] : []
+                }
+                isUploading={isUploadingCatalogue && !form.catalogue_url}
+                busyKeys={isUploadingCatalogue ? ["catalogue"] : []}
+                onSelect={([file]) => uploadCatalogue(file)}
+                onReplace={(_item, file) => uploadCatalogue(file)}
+                onRemove={removeCatalogue}
+              />
             </ProductFormField>
           </div>
         </ProductFormSection>
@@ -678,10 +658,11 @@ function ImagesInput({ disabled, onSelect }: { disabled: boolean; onSelect: (fil
   return (
     <input
       type="file"
-      accept=".jpg,.jpeg,.png"
+      accept={getUploadAccept("product_image")}
       multiple
       disabled={disabled}
-      className="hidden"
+      aria-label="Upload product images"
+      className="sr-only"
       onChange={(event) => {
         const files = Array.from(event.target.files ?? []);
 
@@ -696,50 +677,124 @@ function ImagesInput({ disabled, onSelect }: { disabled: boolean; onSelect: (fil
   );
 }
 
+const tileButtonClass =
+  "flex h-[20px] w-[20px] items-center justify-center rounded-full bg-white shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3024c8]/50";
+
 function ImageTile({
   image,
+  busy,
+  onReplace,
   onRemove,
   onSetPrimary,
+  onMoveLeft,
+  onMoveRight,
 }: {
   image: ProductImageItem;
+  busy: boolean;
+  onReplace?: (file: File) => void;
   onRemove?: () => void;
   onSetPrimary?: () => void;
+  onMoveLeft?: () => void;
+  onMoveRight?: () => void;
 }) {
+  const replaceInputId = useId();
+
   return (
     <div
       className={`relative h-[110px] overflow-hidden rounded-[7px] border bg-[#fafafa] ${image.isPrimary ? "border-[#3024c8]" : "border-[#e0e1ed]"}`}
     >
-      {image.previewUrl ? (
-        <Image src={image.previewUrl} alt={image.name} fill className="object-contain p-2" />
-      ) : (
-        <ProductImage src={image.url} alt={image.name} className="object-contain p-2" />
+      <ProductImage src={image.url} alt={image.name} className="object-contain p-2" />
+
+      {busy && (
+        <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+          <Loader2 size={16} className="animate-spin text-[#3024c8]" />
+        </div>
       )}
 
-      {image.isPrimary ? (
-        <span className="absolute bottom-1.5 left-1.5 rounded-[3px] bg-[#3024c8] px-1.5 py-0.5 font-bold text-[6px] text-white">
-          Primary
-        </span>
-      ) : onSetPrimary ? (
-        <button
-          type="button"
-          onClick={onSetPrimary}
-          aria-label="Set as primary image"
-          className="absolute bottom-1.5 left-1.5 flex h-[20px] w-[20px] items-center justify-center rounded-full bg-white shadow"
-        >
-          <Star size={10} className="text-[#3024c8]" />
-        </button>
-      ) : null}
+      {!busy && (
+        <>
+          {image.isPrimary ? (
+            <span className="absolute bottom-1.5 left-1.5 rounded-[3px] bg-[#3024c8] px-1.5 py-0.5 font-bold text-[6px] text-white">
+              Primary
+            </span>
+          ) : onSetPrimary ? (
+            <button
+              type="button"
+              onClick={onSetPrimary}
+              aria-label="Set as primary image"
+              title="Set as primary image"
+              className={`absolute bottom-1.5 left-1.5 ${tileButtonClass}`}
+            >
+              <Star size={10} className="text-[#3024c8]" />
+            </button>
+          ) : null}
 
-      {onRemove ? (
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label="Remove image"
-          className="absolute top-2 right-2 flex h-[20px] w-[20px] items-center justify-center rounded-full bg-white shadow"
-        >
-          <X size={10} className="text-[#3024c8]" />
-        </button>
-      ) : null}
+          <div className="absolute top-2 right-2 flex flex-col gap-1">
+            {onRemove && (
+              <button
+                type="button"
+                onClick={onRemove}
+                aria-label="Remove image"
+                title="Remove image"
+                className={tileButtonClass}
+              >
+                <X size={10} className="text-[#3024c8]" />
+              </button>
+            )}
+
+            {onReplace && (
+              <label htmlFor={replaceInputId} title="Replace image" className={`cursor-pointer ${tileButtonClass}`}>
+                <RefreshCw size={9} className="text-[#3024c8]" />
+                <span className="sr-only">Replace image</span>
+
+                <input
+                  id={replaceInputId}
+                  type="file"
+                  accept={getUploadAccept("product_image")}
+                  className="sr-only"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+
+                    event.target.value = "";
+
+                    if (file) {
+                      onReplace(file);
+                    }
+                  }}
+                />
+              </label>
+            )}
+          </div>
+
+          {(onMoveLeft || onMoveRight) && (
+            <div className="absolute right-2 bottom-1.5 flex gap-1">
+              {onMoveLeft && (
+                <button
+                  type="button"
+                  onClick={onMoveLeft}
+                  aria-label="Move image left"
+                  title="Move left"
+                  className={tileButtonClass}
+                >
+                  <ChevronLeft size={11} className="text-[#3024c8]" />
+                </button>
+              )}
+
+              {onMoveRight && (
+                <button
+                  type="button"
+                  onClick={onMoveRight}
+                  aria-label="Move image right"
+                  title="Move right"
+                  className={tileButtonClass}
+                >
+                  <ChevronRight size={11} className="text-[#3024c8]" />
+                </button>
+              )}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

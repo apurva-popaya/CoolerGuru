@@ -1,5 +1,4 @@
 import { type ApiResponse, apiRequest } from "@/lib/api/api-client";
-import { uploadFileToStorage } from "@/lib/api/file-upload-api";
 
 /* =========================================
    TYPES
@@ -132,16 +131,4 @@ export function submitCompanyForVerification() {
   return apiRequest<CompanyResponse>("/companies/me/submit-verification", {
     method: "PATCH",
   });
-}
-
-/* =========================================
-   FILE UPLOAD (TEMPORARY)
-========================================= */
-
-export type CompanyUploadFolder = "logos" | "covers" | "documents" | "brochures";
-
-export { getFileNameFromUrl } from "@/lib/api/file-upload-api";
-
-export function uploadCompanyFile(file: File, folder: CompanyUploadFolder): Promise<string> {
-  return uploadFileToStorage(file, `companies/${folder}`);
 }

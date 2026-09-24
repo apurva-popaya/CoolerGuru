@@ -1,22 +1,32 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { toast } from "sonner";
 
 import { ApiError } from "@/lib/api/api-client";
+import {
+  deleteFile,
+  getUploadErrorMessage,
+  listAllFiles,
+  replaceFile,
+  toFileIdMap,
+  type UploadCategory,
+  type UploadedFileRecord,
+  uploadFile as uploadFileToApi,
+  uploadFiles,
+  validateUploadFile,
+} from "@/lib/api/file-upload-api";
 import { getApiErrorMessage } from "@/lib/api/get-api-error-message";
 import {
   type BusinessHours,
   type CompanyPayload,
-  type CompanyUploadFolder,
   type CreateCompanyRequest,
   createCompany,
   getMyCompany,
   type SupplierCompany,
   submitCompanyForVerification,
   updateMyCompany,
-  uploadCompanyFile,
 } from "@/lib/api/supplier-create-profile-api";
 
 /* =========================================
@@ -39,9 +49,13 @@ export type CompanyFileField =
 
 export type CompanyFileSelectHandler = (field: CompanyFileField, file: File) => void;
 
-export interface CompanyFilePreview {
-  name: string;
-  previewUrl?: string;
+export type CompanyFileRemoveHandler = (field: CompanyFileField) => void;
+
+/* An uploaded file backing one of the company URL fields. */
+export interface CompanyFileInfo {
+  // Missing for saved URLs that were not uploaded through /uploads.
+  fileId?: string;
+  name?: string;
 }
 
 type ValidationMode = "draft" | "submit";
@@ -118,15 +132,17 @@ const initialCompanyForm: CreateCompanyRequest = {
   brochure_url: "",
 };
 
-const FILE_RULES: Record<CompanyFileField, { folder: CompanyUploadFolder; maxSizeMb: number }> = {
-  company_logo_url: { folder: "logos", maxSizeMb: 2 },
-  cover_image_url: { folder: "covers", maxSizeMb: 2 },
-  pan_document_url: { folder: "documents", maxSizeMb: 5 },
-  gst_certificate_url: { folder: "documents", maxSizeMb: 5 },
-  incorporation_certificate_url: { folder: "documents", maxSizeMb: 5 },
-  shop_establishment_document_url: { folder: "documents", maxSizeMb: 5 },
-  brochure_url: { folder: "brochures", maxSizeMb: 10 },
+export const COMPANY_FILE_CATEGORIES: Record<CompanyFileField, UploadCategory> = {
+  company_logo_url: "company_logo",
+  cover_image_url: "company_cover",
+  pan_document_url: "pan_document",
+  gst_certificate_url: "gst_certificate",
+  incorporation_certificate_url: "incorporation_certificate",
+  shop_establishment_document_url: "shop_establishment_certificate",
+  brochure_url: "company_brochure",
 };
+
+const COMPANY_FILE_FIELDS = Object.keys(COMPANY_FILE_CATEGORIES) as CompanyFileField[];
 
 const URL_FIELDS = [
   ["website_url", "Website"],
@@ -316,17 +332,25 @@ export function useCompanyForm() {
 
   const [company, setCompany] = useState<SupplierCompany | null>(null);
 
-  const [filePreviews, setFilePreviews] = useState<Partial<Record<CompanyFileField, CompanyFilePreview>>>({});
+  const [fileInfo, setFileInfo] = useState<Partial<Record<CompanyFileField, CompanyFileInfo>>>({});
 
   const [uploadingFields, setUploadingFields] = useState<CompanyFileField[]>([]);
+
+  const [documents, setDocuments] = useState<UploadedFileRecord[]>([]);
+  const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
+  const [removingDocumentIds, setRemovingDocumentIds] = useState<string[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const objectUrlsRef = useRef<string[]>([]);
+  const loadDocuments = useCallback(async () => {
+    const files = await listAllFiles({ category: "company_document" });
 
-  /* Load existing company (if any) */
+    setDocuments(files);
+  }, []);
+
+  /* Load existing company (if any) and the files behind its URLs */
   useEffect(() => {
     let isMounted = true;
 
@@ -335,10 +359,37 @@ export function useCompanyForm() {
         const response = await getMyCompany();
         const existingCompany = response.data?.company;
 
-        if (isMounted && existingCompany) {
-          setCompany(existingCompany);
-          setForm(fromCompany(existingCompany));
+        if (!isMounted || !existingCompany) return;
+
+        setCompany(existingCompany);
+        setForm(fromCompany(existingCompany));
+
+        // GET /companies/me returns URLs only; look up their fileIds.
+        // Filter by category so product images are not fetched as well.
+        const categories: UploadCategory[] = [...Object.values(COMPANY_FILE_CATEGORIES), "company_document"];
+
+        const files = (await Promise.all(categories.map((category) => listAllFiles({ category })))).flat();
+        const filesByUrl = toFileIdMap(files);
+
+        if (!isMounted) return;
+
+        setDocuments(files.filter((file) => file.category === "company_document"));
+
+        const nextFileInfo: Partial<Record<CompanyFileField, CompanyFileInfo>> = {};
+
+        for (const field of COMPANY_FILE_FIELDS) {
+          const url = existingCompany[field];
+          const file = url ? filesByUrl.get(url) : undefined;
+
+          if (file) {
+            nextFileInfo[field] = {
+              fileId: file.fileId,
+              name: file.originalFilename ?? undefined,
+            };
+          }
         }
+
+        setFileInfo(nextFileInfo);
       } catch (error) {
         // 404 = no company yet, the form stays in "create" mode.
         if (!(error instanceof ApiError && error.status === 404)) {
@@ -358,17 +409,6 @@ export function useCompanyForm() {
     };
   }, []);
 
-  /* Release local image previews */
-  useEffect(() => {
-    const objectUrls = objectUrlsRef.current;
-
-    return () => {
-      for (const url of objectUrls) {
-        URL.revokeObjectURL(url);
-      }
-    };
-  }, []);
-
   const updateField: CompanyFieldChangeHandler = (field, value) => {
     setForm((previous) => ({
       ...previous,
@@ -376,50 +416,119 @@ export function useCompanyForm() {
     }));
   };
 
+  /*
+   * New file → POST /uploads. When the field already has an uploaded file,
+   * replace it in place (PUT keeps the fileId, returns a new url).
+   */
   const uploadFile: CompanyFileSelectHandler = async (field, file) => {
-    const { folder, maxSizeMb } = FILE_RULES[field];
+    const category = COMPANY_FILE_CATEGORIES[field];
 
-    if (file.size > maxSizeMb * 1024 * 1024) {
-      toast.error(`File must be smaller than ${maxSizeMb}MB.`);
+    const validationError = validateUploadFile(file, category);
+
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
+
+    const existingFileId = fileInfo[field]?.fileId;
 
     setUploadingFields((previous) => [...previous, field]);
 
     try {
-      const fileUrl = await uploadCompanyFile(file, folder);
+      const uploaded = existingFileId ? await replaceFile(existingFileId, file) : await uploadFileToApi(file, category);
 
-      let previewUrl: string | undefined;
-
-      if (file.type.startsWith("image/")) {
-        previewUrl = URL.createObjectURL(file);
-        objectUrlsRef.current.push(previewUrl);
-      }
-
-      setFilePreviews((previous) => ({
+      setFileInfo((previous) => ({
         ...previous,
         [field]: {
+          fileId: uploaded.fileId,
           name: file.name,
-          previewUrl,
         },
       }));
 
-      updateField(field, fileUrl);
+      updateField(field, uploaded.url);
     } catch (error) {
-      toast.error(getApiErrorMessage(error));
+      toast.error(getUploadErrorMessage(error));
     } finally {
       setUploadingFields((previous) => previous.filter((item) => item !== field));
     }
   };
 
-  const removeFile = (field: CompanyFileField) => {
-    setFilePreviews((previous) => {
+  const removeFile: CompanyFileRemoveHandler = async (field) => {
+    const fileId = fileInfo[field]?.fileId;
+
+    if (fileId) {
+      setUploadingFields((previous) => [...previous, field]);
+
+      try {
+        // The backend also clears the saved company field.
+        await deleteFile(fileId);
+      } catch (error) {
+        // 404 = already gone; clear the field anyway.
+        if (!(error instanceof ApiError && error.status === 404)) {
+          toast.error(getUploadErrorMessage(error));
+          return;
+        }
+      } finally {
+        setUploadingFields((previous) => previous.filter((item) => item !== field));
+      }
+    }
+
+    setFileInfo((previous) => {
       const { [field]: _removed, ...rest } = previous;
 
       return rest;
     });
 
     updateField(field, "");
+  };
+
+  /* General company documents: a list, not tied to a form field */
+  const addDocuments = async (files: File[]) => {
+    setIsUploadingDocuments(true);
+
+    try {
+      const uploaded = await uploadFiles(files, "company_document");
+
+      toast.success(files.length > 1 ? "Documents uploaded." : "Document uploaded.");
+
+      try {
+        await loadDocuments();
+      } catch {
+        // Listing can fail before the company is saved; show the uploads anyway.
+        const now = new Date().toISOString();
+
+        setDocuments((previous) => [
+          ...previous,
+          ...uploaded.map((file, index) => ({
+            ...file,
+            originalFilename: files[index]?.name ?? null,
+            companyId: null,
+            productId: null,
+            categoryId: null,
+            createdAt: now,
+            updatedAt: now,
+          })),
+        ]);
+      }
+    } catch (error) {
+      toast.error(getUploadErrorMessage(error));
+    } finally {
+      setIsUploadingDocuments(false);
+    }
+  };
+
+  const removeDocument = async (fileId: string) => {
+    setRemovingDocumentIds((previous) => [...previous, fileId]);
+
+    try {
+      await deleteFile(fileId);
+
+      setDocuments((previous) => previous.filter((document) => document.fileId !== fileId));
+    } catch (error) {
+      toast.error(getUploadErrorMessage(error));
+    } finally {
+      setRemovingDocumentIds((previous) => previous.filter((id) => id !== fileId));
+    }
   };
 
   /* Create on first save, update afterwards */
@@ -488,16 +597,21 @@ export function useCompanyForm() {
   return {
     form,
     company,
-    filePreviews,
+    fileInfo,
     uploadingFields,
+    documents,
+    isUploadingDocuments,
+    removingDocumentIds,
     isLoading,
     isSaving,
     isSubmitting,
-    isUploading: uploadingFields.length > 0,
+    isUploading: uploadingFields.length > 0 || isUploadingDocuments,
     setForm,
     updateField,
     uploadFile,
     removeFile,
+    addDocuments,
+    removeDocument,
     saveDraft,
     submitForVerification,
   };
