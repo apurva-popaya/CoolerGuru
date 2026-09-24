@@ -1,23 +1,30 @@
 import { Check, RefreshCw } from "lucide-react";
 
-import type { VerificationStatus } from "./types";
+import type { VerificationProgress, VerificationStatus } from "./types";
 
 interface VerificationStepsProps {
   status: VerificationStatus;
+  progress?: VerificationProgress;
 }
 
-export function VerificationSteps({ status }: VerificationStepsProps) {
+export function VerificationSteps({ status, progress }: VerificationStepsProps) {
+  const submitted = status !== "NOT_VERIFIED";
+
+  const detailsComplete = submitted || Boolean(progress?.companyDetailsComplete);
+
+  const documentsComplete = submitted || Boolean(progress?.documentsComplete);
+
   return (
     <div className="border-black/[0.06] border-t px-7 py-4">
       <div className="grid grid-cols-3">
-        <VerificationStep
-          number="1"
-          label="Company Details"
-          completed={status !== "NOT_VERIFIED"}
-          active={status === "NOT_VERIFIED"}
-        />
+        <VerificationStep number="1" label="Company Details" completed={detailsComplete} active={!detailsComplete} />
 
-        <VerificationStep number="2" label="Verification Documents" completed={status !== "NOT_VERIFIED"} />
+        <VerificationStep
+          number="2"
+          label="Verification Documents"
+          completed={documentsComplete}
+          active={detailsComplete && !documentsComplete}
+        />
 
         <VerificationStep
           number="3"

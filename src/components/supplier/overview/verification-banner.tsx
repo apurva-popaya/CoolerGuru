@@ -2,16 +2,17 @@ import Link from "next/link";
 
 import { AlertTriangle, CheckCircle2, ClipboardCheck, Clock3, FileSearch, Pencil } from "lucide-react";
 
-import type { VerificationStatus } from "./types";
+import type { VerificationProgress, VerificationStatus } from "./types";
 import { VerificationSteps } from "./verification-steps";
 
 interface VerificationBannerProps {
   status: VerificationStatus;
   profileCompletion: number;
   rejectionReason?: string;
+  progress?: VerificationProgress;
 }
 
-export function VerificationBanner({ status, profileCompletion, rejectionReason }: VerificationBannerProps) {
+export function VerificationBanner({ status, profileCompletion, rejectionReason, progress }: VerificationBannerProps) {
   if (status === "VERIFIED") {
     return (
       <BannerShell borderClass="border-[#83d69a]" backgroundClass="from-[#f3fff6] via-white to-[#f1fff5]">
@@ -28,7 +29,7 @@ export function VerificationBanner({ status, profileCompletion, rejectionReason 
           <ProfileProgress percentage={100} />
         </BannerContent>
 
-        <VerificationSteps status={status} />
+        <VerificationSteps status={status} progress={progress} />
       </BannerShell>
     );
   }
@@ -54,7 +55,7 @@ export function VerificationBanner({ status, profileCompletion, rejectionReason 
           </div>
         </BannerContent>
 
-        <VerificationSteps status={status} />
+        <VerificationSteps status={status} progress={progress} />
       </BannerShell>
     );
   }
@@ -83,7 +84,7 @@ export function VerificationBanner({ status, profileCompletion, rejectionReason 
           </div>
         </BannerContent>
 
-        <VerificationSteps status={status} />
+        <VerificationSteps status={status} progress={progress} />
       </BannerShell>
     );
   }
@@ -103,7 +104,7 @@ export function VerificationBanner({ status, profileCompletion, rejectionReason 
         <ProfileProgress percentage={profileCompletion} />
       </BannerContent>
 
-      <VerificationSteps status={status} />
+      <VerificationSteps status={status} progress={progress} />
     </BannerShell>
   );
 }
