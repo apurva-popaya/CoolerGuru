@@ -10,6 +10,7 @@ export interface ProductDetailColour {
 
 export interface ProductDetailRelatedProduct {
   id: string;
+  slug: string;
   name: string;
   company: string;
   location: string;
@@ -22,12 +23,17 @@ export interface ProductDetailRelatedProduct {
 
 export interface ProductDetail {
   id: string;
+  slug: string;
+
   name: string;
+
   category: string;
+  categorySlug: string;
 
   images: string[];
 
   companyId: string;
+  companySlug: string;
   companyName: string;
   companyLogo: string;
   companyLocation: string;
@@ -50,6 +56,7 @@ export interface ProductDetail {
   colours: ProductDetailColour[];
 
   overview: string;
+
   benefits: string[];
 
   specificationsLeft: ProductDetailSpecification[];

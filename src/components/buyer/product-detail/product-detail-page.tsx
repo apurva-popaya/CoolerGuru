@@ -19,28 +19,22 @@ interface ProductDetailPageProps {
   companyId?: string;
 }
 
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/&/g, "and")
-    .replace(/\//g, "-")
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .replace(/-+/g, "-");
-}
-
-export function ProductDetailPage({ product, companyId }: ProductDetailPageProps) {
-  const categorySlug = slugify(product.category);
-
-  const hasCompanyContext = Boolean(companyId);
+export function ProductDetailPage({
+  product,
+  companyId,
+}: ProductDetailPageProps) {
+  const hasCompanyContext =
+    Boolean(companyId);
 
   return (
     <section className="bg-white pt-3 pb-5 sm:pt-4">
       <Container>
         {/* Breadcrumb */}
         <div className="mb-3 flex flex-wrap items-center gap-1.5 font-medium text-[#555a76] text-[9px] sm:text-[10px]">
-          <Link href="/" className="transition hover:text-[#2118ad]">
+          <Link
+            href="/"
+            className="transition hover:text-[#2118ad]"
+          >
             Home
           </Link>
 
@@ -58,7 +52,7 @@ export function ProductDetailPage({ product, companyId }: ProductDetailPageProps
               <ChevronRight size={11} />
 
               <Link
-                href={`/companies/${product.companyId}`}
+                href={`/companies/${product.companySlug}`}
                 className="max-w-[150px] truncate transition hover:text-[#2118ad] sm:max-w-none"
               >
                 {product.companyName}
@@ -89,7 +83,9 @@ export function ProductDetailPage({ product, companyId }: ProductDetailPageProps
           )}
 
           <Link
-            href={`/products?category=${categorySlug}`}
+            href={`/products?category=${encodeURIComponent(
+              product.categorySlug,
+            )}`}
             className="max-w-[130px] truncate transition hover:text-[#2118ad] sm:max-w-none"
           >
             {product.category}
@@ -122,7 +118,9 @@ export function ProductDetailPage({ product, companyId }: ProductDetailPageProps
         <ProductSupplierCard product={product} />
 
         {/* Related Products */}
-        <RelatedProducts products={product.relatedProducts} />
+        <RelatedProducts
+          products={product.relatedProducts}
+        />
 
         {/* Next Steps */}
         <ProductNextSteps />

@@ -1,9 +1,12 @@
 export interface DirectoryProduct {
   id: string;
 
+  slug: string;
+
   name: string;
 
   companyId: string;
+
   company: string;
 
   location: string;
@@ -11,6 +14,7 @@ export interface DirectoryProduct {
   image: string;
 
   category: string;
+
   categorySlug: string;
 
   specs: {

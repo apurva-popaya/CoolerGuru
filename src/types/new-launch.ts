@@ -1,8 +1,10 @@
 export interface NewLaunchProduct {
   id: string;
   productId: string;
+  slug: string;
 
   name: string;
+
   company: string;
   location: string;
 

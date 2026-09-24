@@ -1,51 +1,96 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import { ArrowRight, Building2, ChevronDown, ChevronRight, Search } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  ChevronDown,
+  ChevronRight,
+  Search,
+} from "lucide-react";
 
-import { useFavorites } from "@/context/favorites-context";
-import { companyProfiles } from "@/data/company-profiles";
+import {
+  getSavedCompanies,
+  type SavedCompany,
+} from "@/lib/api/buyer-saved-api";
 
 import { BuyerSavedCompanyCard } from "./buyer-saved-company-card";
 
 type SortOption = "recent" | "name-asc" | "name-desc";
 
+const PAGE_SIZE = 12;
+
 export function BuyerSavedCompaniesPage() {
-  const { favorites } = useFavorites();
+  const [companies, setCompanies] = useState<SavedCompany[]>([]);
+  const [savedCount, setSavedCount] = useState(0);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [sortOpen, setSortOpen] = useState(false);
 
-  const savedCompanyFavorites = useMemo(
-    () => favorites.filter((item) => item.type === "company"),
-    [favorites],
-  );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const visibleCompanies = useMemo(() => {
-    let companies = [...savedCompanyFavorites].reverse();
+  const loadSavedCompanies = useCallback(async () => {
+    setLoading(true);
+    setError("");
 
-    const query = searchQuery.trim().toLowerCase();
+    try {
+      const response = await getSavedCompanies({
+        search: searchQuery,
+        page: 1,
+        limit: PAGE_SIZE,
+      });
 
-    if (query) {
-      companies = companies.filter((company) =>
-        company.title.toLowerCase().includes(query),
+      setCompanies(response.data.companies);
+      setSavedCount(response.data.saved_count);
+    } catch (error) {
+      console.error("Failed to fetch saved companies:", error);
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to load saved companies.",
       );
+    } finally {
+      setLoading(false);
     }
+  }, [searchQuery]);
 
-    if (sortBy === "name-asc") {
-      companies.sort((a, b) => a.title.localeCompare(b.title));
-    }
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      loadSavedCompanies();
+    }, 300);
 
-    if (sortBy === "name-desc") {
-      companies.sort((a, b) => b.title.localeCompare(a.title));
-    }
+    return () => clearTimeout(timeout);
+  }, [loadSavedCompanies]);
 
-    return companies;
-  }, [savedCompanyFavorites, searchQuery, sortBy]);
+  function handleCompanyRemoved(companyId: number) {
+    setCompanies((current) =>
+      current.filter(
+        (company) => company.company_id !== companyId,
+      ),
+    );
+
+    setSavedCount((current) => Math.max(0, current - 1));
+  }
+
+  const visibleCompanies = [...companies];
+
+  if (sortBy === "name-asc") {
+    visibleCompanies.sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+  }
+
+  if (sortBy === "name-desc") {
+    visibleCompanies.sort((a, b) =>
+      b.name.localeCompare(a.name),
+    );
+  }
 
   const sortLabel =
     sortBy === "name-asc"
@@ -56,7 +101,7 @@ export function BuyerSavedCompaniesPage() {
 
   return (
     <section className="px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
-      {/* Page Header */}
+      {/* Header */}
       <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <h1 className="font-bold text-[#171570] text-[24px] leading-tight sm:text-[27px]">
@@ -64,13 +109,19 @@ export function BuyerSavedCompaniesPage() {
           </h1>
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5 font-medium text-[#666b83] text-[9px] sm:text-[10px]">
-            <Link href="/" className="transition hover:text-[#2118ad]">
+            <Link
+              href="/"
+              className="transition hover:text-[#2118ad]"
+            >
               Home
             </Link>
 
             <ChevronRight size={11} />
 
-            <Link href="/dashboard" className="transition hover:text-[#2118ad]">
+            <Link
+              href="/dashboard"
+              className="transition hover:text-[#2118ad]"
+            >
               Dashboard
             </Link>
 
@@ -85,13 +136,16 @@ export function BuyerSavedCompaniesPage() {
         {/* Saved count */}
         <div className="flex w-full items-center gap-3 rounded-[8px] bg-[#f5f3ff] px-4 py-3 sm:w-auto sm:min-w-[260px]">
           <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[#ebe8ff]">
-            <Building2 size={16} className="text-[#3024cf]" />
+            <Building2
+              size={16}
+              className="text-[#3024cf]"
+            />
           </div>
 
           <div className="min-w-0">
             <p className="font-bold text-[#171570] text-[10px]">
-              You have {savedCompanyFavorites.length} saved{" "}
-              {savedCompanyFavorites.length === 1 ? "company" : "companies"}
+              You have {savedCount} saved{" "}
+              {savedCount === 1 ? "company" : "companies"}
             </p>
 
             <p className="mt-0.5 text-[#666b83] text-[8px]">
@@ -101,12 +155,12 @@ export function BuyerSavedCompaniesPage() {
         </div>
       </div>
 
-      {/* Main toolbar */}
+      {/* Toolbar */}
       <div className="rounded-[9px] border border-[#e2e3ee] bg-white px-4 py-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="font-bold text-[#171570] text-[17px] sm:text-[18px]">
-              Saved Companies ({savedCompanyFavorites.length})
+              Saved Companies ({savedCount})
             </h2>
 
             <p className="mt-0.5 text-[#555b76] text-[9px]">
@@ -117,12 +171,17 @@ export function BuyerSavedCompaniesPage() {
           {/* Search + Sort */}
           <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
             <div className="flex h-[36px] w-full items-center gap-2 rounded-[6px] border border-[#dedff0] bg-white px-3 sm:w-[230px]">
-              <Search size={13} className="shrink-0 text-[#3025c6]" />
+              <Search
+                size={13}
+                className="shrink-0 text-[#3025c6]"
+              />
 
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
+                onChange={(event) =>
+                  setSearchQuery(event.target.value)
+                }
                 placeholder="Search saved companies..."
                 className="w-full min-w-0 bg-transparent text-[#34395d] text-[9px] outline-none placeholder:text-[#999db2]"
               />
@@ -131,10 +190,14 @@ export function BuyerSavedCompaniesPage() {
             <div className="relative w-full sm:w-auto">
               <button
                 type="button"
-                onClick={() => setSortOpen((previous) => !previous)}
+                onClick={() =>
+                  setSortOpen((previous) => !previous)
+                }
                 className="flex h-[36px] w-full min-w-0 items-center justify-between gap-3 rounded-[6px] border border-[#dedff0] bg-white px-3 font-semibold text-[#34395d] text-[9px] sm:min-w-[155px]"
               >
-                <span className="truncate">{sortLabel}</span>
+                <span className="truncate">
+                  {sortLabel}
+                </span>
 
                 <ChevronDown
                   size={12}
@@ -179,26 +242,33 @@ export function BuyerSavedCompaniesPage() {
         </div>
       </div>
 
-      {/* Companies */}
-      {visibleCompanies.length > 0 ? (
-        <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2">
-          {visibleCompanies.map((favorite) => {
-            const company = companyProfiles.find(
-              (item) => item.id === favorite.id,
-            );
+      {/* Error */}
+      {error && (
+        <div className="mt-3 rounded-[8px] border border-red-200 bg-red-50 px-4 py-3 text-red-600 text-[9px]">
+          {error}
+        </div>
+      )}
 
-            return (
-              <BuyerSavedCompanyCard
-                key={favorite.id}
-                favorite={favorite}
-                company={company}
-              />
-            );
-          })}
+      {/* Companies */}
+      {loading ? (
+        <div className="mt-3 flex min-h-[270px] items-center justify-center rounded-[9px] border border-[#e2e3ee] bg-white">
+          <p className="text-[#555b76] text-[9px]">
+            Loading saved companies...
+          </p>
+        </div>
+      ) : companies.length > 0 ? (
+        <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2">
+          {visibleCompanies.map((company) => (
+            <BuyerSavedCompanyCard
+              key={company.company_id}
+              company={company}
+              onRemoved={handleCompanyRemoved}
+            />
+          ))}
         </div>
       ) : (
         <EmptySavedCompanies
-          hasFavorites={savedCompanyFavorites.length > 0}
+          hasFavorites={Boolean(searchQuery.trim())}
         />
       )}
 
@@ -206,7 +276,10 @@ export function BuyerSavedCompaniesPage() {
       <div className="mt-5 flex flex-col gap-4 rounded-[9px] border border-[#dfdff2] bg-[#f8f7ff] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[#eeecff]">
-            <Building2 size={15} className="text-[#3124d7]" />
+            <Building2
+              size={15}
+              className="text-[#3124d7]"
+            />
           </div>
 
           <div>
@@ -215,7 +288,8 @@ export function BuyerSavedCompaniesPage() {
             </p>
 
             <p className="mt-0.5 text-[#555b76] text-[8.5px]">
-              Explore verified companies across India&apos;s cooling industry.
+              Explore verified companies across India&apos;s
+              cooling industry.
             </p>
           </div>
         </div>
@@ -265,7 +339,10 @@ function EmptySavedCompanies({
     <div className="mt-3 flex min-h-[270px] items-center justify-center rounded-[9px] border border-[#e2e3ee] bg-white px-5 py-10">
       <div className="text-center">
         <div className="mx-auto flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#f1efff]">
-          <Building2 size={21} className="text-[#3024ca]" />
+          <Building2
+            size={21}
+            className="text-[#3024ca]"
+          />
         </div>
 
         <h3 className="mt-3 font-bold text-[#171570] text-[14px]">

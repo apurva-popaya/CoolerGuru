@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { SafeImage } from "@/components/common/safe-image";
 import Link from "next/link";
 
 import { ArrowRight } from "lucide-react";
@@ -6,93 +6,35 @@ import { ArrowRight } from "lucide-react";
 import { Container } from "@/components/common/container";
 import { HorizontalCarousel } from "@/components/common/horizontal-carousel";
 import { SectionHeader } from "@/components/common/section-header";
-import type { HomepageFeaturedProduct } from "@/lib/api/homepage-api";
-
-const products = [
-  {
-    id: "1",
-    name: "Tower Air Cooler",
-    specs: [
-      { label: "Tank", value: "70 L" },
-      { label: "Blade", value: '12"' },
-      { label: "Power", value: "130W" },
-      { label: "Air Throw", value: "10 ft" },
-      { label: "RPM", value: "1350" },
-    ],
-    bottomLabel: "Warranty",
-    bottomValue: "1-Year Motor",
-    image: "/images/home/products/tower-air-cooler-1.png",
-    href: "/companies?category=tower-air-coolers",
-  },
-  {
-    id: "2",
-    name: "Tower Air Cooler",
-    specs: [
-      { label: "Tank", value: "70 L" },
-      { label: "Blade", value: '12"' },
-      { label: "Power", value: "130W" },
-      { label: "Air Throw", value: "10 ft" },
-      { label: "RPM", value: "1350" },
-    ],
-    bottomLabel: "Warranty",
-    bottomValue: "1-Year Motor",
-    image: "/images/home/products/tower-air-cooler-2.png",
-    href: "/companies?category=tower-air-coolers",
-  },
-  {
-    id: "3",
-    name: "Personal Air Cooler",
-    specs: [
-      { label: "Coverage", value: "200 sq ft" },
-      { label: "Tank", value: "50 L" },
-      { label: "Power", value: "120W" },
-      { label: "Air Throw", value: "15 ft" },
-      { label: "Blade", value: "12 inch" },
-    ],
-    bottomLabel: "Color",
-    bottomValue: "Grey",
-    image: "/images/home/products/personal-air-cooler.png",
-    href: "/companies?category=personal-air-coolers",
-  },
-  {
-    id: "4",
-    name: "Glass Top Air Cooler",
-    specs: [
-      { label: "Tank", value: "40 L" },
-      { label: "Blade", value: '12"' },
-      { label: "Power", value: "160W" },
-      { label: "Air Throw", value: "15 ft" },
-      { label: "Cooling", value: "3-Side Honeycomb" },
-    ],
-    bottomLabel: "Color",
-    bottomValue: "Blue",
-    image: "/images/home/products/glass-top-air-cooler-blue.png",
-    href: "/companies?category=glass-top-air-coolers",
-  },
-  {
-    id: "5",
-    name: "Glass Top Air Cooler",
-    specs: [
-      { label: "Tank", value: "40 L" },
-      { label: "Blade", value: '12"' },
-      { label: "Power", value: "160W" },
-      { label: "Air Throw", value: "15 ft" },
-      { label: "Cooling", value: "3-Side Honeycomb" },
-    ],
-    bottomLabel: "Color",
-    bottomValue: "Pink",
-    image: "/images/home/products/glass-top-air-cooler-pink.png",
-    href: "/companies?category=glass-top-air-coolers",
-  },
-];
+import {
+  getProducts,
+  type ApiProduct,
+} from "@/lib/api/buyer-product-api";
 
 interface ProductsByCategoryProps {
-  products?: HomepageFeaturedProduct[];
+  products?: ApiProduct[];
 }
 
-export function ProductsByCategory({
-  products: _products,
+export async function ProductsByCategory({
+  products: initialProducts,
 }: ProductsByCategoryProps) {
+  let products = initialProducts ?? [];
+
+  /*
+   * Fetch real products when products are not supplied
+   * by the parent.
+   */
+  if (products.length === 0) {
+    try {
+      const response = await getProducts(1, 6);
+
+      products = response.data.products ?? [];
+    } catch (error) {
+      console.error("Failed to fetch homepage products:", error);
+      products = [];
+    }
+  }
+
   return (
     <section className="bg-white py-4 sm:py-5">
       <Container>
@@ -103,11 +45,22 @@ export function ProductsByCategory({
           className="mb-4 sm:mb-5"
         />
 
-        <HorizontalCarousel scrollAmount={290} className="gap-3">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </HorizontalCarousel>
+        {products.length > 0 ? (
+          <HorizontalCarousel scrollAmount={290} className="gap-3">
+            {products.map((product) => (
+              <ProductCard
+                key={product.product_id}
+                product={product}
+              />
+            ))}
+          </HorizontalCarousel>
+        ) : (
+          <div className="rounded-[10px] border border-[#e5e6ef] py-10 text-center">
+            <p className="text-[#555a76] text-sm">
+              No products available at the moment.
+            </p>
+          </div>
+        )}
       </Container>
     </section>
   );
@@ -116,8 +69,27 @@ export function ProductsByCategory({
 function ProductCard({
   product,
 }: {
-  product: (typeof products)[number];
+  product: ApiProduct;
 }) {
+  const specifications =
+    product.specifications
+      ?.filter(
+        (spec) =>
+          spec.value !== null &&
+          spec.value !== "",
+      )
+      .sort(
+        (a, b) =>
+          a.sort_order - b.sort_order,
+      )
+      .slice(0, 5) ?? [];
+
+  const image =
+    product.primary_image?.image_url ??
+    "/images/product-placeholder.png";
+
+  const price = getPrice(product);
+
   return (
     <div className="flex min-h-[330px] min-w-[255px] max-w-[255px] shrink-0 flex-col rounded-[10px] border border-[#e5e6ef] bg-white px-4 pt-4 pb-4">
       <h3 className="font-bold text-[#17159a] text-[15px] leading-[1.25]">
@@ -126,21 +98,26 @@ function ProductCard({
 
       <div className="mt-3 grid grid-cols-[1fr_115px] gap-2">
         <div className="space-y-[9px] pt-2">
-          {product.specs.map((spec) => (
+          {specifications.map((spec) => (
             <p
-              key={spec.label}
+              key={`${spec.key}-${spec.label}`}
               className="text-[#292e4d] text-[10px] leading-[1.3]"
             >
-              <span className="font-bold">{spec.label}:</span>{" "}
-              <span className="font-semibold">{spec.value}</span>
+              <span className="font-bold">
+                {spec.label}:
+              </span>{" "}
+              <span className="font-semibold">
+                {spec.value}
+                {spec.unit ? ` ${spec.unit}` : ""}
+              </span>
             </p>
           ))}
         </div>
 
         <div className="relative h-[190px] w-[115px] self-start">
-          <Image
-            src={product.image}
-            alt={product.name}
+          <SafeImage
+            src={image}
+            alt={product.primary_image?.alt_text ?? product.name}
             fill
             sizes="115px"
             className="object-contain object-center"
@@ -149,16 +126,41 @@ function ProductCard({
       </div>
 
       <p className="mt-2 font-bold text-[#2720bf] text-[10px]">
-        {product.bottomLabel}: {product.bottomValue}
+        {price}
       </p>
 
       <Link
-        href={product.href}
+        href={`/products/${product.slug}`}
         className="mt-auto flex h-[38px] w-full items-center justify-center gap-4 rounded-[5px] border border-[#4938ee] bg-white font-bold text-[#251bb4] text-[11px] transition hover:bg-[#f6f5ff]"
       >
-        View Suppliers
+        View Product
         <ArrowRight size={16} />
       </Link>
     </div>
   );
+}
+
+function getPrice(product: ApiProduct): string {
+  const currency =
+    product.currency === "INR"
+      ? "₹"
+      : product.currency;
+
+  if (
+    product.min_price &&
+    product.max_price &&
+    product.min_price !== product.max_price
+  ) {
+    return `${currency}${product.min_price} - ${currency}${product.max_price}`;
+  }
+
+  if (product.price) {
+    return `${currency}${product.price}`;
+  }
+
+  if (product.min_price) {
+    return `${currency}${product.min_price}`;
+  }
+
+  return "Price on request";
 }

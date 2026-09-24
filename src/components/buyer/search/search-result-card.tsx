@@ -7,7 +7,6 @@ import {
   Box,
   CalendarDays,
   Droplets,
-  Heart,
   MapPin,
   Package,
   UsersRound,
@@ -16,7 +15,8 @@ import {
 } from "lucide-react";
 
 import { SafeImage } from "@/components/common/safe-image";
-import { useFavorites } from "@/context/favorites-context";
+import { FavoriteButton } from "@/components/common/favorite-button";
+
 import type {
   CompanySearchResult,
   ProductSearchResult,
@@ -27,13 +27,19 @@ interface SearchResultCardProps {
   result: SearchResult;
 }
 
-export function SearchResultCard({ result }: SearchResultCardProps) {
+export function SearchResultCard({
+  result,
+}: SearchResultCardProps) {
   if (result.type === "product") {
     return <ProductResultCard result={result} />;
   }
 
   return <CompanyResultCard result={result} />;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Product Card                                                               */
+/* -------------------------------------------------------------------------- */
 
 function ProductResultCard({
   result,
@@ -42,8 +48,10 @@ function ProductResultCard({
 }) {
   return (
     <div className="relative w-full min-w-0 overflow-hidden rounded-[8px] border border-[#e2e3ef] bg-white px-3 py-4 sm:px-4">
+      {/* Save Product */}
       <FavoriteButton
-        id={result.id}
+        // id={result.id}
+        id={String(result.productId)}
         type="product"
         title={result.title}
         image={result.image}
@@ -99,6 +107,7 @@ function ProductResultCard({
             />
           </div>
 
+          {/* Description */}
           <p className="mt-3 max-w-[760px] break-words text-[#444967] text-[10px] leading-[1.5]">
             {result.description}
           </p>
@@ -106,8 +115,11 @@ function ProductResultCard({
           {/* Company / Location / Experience */}
           <div className="mt-3 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
+              {/* Company */}
               <span className="inline-flex max-w-full items-center gap-1 rounded-[3px] bg-[#f2f0ff] px-2 py-[4px] font-bold text-[#2c21c1] text-[9px]">
-                <span className="truncate">{result.company}</span>
+                <span className="truncate">
+                  {result.company}
+                </span>
 
                 <BadgeCheck
                   size={12}
@@ -115,12 +127,19 @@ function ProductResultCard({
                 />
               </span>
 
+              {/* Location */}
               <span className="inline-flex max-w-full items-center gap-1 rounded-[3px] bg-[#f2f0ff] px-2 py-[4px] font-bold text-[#2c21c1] text-[9px]">
-                <MapPin size={10} className="shrink-0" />
+                <MapPin
+                  size={10}
+                  className="shrink-0"
+                />
 
-                <span className="truncate">{result.location}</span>
+                <span className="truncate">
+                  {result.location}
+                </span>
               </span>
 
+              {/* Experience */}
               <span className="rounded-[3px] bg-[#f2f0ff] px-2 py-[4px] font-bold text-[#2c21c1] text-[9px]">
                 {result.experience}
               </span>
@@ -149,6 +168,10 @@ function ProductResultCard({
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/* Company Card                                                               */
+/* -------------------------------------------------------------------------- */
+
 function CompanyResultCard({
   result,
 }: {
@@ -156,8 +179,10 @@ function CompanyResultCard({
 }) {
   return (
     <div className="relative w-full min-w-0 overflow-hidden rounded-[8px] border border-[#e2e3ef] bg-white px-3 py-4 sm:px-4">
+      {/* Save Company */}
       <FavoriteButton
-        id={result.id}
+        // id={result.id}
+        id={String(result.companyId)}
         type="company"
         title={result.title}
         image={result.image}
@@ -193,6 +218,7 @@ function CompanyResultCard({
             {result.title}
           </h3>
 
+          {/* Location */}
           <div className="mt-1 flex min-w-0 items-center gap-1 text-[#565a75] text-[9px]">
             <MapPin
               size={11}
@@ -204,10 +230,12 @@ function CompanyResultCard({
             </span>
           </div>
 
+          {/* Description */}
           <p className="mt-2 break-words text-[#454a67] text-[10px] leading-[1.45]">
             {result.description}
           </p>
 
+          {/* Business Type + Experience */}
           <div className="mt-2 flex flex-wrap gap-2">
             <span className="rounded-[3px] bg-[#f2f0ff] px-2 py-[4px] font-bold text-[#2c21c1] text-[9px]">
               {result.businessType}
@@ -221,6 +249,7 @@ function CompanyResultCard({
 
         {/* Stats + Actions */}
         <div className="min-w-0">
+          {/* Stats */}
           <div className="grid grid-cols-3 divide-x divide-[#e2e3ef] border-[#e2e3ef] border-l">
             <CompanyStat
               icon={<Package size={15} />}
@@ -241,6 +270,7 @@ function CompanyResultCard({
             />
           </div>
 
+          {/* Actions */}
           <div className="mt-4 grid grid-cols-2 gap-2">
             <Link
               href={`/companies/${result.id}`}
@@ -251,7 +281,7 @@ function CompanyResultCard({
 
             <Link
               href={`/companies/${result.id}/inquiry`}
-              className="flex h-[34px] min-w-0 items-center justify-center rounded-[4px] bg-[#2516c7] px-2 font-bold text-[9px] text-white transition hover:bg-[#3424df] sm:px-4 sm:text-[10px]"
+              className="flex h-[34px] min-w-0 items-center justify-center rounded-[4px] bg-[#2516c7] px-2 font-bold text-[#271bc7] text-[9px] text-white transition hover:bg-[#3424df] sm:px-4 sm:text-[10px]"
             >
               Send Inquiry
             </Link>
@@ -262,20 +292,35 @@ function CompanyResultCard({
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/* Specification                                                              */
+/* -------------------------------------------------------------------------- */
+
 interface SpecProps {
   icon: React.ReactNode;
   text: string;
 }
 
-function Spec({ icon, text }: SpecProps) {
+function Spec({
+  icon,
+  text,
+}: SpecProps) {
   return (
     <div className="flex min-w-0 items-center gap-1.5">
-      <span className="shrink-0 text-[#2420aa]">{icon}</span>
+      <span className="shrink-0 text-[#2420aa]">
+        {icon}
+      </span>
 
-      <span className="min-w-0 break-words">{text}</span>
+      <span className="min-w-0 break-words">
+        {text}
+      </span>
     </div>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* Company Stats                                                               */
+/* -------------------------------------------------------------------------- */
 
 interface CompanyStatProps {
   icon: React.ReactNode;
@@ -304,53 +349,5 @@ function CompanyStat({
         {value}
       </p>
     </div>
-  );
-}
-
-interface FavoriteButtonProps {
-  id: string;
-  type: "product" | "company";
-  title: string;
-  image: string;
-}
-
-function FavoriteButton({
-  id,
-  type,
-  title,
-  image,
-}: FavoriteButtonProps) {
-  const { isFavorite, toggleFavorite } = useFavorites();
-
-  const liked = isFavorite(id, type);
-
-  return (
-    <button
-      type="button"
-      aria-label={
-        liked
-          ? `Remove ${type} from favorites`
-          : `Add ${type} to favorites`
-      }
-      onClick={() =>
-        toggleFavorite({
-          id,
-          type,
-          title,
-          image,
-        })
-      }
-      className="absolute top-3 right-3 z-10 text-[#3325e2] transition hover:scale-110"
-    >
-      <Heart
-        size={18}
-        strokeWidth={2}
-        className={
-          liked
-            ? "fill-[#3325e2] text-[#3325e2]"
-            : "fill-transparent text-[#3325e2]"
-        }
-      />
-    </button>
   );
 }

@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 
 import { ProductDetailPage } from "@/components/buyer/product-detail/product-detail-page";
-import { productDetails } from "@/data/product-details";
+
+import { getProductBySlug } from "@/lib/api/buyer-product-api";
+import { mapApiProductDetailToProductDetail } from "@/lib/mappers/product-detail-mapper";
 
 interface ProductPageProps {
   params: Promise<{
@@ -13,15 +15,41 @@ interface ProductPageProps {
   }>;
 }
 
-export default async function ProductPage({ params, searchParams }: ProductPageProps) {
+export default async function ProductPage({
+  params,
+  searchParams,
+}: ProductPageProps) {
   const { productId } = await params;
   const { company } = await searchParams;
 
-  const product = productDetails.find((item) => item.id === productId);
+  try {
+    const response =
+      await getProductBySlug(productId);
 
-  if (!product) {
+    if (
+      !response.success ||
+      !response.data?.product
+    ) {
+      notFound();
+    }
+
+    const product =
+      mapApiProductDetailToProductDetail(
+        response.data.product,
+      );
+
+    return (
+      <ProductDetailPage
+        product={product}
+        companyId={company}
+      />
+    );
+  } catch (error) {
+    console.error(
+      "Failed to fetch product details:",
+      error,
+    );
+
     notFound();
   }
-
-  return <ProductDetailPage product={product} companyId={company} />;
 }

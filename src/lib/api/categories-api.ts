@@ -1,47 +1,59 @@
-import type { Category, CategoryResponse, CreateCategoryRequest, UpdateCategoryRequest } from "@/types/category";
+import { apiRequest } from "@/lib/api/api-client";
 
-import { apiRequest } from "./api-client";
+/* -------------------------------------------------------------------------- */
+/* Category Types                                                             */
+/* -------------------------------------------------------------------------- */
 
-export function getRootCategories() {
-  return apiRequest<CategoryResponse<Category[]>>("/categories", {
-    method: "GET",
-  });
+export interface Category {
+  category_id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  image: string | null;
+  banner_image: string | null;
+  icon: string | null;
+  parent_id: number | null;
+  can_have_children: boolean;
+  sort_order: number;
+  is_featured: boolean;
+  is_active: boolean;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
-export function getCategoryBySlug(slug: string) {
-  return apiRequest<CategoryResponse<Category>>(`/categories/${encodeURIComponent(slug)}`, {
-    method: "GET",
-  });
+export interface CategoriesResponse {
+  success: boolean;
+  message: string;
+  data: {
+    categories: Category[];
+  };
 }
 
-export function getCategoryChildren(slug: string) {
-  return apiRequest<CategoryResponse<Category[]>>(`/categories/${encodeURIComponent(slug)}/children`, {
-    method: "GET",
-  });
+/* -------------------------------------------------------------------------- */
+/* Get Air Cooler Categories                                                  */
+/* -------------------------------------------------------------------------- */
+
+export async function getAirCoolerCategories(): Promise<CategoriesResponse> {
+  return apiRequest<CategoriesResponse>(
+    "/categories/air-coolers/children",
+    {
+      method: "GET",
+    },
+  );
 }
 
-export function createCategory(payload: CreateCategoryRequest) {
-  return apiRequest<CategoryResponse<Category>>("/categories", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
+/* -------------------------------------------------------------------------- */
+/* Get Subcategories of a Category                                            */
+/* -------------------------------------------------------------------------- */
 
-export function updateCategory(slug: string, payload: UpdateCategoryRequest) {
-  return apiRequest<CategoryResponse<Category>>(`/categories/${encodeURIComponent(slug)}`, {
-    method: "PATCH",
-    body: JSON.stringify(payload),
-  });
-}
-
-export function deactivateCategory(slug: string) {
-  return apiRequest<CategoryResponse>(`/categories/${encodeURIComponent(slug)}`, {
-    method: "DELETE",
-  });
-}
-
-export function restoreCategory(slug: string) {
-  return apiRequest<CategoryResponse>(`/categories/${encodeURIComponent(slug)}/restore`, {
-    method: "PATCH",
-  });
+export async function getCategoryChildren(
+  categorySlug: string,
+): Promise<CategoriesResponse> {
+  return apiRequest<CategoriesResponse>(
+    `/categories/${categorySlug}/children`,
+    {
+      method: "GET",
+    },
+  );
 }

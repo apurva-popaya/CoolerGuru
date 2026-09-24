@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 
+import { getProductBySlug } from "@/lib/api/buyer-product-api";
+import { mapApiProductDetailToProductDetail } from "@/lib/mappers/product-detail-mapper";
+
 import { ProductInquiryPage } from "@/components/buyer/product-inquiry/product-inquiry-page";
-import { productDetails } from "@/data/product-details";
 
 interface ProductInquiryPageRouteProps {
   params: Promise<{
@@ -9,14 +11,24 @@ interface ProductInquiryPageRouteProps {
   }>;
 }
 
-export default async function ProductInquiryRoute({ params }: ProductInquiryPageRouteProps) {
+export default async function ProductInquiryRoute({
+  params,
+}: ProductInquiryPageRouteProps) {
   const { productId } = await params;
 
-  const product = productDetails.find((item) => item.id === productId);
+  try {
+    const response = await getProductBySlug(productId);
 
-  if (!product) {
+    if (!response.success || !response.data?.product) {
+      notFound();
+    }
+
+    const product = mapApiProductDetailToProductDetail(
+      response.data.product,
+    );
+
+    return <ProductInquiryPage product={product} />;
+  } catch {
     notFound();
   }
-
-  return <ProductInquiryPage product={product} />;
 }

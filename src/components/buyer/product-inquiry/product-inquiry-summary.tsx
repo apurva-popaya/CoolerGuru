@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { SafeImage } from "@/components/common/safe-image";
 import Link from "next/link";
 
 import {
@@ -21,8 +21,9 @@ export function ProductInquirySummary({
   product,
 }: ProductInquirySummaryProps) {
   const airflow =
-    product.highlightSpecs.find((item) => item.label === "Airflow")?.value ??
-    "-";
+    product.highlightSpecs.find(
+      (item) => item.label === "Airflow",
+    )?.value ?? "-";
 
   const tank =
     product.highlightSpecs.find(
@@ -30,11 +31,14 @@ export function ProductInquirySummary({
     )?.value ?? "-";
 
   const power =
-    product.highlightSpecs.find((item) => item.label === "Power")?.value ??
-    "-";
+    product.highlightSpecs.find(
+      (item) => item.label === "Power",
+    )?.value ?? "-";
 
   const moq =
-    product.highlightSpecs.find((item) => item.label === "MOQ")?.value ?? "-";
+    product.highlightSpecs.find(
+      (item) => item.label === "MOQ",
+    )?.value ?? "-";
 
   return (
     <div className="rounded-[10px] border border-[#e1e2ed] bg-white p-4 sm:p-5">
@@ -45,7 +49,7 @@ export function ProductInquirySummary({
       {/* Product */}
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-[125px_minmax(0,1fr)] sm:gap-4">
         <div className="relative mx-auto h-[145px] w-[135px] sm:mx-0 sm:h-[150px] sm:w-[125px]">
-          <Image
+          <SafeImage
             src={product.images[0]}
             alt={product.name}
             fill
@@ -62,7 +66,7 @@ export function ProductInquirySummary({
           {/* Company */}
           <div className="mt-3 flex items-center gap-2">
             <div className="relative h-[28px] w-[28px] shrink-0">
-              <Image
+              <SafeImage
                 src={product.companyLogo}
                 alt={product.companyName}
                 fill
@@ -127,7 +131,7 @@ export function ProductInquirySummary({
       {/* Product Page Button */}
       <div className="mt-4">
         <Link
-          href={`/products/${product.id}`}
+          href={`/products/${product.slug}`}
           className="!text-[#251bb4] flex h-[36px] w-full items-center justify-center gap-2 rounded-[4px] border border-[#3929dc] bg-white font-bold text-[9px] transition hover:bg-[#f6f5ff]"
         >
           View Product Page

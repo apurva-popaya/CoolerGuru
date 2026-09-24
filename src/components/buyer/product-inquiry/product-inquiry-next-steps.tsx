@@ -9,17 +9,20 @@ const steps = [
   {
     icon: <UsersRound size={17} />,
     title: "2. Supplier Reviews",
-    description: "The supplier reviews your requirement and prepares the best possible response.",
+    description:
+      "The supplier reviews your requirement and prepares the best possible response.",
   },
   {
     icon: <Mail size={17} />,
     title: "3. Response by Email / Dashboard",
-    description: "You'll receive a response in your email and your CoolerGuru dashboard.",
+    description:
+      "You'll receive a response in your email and your CoolerGuru dashboard.",
   },
   {
     icon: <Scale size={17} />,
     title: "4. Compare & Decide",
-    description: "Compare quotes, details and choose the best option for your business.",
+    description:
+      "Compare quotes, details and choose the best option for your business.",
   },
 ];
 

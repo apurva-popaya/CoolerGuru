@@ -1,6 +1,7 @@
 "use client";
 
-// import Image from "next/image";
+import { useEffect, useState } from "react";
+
 import { SafeImage } from "@/components/common/safe-image";
 import Link from "next/link";
 
@@ -15,7 +16,12 @@ import {
   UsersRound,
 } from "lucide-react";
 
-import { useFavorites } from "@/context/favorites-context";
+import {
+  getSavedStatus,
+  removeSavedCompany,
+  saveCompany,
+} from "@/lib/api/buyer-saved-api";
+
 import type { CompanyProfile } from "@/types/company-profile";
 
 interface CompanyProfileHeroProps {
@@ -25,17 +31,89 @@ interface CompanyProfileHeroProps {
 export function CompanyProfileHero({
   company,
 }: CompanyProfileHeroProps) {
-  const { isFavorite, toggleFavorite } = useFavorites();
+  const [isSaved, setIsSaved] = useState(false);
+  const [loadingSavedStatus, setLoadingSavedStatus] = useState(true);
+  const [savingCompany, setSavingCompany] = useState(false);
 
-  const isSaved = isFavorite(company.id, "company");
+  /*
+   * Get saved status when company profile loads
+   */
+  useEffect(() => {
+    let cancelled = false;
 
-  function handleSaveCompany() {
-    toggleFavorite({
-      id: company.id,
-      type: "company",
-      title: company.name,
-      image: company.logo,
-    });
+    async function loadSavedStatus() {
+      const companyId = Number(company.id);
+
+      if (!Number.isFinite(companyId)) {
+        setLoadingSavedStatus(false);
+        return;
+      }
+
+      try {
+        const response = await getSavedStatus({
+          product_ids: [],
+          company_ids: [companyId],
+        });
+
+        if (cancelled) {
+          return;
+        }
+
+        const savedCompany = response.data.companies.find(
+          (item) => item.company_id === companyId,
+        );
+
+        setIsSaved(savedCompany?.is_saved ?? false);
+      } catch (error) {
+        console.error(
+          "Failed to fetch company saved status:",
+          error,
+        );
+      } finally {
+        if (!cancelled) {
+          setLoadingSavedStatus(false);
+        }
+      }
+    }
+
+    loadSavedStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [company.id]);
+
+  /*
+   * Save / remove company
+   */
+  async function handleSaveCompany() {
+    if (savingCompany || loadingSavedStatus) {
+      return;
+    }
+
+    const companyId = Number(company.id);
+
+    if (!Number.isFinite(companyId)) {
+      console.error("Invalid company ID:", company.id);
+      return;
+    }
+
+    setSavingCompany(true);
+
+    try {
+      const response = isSaved
+        ? await removeSavedCompany(companyId)
+        : await saveCompany(companyId);
+
+      setIsSaved(response.data.is_saved);
+    } catch (error) {
+      console.error(
+        `Failed to ${isSaved ? "remove" : "save"} company:`,
+        error,
+      );
+    } finally {
+      setSavingCompany(false);
+    }
   }
 
   const hasLocation = Boolean(company.location?.trim());
@@ -54,13 +132,13 @@ export function CompanyProfileHero({
       {/* Cover */}
       <div className="relative h-[120px] w-full sm:h-[150px] md:h-[180px]">
         <SafeImage
-  src={company.coverImage}
-  alt={`${company.name} cover`}
-  fill
-  priority
-  sizes="(max-width: 640px) 100vw, 1200px"
-  className="object-cover"
-/>
+          src={company.coverImage}
+          alt={`${company.name} cover`}
+          fill
+          priority
+          sizes="(max-width: 640px) 100vw, 1200px"
+          className="object-cover"
+        />
       </div>
 
       {/* Profile card */}
@@ -70,12 +148,12 @@ export function CompanyProfileHero({
           <div className="flex h-[90px] w-[90px] items-center justify-center self-start rounded-full border border-[#dfe1eb] bg-white p-3 sm:h-[110px] sm:w-[110px] sm:p-4 md:h-[115px] md:w-[115px] lg:h-[130px] lg:w-[130px]">
             <div className="relative h-full w-full">
               <SafeImage
-  src={company.logo}
-  alt={company.name}
-  fill
-  sizes="130px"
-  className="object-contain"
-/>
+                src={company.logo}
+                alt={company.name}
+                fill
+                sizes="130px"
+                className="object-contain"
+              />
             </div>
           </div>
 
@@ -170,10 +248,15 @@ export function CompanyProfileHero({
             <button
               type="button"
               onClick={handleSaveCompany}
+              disabled={loadingSavedStatus || savingCompany}
               className={`flex h-[38px] items-center justify-center gap-2 rounded-[5px] border font-bold text-[9px] transition sm:h-[40px] sm:text-[10px] ${
                 isSaved
                   ? "border-[#cbc7ff] bg-[#f0eeff] text-[#241ab5]"
                   : "border-[#e0e1ec] bg-white text-[#241ab5] hover:bg-[#f7f6ff]"
+              } ${
+                loadingSavedStatus || savingCompany
+                  ? "cursor-not-allowed opacity-60"
+                  : ""
               }`}
             >
               <Bookmark
@@ -185,7 +268,15 @@ export function CompanyProfileHero({
                 }
               />
 
-              {isSaved ? "Saved Company" : "Save Company"}
+              {loadingSavedStatus
+                ? "Loading..."
+                : savingCompany
+                  ? isSaved
+                    ? "Removing..."
+                    : "Saving..."
+                  : isSaved
+                    ? "Saved Company"
+                    : "Save Company"}
             </button>
           </div>
         </div>

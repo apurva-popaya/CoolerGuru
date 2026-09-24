@@ -1,7 +1,12 @@
-import Image from "next/image";
+import { SafeImage } from "@/components/common/safe-image";
 import Link from "next/link";
 
-import { Gauge, MapPin, Package, Settings } from "lucide-react";
+import {
+  Gauge,
+  MapPin,
+  Package,
+  Settings,
+} from "lucide-react";
 
 import type { DirectoryProduct } from "@/types/product-directory";
 
@@ -10,12 +15,13 @@ interface ProductDirectoryCardProps {
   companyId?: string;
 }
 
-export function ProductDirectoryCard({ product, companyId }: ProductDirectoryCardProps) {
-  const productDetailHref = companyId ? `/products/${product.id}?company=${companyId}` : `/products/${product.id}`;
+export function ProductDirectoryCard({
+  product,
+  companyId,
+}: ProductDirectoryCardProps) {
+  const productDetailHref = `/products/${product.slug}`;
 
-  const inquiryHref = companyId
-    ? `/products/${product.id}/inquiry?company=${companyId}`
-    : `/products/${product.id}/inquiry`;
+  const inquiryHref = `/products/${product.slug}/inquiry`;
 
   return (
     <div className="relative flex min-w-0 flex-col rounded-[8px] border border-[#e1e2ec] bg-white p-3">
@@ -34,7 +40,7 @@ export function ProductDirectoryCard({ product, companyId }: ProductDirectoryCar
 
       {/* Image */}
       <div className="relative h-[135px] w-full sm:h-[145px]">
-        <Image
+        <SafeImage
           src={product.image}
           alt={product.name}
           fill
@@ -52,8 +58,12 @@ export function ProductDirectoryCard({ product, companyId }: ProductDirectoryCar
         {product.company}
       </p>
 
+      {/* Location */}
       <div className="mt-1 flex items-center gap-1">
-        <MapPin size={9} className="shrink-0 text-[#3025cf]" />
+        <MapPin
+          size={9}
+          className="shrink-0 text-[#3025cf]"
+        />
 
         <span className="truncate text-[#666b82] text-[7px]">
           {product.location}
@@ -69,33 +79,40 @@ export function ProductDirectoryCard({ product, companyId }: ProductDirectoryCar
 
       {/* Specs */}
       <div className="mt-2 space-y-[4px]">
-        {product.specs.map((spec, index) => (
-          <div
-            key={`${product.id}-${spec.label}`}
-            className="flex items-start gap-1.5"
-          >
-            <span className="mt-[1px] shrink-0 text-[#3127cb]">
-              {index === 0 ? (
-                <Gauge size={9} />
-              ) : index === 1 ? (
-                <Package size={9} />
-              ) : (
-                <Settings size={9} />
-              )}
-            </span>
+        {product.specs.map(
+          (spec, index) => (
+            <div
+              key={`${product.id}-${spec.label}`}
+              className="flex items-start gap-1.5"
+            >
+              <span className="mt-[1px] shrink-0 text-[#3127cb]">
+                {index === 0 ? (
+                  <Gauge size={9} />
+                ) : index === 1 ? (
+                  <Package size={9} />
+                ) : (
+                  <Settings size={9} />
+                )}
+              </span>
 
-            <span className="text-[#555b73] text-[7.5px] leading-[1.3]">
-              <span className="font-semibold">{spec.label}:</span>{" "}
-              {spec.value}
-            </span>
-          </div>
-        ))}
+              <span className="text-[#555b73] text-[7.5px] leading-[1.3]">
+                <span className="font-semibold">
+                  {spec.label}:
+                </span>{" "}
+                {spec.value}
+              </span>
+            </div>
+          ),
+        )}
       </div>
 
       {/* MOQ + Price */}
       <div className="mt-3 flex items-end justify-between gap-2">
         <p className="text-[#555b73] text-[7.5px]">
-          <span className="font-semibold">MOQ:</span> {product.moq}
+          <span className="font-semibold">
+            MOQ:
+          </span>{" "}
+          {product.moq}
         </p>
 
         <p className="truncate text-right font-bold text-[#2118ad] text-[8px]">

@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { BadgeCheck, Clock3, MapPin } from "lucide-react";
 
+import { SafeImage } from "@/components/common/safe-image";
 import type { ProductDetail } from "@/types/product-detail";
 
 export function ProductSupplierCard({
@@ -10,12 +10,25 @@ export function ProductSupplierCard({
 }: {
   product: ProductDetail;
 }) {
+  const companyHref = product.companyId
+    ? `/companies/${product.companyId}`
+    : "/companies";
+
+  const inquiryHref = product.companyId
+    ? `/companies/${product.companyId}/inquiry`
+    : "/companies";
+
+  const businessTypes =
+    product.companyBusinessTypes.length > 0
+      ? product.companyBusinessTypes.join(" | ")
+      : "Supplier";
+
   return (
     <div className="mt-4 grid grid-cols-1 gap-4 rounded-[8px] border border-[#e2e3ee] bg-white px-4 py-4 sm:px-5 lg:grid-cols-[minmax(280px,330px)_minmax(0,1fr)] lg:items-center lg:gap-5 lg:px-4 lg:py-3 xl:grid-cols-[330px_1fr_290px]">
       {/* Company */}
       <div className="flex items-center gap-3">
         <div className="relative h-[60px] w-[90px] shrink-0">
-          <Image
+          <SafeImage
             src={product.companyLogo}
             alt={product.companyName}
             fill
@@ -39,7 +52,7 @@ export function ProductSupplierCard({
           </div>
 
           <p className="mt-1 text-[#555a76] text-[8px]">
-            {product.companyBusinessTypes.join(" | ")}
+            {businessTypes}
           </p>
 
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -63,21 +76,22 @@ export function ProductSupplierCard({
         </p>
 
         <p className="mt-1 text-[#555a75] text-[8px] leading-[1.5]">
-          {product.companyDescription}
+          {product.companyDescription ||
+            "No company description available."}
         </p>
       </div>
 
       {/* Actions */}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:col-span-2 xl:col-span-1">
         <Link
-          href={`/companies/${product.companyId}`}
+          href={companyHref}
           className="!text-[#251bb4] flex h-[34px] items-center justify-center rounded-[4px] border border-[#3829db] font-bold text-[8px] transition hover:bg-[#f7f6ff]"
         >
           View Profile
         </Link>
 
         <Link
-          href={`/companies/${product.companyId}/inquiry`}
+          href={inquiryHref}
           className="!text-white flex h-[34px] items-center justify-center rounded-[4px] bg-[#2116a5] font-bold text-[8px] transition hover:bg-[#181080]"
         >
           Contact Supplier

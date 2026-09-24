@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { SubcategoryDetailPage } from "@/components/buyer/category/subcategory-detail-page";
-import { subcategoryDetails } from "@/data/subcategory-details";
+import { getSubcategoryProducts } from "@/lib/api/subcategory-api";
 
 interface SubcategoryPageProps {
   params: Promise<{
@@ -10,16 +10,45 @@ interface SubcategoryPageProps {
   }>;
 }
 
-export default async function SubcategoryPage({ params }: SubcategoryPageProps) {
+export default async function SubcategoryPage({
+  params,
+}: SubcategoryPageProps) {
   const { categorySlug, subcategorySlug } = await params;
 
-  const subcategory = subcategoryDetails.find(
-    (item) => item.categorySlug === categorySlug && item.slug === subcategorySlug,
-  );
+  /*
+   * The API expects the subcategory slug.
+   *
+   * Example:
+   * /category/air-coolers/domestic-air-coolers
+   *
+   * API:
+   * /products?category_slug=domestic-air-coolers
+   */
+  try {
+    const subcategory = await getSubcategoryProducts(
+      subcategorySlug,
+    );
 
-  if (!subcategory) {
+    /*
+     * Make sure the API actually returned the requested
+     * subcategory.
+     */
+    if (subcategory.categorySlug !== subcategorySlug) {
+      notFound();
+    }
+
+    return (
+      <SubcategoryDetailPage
+        subcategory={subcategory}
+        parentCategorySlug={categorySlug}
+      />
+    );
+  } catch (error) {
+    console.error(
+      "Subcategory products error:",
+      error,
+    );
+
     notFound();
   }
-
-  return <SubcategoryDetailPage subcategory={subcategory} />;
 }

@@ -24,7 +24,9 @@ function slugify(value: string) {
     .replace(/-+/g, "-");
 }
 
-export function ProductInquiryPage({ product }: ProductInquiryPageProps) {
+export function ProductInquiryPage({
+  product,
+}: ProductInquiryPageProps) {
   const categorySlug = slugify(product.category);
 
   return (
@@ -69,8 +71,9 @@ export function ProductInquiryPage({ product }: ProductInquiryPageProps) {
               className="shrink-0 text-[#777b92]"
             />
 
+            {/* Product URL should use slug */}
             <Link
-              href={`/products/${product.id}`}
+              href={`/products/${product.slug}`}
               className="max-w-[180px] truncate transition hover:text-[#2118ad] sm:max-w-none"
             >
               {product.name}
