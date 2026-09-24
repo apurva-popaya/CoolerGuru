@@ -12,6 +12,7 @@ import {
 import {
   COMPANY_FILE_CATEGORIES,
   type CompanyFieldChangeHandler,
+  type CompanyFieldErrors,
   type CompanyFileField,
   type CompanyFileInfo,
   type CompanyFileRemoveHandler,
@@ -19,7 +20,6 @@ import {
 } from "@/hooks/use-company-form";
 
 type VerificationDetailsSectionProps = {
-  companyType: string;
   hasGst: boolean;
   gstNumber: string;
   gstCertificateUrl: string;
@@ -31,13 +31,13 @@ type VerificationDetailsSectionProps = {
   shopEstablishmentDocumentUrl: string;
   fileInfo: Partial<Record<CompanyFileField, CompanyFileInfo>>;
   uploadingFields: CompanyFileField[];
+  errors: CompanyFieldErrors;
   onChange: CompanyFieldChangeHandler;
   onFileSelect: CompanyFileSelectHandler;
   onFileRemove: CompanyFileRemoveHandler;
 };
 
 export function VerificationDetailsSection({
-  companyType,
   hasGst,
   gstNumber,
   gstCertificateUrl,
@@ -49,6 +49,7 @@ export function VerificationDetailsSection({
   shopEstablishmentDocumentUrl,
   fileInfo,
   uploadingFields,
+  errors,
   onChange,
   onFileSelect,
   onFileRemove,
@@ -71,26 +72,8 @@ export function VerificationDetailsSection({
   };
 
   return (
-    <SupplierFormCard title="3. Verification Details">
-      <SupplierFormField label="Company Type" required description="Select the legal constitution of your business.">
-        <select
-          value={companyType}
-          onChange={(event) => onChange("company_type", event.target.value)}
-          className={supplierInputClass}
-        >
-          <option value="" disabled>
-            Select company type
-          </option>
-
-          <option value="sole-proprietorship">Sole Proprietorship</option>
-          <option value="partnership">Partnership</option>
-          <option value="llp">LLP</option>
-          <option value="private-limited">Private Limited</option>
-          <option value="public-limited">Public Limited</option>
-        </select>
-      </SupplierFormField>
-
-      <div className="mt-5">
+    <SupplierFormCard title="Verification Details">
+      <div>
         <p className="font-bold text-[#292e55] text-[10px]">
           Do you have a GST Registration?
           <span className="ml-0.5 text-red-500">*</span>
@@ -134,7 +117,7 @@ export function VerificationDetailsSection({
           <SupplierSectionHeading>GST Details</SupplierSectionHeading>
 
           <div className="mt-3 grid grid-cols-2 gap-3">
-            <SupplierFormField label="GST Number" required>
+            <SupplierFormField label="GST Number" required error={errors.gst_number}>
               <input
                 type="text"
                 value={gstNumber}
@@ -145,7 +128,7 @@ export function VerificationDetailsSection({
               />
             </SupplierFormField>
 
-            <SupplierFormField label="GST Certificate" required>
+            <SupplierFormField label="GST Certificate" required error={errors.gst_certificate_url}>
               {renderDocumentUpload("gst_certificate_url", "Upload GST Certificate", gstCertificateUrl)}
             </SupplierFormField>
           </div>
@@ -155,7 +138,11 @@ export function VerificationDetailsSection({
           <SupplierSectionHeading>Shop & Establishment Details</SupplierSectionHeading>
 
           <div className="mt-3 grid grid-cols-2 gap-3">
-            <SupplierFormField label="Shop & Establishment Registration Number" required>
+            <SupplierFormField
+              label="Shop & Establishment Registration Number"
+              required
+              error={errors.shop_establishment_number}
+            >
               <input
                 type="text"
                 value={shopEstablishmentNumber}
@@ -165,7 +152,11 @@ export function VerificationDetailsSection({
               />
             </SupplierFormField>
 
-            <SupplierFormField label="Shop & Establishment Certificate" required>
+            <SupplierFormField
+              label="Shop & Establishment Certificate"
+              required
+              error={errors.shop_establishment_document_url}
+            >
               {renderDocumentUpload("shop_establishment_document_url", "Upload Document", shopEstablishmentDocumentUrl)}
             </SupplierFormField>
           </div>
@@ -185,7 +176,7 @@ export function VerificationDetailsSection({
         <SupplierSectionHeading>PAN Details</SupplierSectionHeading>
 
         <div className="mt-3 grid grid-cols-2 gap-3">
-          <SupplierFormField label="PAN Number" required>
+          <SupplierFormField label="PAN Number" required error={errors.pan_number}>
             <input
               type="text"
               value={panNumber}
@@ -196,7 +187,7 @@ export function VerificationDetailsSection({
             />
           </SupplierFormField>
 
-          <SupplierFormField label="PAN Document" required>
+          <SupplierFormField label="PAN Document" required error={errors.pan_document_url}>
             {renderDocumentUpload("pan_document_url", "Upload PAN Document", panDocumentUrl)}
           </SupplierFormField>
         </div>
@@ -206,7 +197,7 @@ export function VerificationDetailsSection({
         <SupplierSectionHeading>Incorporation Details</SupplierSectionHeading>
 
         <div className="mt-3 grid grid-cols-2 gap-3">
-          <SupplierFormField label="Incorporation / Registration Number">
+          <SupplierFormField label="Incorporation / Registration Number" error={errors.registration_number}>
             <input
               type="text"
               value={registrationNumber}
@@ -216,7 +207,7 @@ export function VerificationDetailsSection({
             />
           </SupplierFormField>
 
-          <SupplierFormField label="Incorporation Certificate">
+          <SupplierFormField label="Incorporation Certificate" error={errors.incorporation_certificate_url}>
             {renderDocumentUpload("incorporation_certificate_url", "Upload Certificate", incorporationCertificateUrl)}
           </SupplierFormField>
         </div>

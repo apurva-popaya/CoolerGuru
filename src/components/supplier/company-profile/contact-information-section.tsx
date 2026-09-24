@@ -7,7 +7,7 @@ import {
   supplierInputClass,
   supplierTextareaClass,
 } from "@/components/supplier/common/supplier-form";
-import type { CompanyFieldChangeHandler } from "@/hooks/use-company-form";
+import type { CompanyFieldChangeHandler, CompanyFieldErrors } from "@/hooks/use-company-form";
 
 type ContactInformationSectionProps = {
   phoneNumber: string;
@@ -16,6 +16,7 @@ type ContactInformationSectionProps = {
   city: string;
   state: string;
   pinCode: string;
+  errors: CompanyFieldErrors;
   onChange: CompanyFieldChangeHandler;
 };
 
@@ -26,12 +27,13 @@ export function ContactInformationSection({
   city,
   state,
   pinCode,
+  errors,
   onChange,
 }: ContactInformationSectionProps) {
   return (
-    <SupplierFormCard title="4. Contact Information">
+    <SupplierFormCard title="Contact Information">
       <div className="grid grid-cols-2 gap-3">
-        <SupplierFormField label="Phone Number" required>
+        <SupplierFormField label="Phone Number" required error={errors.phone_number}>
           <input
             type="tel"
             value={phoneNumber}
@@ -42,7 +44,7 @@ export function ContactInformationSection({
           />
         </SupplierFormField>
 
-        <SupplierFormField label="Email Address" required>
+        <SupplierFormField label="Email Address" required error={errors.email}>
           <input
             type="email"
             value={email}
@@ -55,7 +57,7 @@ export function ContactInformationSection({
       </div>
 
       <div className="mt-4">
-        <SupplierFormField label="Address" required>
+        <SupplierFormField label="Address" required error={errors.address}>
           <textarea
             value={address}
             onChange={(event) =>
@@ -67,7 +69,7 @@ export function ContactInformationSection({
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-3">
-        <SupplierFormField label="City" required>
+        <SupplierFormField label="City" required error={errors.city}>
           <input
             value={city}
             onChange={(event) =>
@@ -77,7 +79,7 @@ export function ContactInformationSection({
           />
         </SupplierFormField>
 
-        <SupplierFormField label="State" required>
+        <SupplierFormField label="State" required error={errors.state}>
           <select
             value={state}
             onChange={(event) =>
@@ -93,7 +95,7 @@ export function ContactInformationSection({
           </select>
         </SupplierFormField>
 
-        <SupplierFormField label="PIN Code" required>
+        <SupplierFormField label="PIN Code" required error={errors.pin_code}>
           <input
             type="text"
             inputMode="numeric"

@@ -7,7 +7,7 @@ import {
   supplierInputClass,
   supplierTextareaClass,
 } from "@/components/supplier/common/supplier-form";
-import type { CompanyFieldChangeHandler } from "@/hooks/use-company-form";
+import type { CompanyFieldChangeHandler, CompanyFieldErrors } from "@/hooks/use-company-form";
 import { COMPANY_BUSINESS_TYPES, type CompanyBusinessType } from "@/lib/api/supplier-create-profile-api";
 
 const BUSINESS_TYPE_LABELS: Record<CompanyBusinessType, string> = {
@@ -22,6 +22,7 @@ type CompanyOverviewSectionProps = {
   name: string;
   description: string;
   businessTypes: CompanyBusinessType[];
+  errors: CompanyFieldErrors;
   onChange: CompanyFieldChangeHandler;
 };
 
@@ -29,6 +30,7 @@ export function CompanyOverviewSection({
   name,
   description,
   businessTypes,
+  errors,
   onChange,
 }: CompanyOverviewSectionProps) {
   const toggleBusinessType = (businessType: CompanyBusinessType) => {
@@ -41,8 +43,8 @@ export function CompanyOverviewSection({
   };
 
   return (
-    <SupplierFormCard title="1. Company Overview">
-      <SupplierFormField label="Company Name" required>
+    <SupplierFormCard title="Company Overview">
+      <SupplierFormField label="Company Name" required error={errors.name}>
         <input
           value={name}
           onChange={(event) => onChange("name", event.target.value)}
@@ -51,7 +53,7 @@ export function CompanyOverviewSection({
       </SupplierFormField>
 
       <div className="mt-4">
-        <SupplierFormField label="Company Description / Overview" required>
+        <SupplierFormField label="Company Description / Overview" required error={errors.description}>
           <textarea
             value={description}
             onChange={(event) =>
@@ -72,7 +74,12 @@ export function CompanyOverviewSection({
       </div>
 
       <div className="mt-4">
-        <SupplierFormField label="Business Type" required description="Select all that apply.">
+        <SupplierFormField
+          label="Business Type"
+          required
+          description="Select all that apply."
+          error={errors.business_types}
+        >
           <div className="flex flex-wrap gap-2">
             {COMPANY_BUSINESS_TYPES.map((businessType) => {
               const isSelected = businessTypes.includes(businessType);

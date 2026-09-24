@@ -58,18 +58,27 @@ export interface CreateCompanyRequest {
   map_address: string;
   latitude: number;
   longitude: number;
+  // Legacy free text; the UI uses `established_year` instead.
   years_in_business: string;
+  // Kept as text for the input; sent as an integer.
+  established_year: string;
   employee_size: string;
   certifications: string[];
   brochure_url: string;
 }
 
+type CompanyDraftValues = Omit<CreateCompanyRequest, "established_year"> & {
+  established_year: number;
+};
+
 /*
- * What is actually sent to the API.
- * The backend rejects empty strings, so blank fields are omitted.
+ * Body of PATCH /companies/me/draft (and PATCH /companies/me once verified).
+ * Only changed fields are sent; `null` clears a field. `name` cannot be cleared.
  */
-export type CompanyPayload = Partial<CreateCompanyRequest> & {
-  name: string;
+export type CompanyDraftPayload = {
+  [K in Exclude<keyof CompanyDraftValues, "name">]?: CompanyDraftValues[K] | null;
+} & {
+  name?: string;
 };
 
 export interface CompanyProfileCompletion {
@@ -88,8 +97,9 @@ type NullableCompanyFields = {
   [K in keyof CreateCompanyRequest]: CreateCompanyRequest[K] | null;
 };
 
-export interface SupplierCompany extends Omit<NullableCompanyFields, "latitude" | "longitude"> {
+export interface SupplierCompany extends Omit<NullableCompanyFields, "latitude" | "longitude" | "established_year"> {
   company_id: number;
+  established_year: number | null;
   slug: string;
   // Prisma Decimal columns are serialized as strings.
   latitude: string | number | null;
@@ -113,17 +123,19 @@ export function getMyCompany() {
   return apiRequest<CompanyResponse>("/companies/me");
 }
 
-export function createCompany(payload: CompanyPayload) {
-  return apiRequest<CompanyResponse>("/companies/me", {
-    method: "POST",
-    body: JSON.stringify(payload),
+/* Creates the company on the first call (201), updates the draft afterwards (200). */
+export function saveCompanyDraft(changes: CompanyDraftPayload) {
+  return apiRequest<CompanyResponse>("/companies/me/draft", {
+    method: "PATCH",
+    body: JSON.stringify(changes),
   });
 }
 
-export function updateMyCompany(payload: Partial<CompanyPayload>) {
+/* Edits after verification; the draft endpoint returns 409 for verified companies. */
+export function updateMyCompany(changes: CompanyDraftPayload) {
   return apiRequest<CompanyResponse>("/companies/me", {
     method: "PATCH",
-    body: JSON.stringify(payload),
+    body: JSON.stringify(changes),
   });
 }
 

@@ -4,7 +4,11 @@ import { ImagePlus, Loader2, Upload, X } from "lucide-react";
 
 import { SafeImage } from "@/components/common/safe-image";
 import { SupplierFormCard, SupplierFormField } from "@/components/supplier/common/supplier-form";
-import type { CompanyFileRemoveHandler, CompanyFileSelectHandler } from "@/hooks/use-company-form";
+import type {
+  CompanyFieldErrors,
+  CompanyFileRemoveHandler,
+  CompanyFileSelectHandler,
+} from "@/hooks/use-company-form";
 import { getUploadAccept, getUploadHint } from "@/lib/api/file-upload-api";
 
 type CompanyMediaSectionProps = {
@@ -12,6 +16,7 @@ type CompanyMediaSectionProps = {
   coverImageUrl: string;
   isLogoUploading: boolean;
   isCoverUploading: boolean;
+  errors: CompanyFieldErrors;
   onFileSelect: CompanyFileSelectHandler;
   onFileRemove: CompanyFileRemoveHandler;
 };
@@ -21,13 +26,14 @@ export function CompanyMediaSection({
   coverImageUrl,
   isLogoUploading,
   isCoverUploading,
+  errors,
   onFileSelect,
   onFileRemove,
 }: CompanyMediaSectionProps) {
   return (
-    <SupplierFormCard title="2. Cover Image & Company Logo">
+    <SupplierFormCard title="Cover Image & Company Logo">
       <div className="grid grid-cols-[135px_1fr] gap-4">
-        <SupplierFormField label="Company Logo">
+        <SupplierFormField label="Company Logo" error={errors.company_logo_url}>
           <label className="relative flex h-[150px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[6px] border border-[#bfc0eb] border-dashed bg-[#fbfaff] text-center focus-within:ring-2 focus-within:ring-[#3024c8]/40">
             {isLogoUploading ? (
               <Loader2 size={22} className="animate-spin text-[#3225ce]" />
@@ -62,7 +68,7 @@ export function CompanyMediaSection({
           )}
         </SupplierFormField>
 
-        <SupplierFormField label="Cover Image">
+        <SupplierFormField label="Cover Image" error={errors.cover_image_url}>
           <label className="flex h-[70px] cursor-pointer items-center justify-center gap-2 rounded-[6px] border border-[#bfc0eb] border-dashed bg-[#fbfaff] focus-within:ring-2 focus-within:ring-[#3024c8]/40">
             {isCoverUploading ? (
               <Loader2 size={18} className="animate-spin text-[#3024c4]" />

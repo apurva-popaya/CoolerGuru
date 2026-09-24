@@ -1,10 +1,10 @@
 import { AlertCircle, BadgeCheck, ClipboardCheck, Clock, XCircle } from "lucide-react";
 
-import type { CompanyProfileCompletion, CompanyVerificationStatus } from "@/lib/api/supplier-create-profile-api";
+import type { CompanyVerificationStatus } from "@/lib/api/supplier-create-profile-api";
 
+// Progress and missing fields are shown per step in CompanyProfileStepper.
 type CompanyProfileStatusBannerProps = {
   status?: CompanyVerificationStatus;
-  completion?: CompanyProfileCompletion;
   verificationNote?: string | null;
 };
 
@@ -58,14 +58,11 @@ const STATUS_CONTENT = {
 
 export function CompanyProfileStatusBanner({
   status = "DRAFT",
-  completion,
   verificationNote,
 }: CompanyProfileStatusBannerProps) {
   const content = STATUS_CONTENT[status];
   const Icon = content.icon;
 
-  const showMissingFields =
-    (status === "DRAFT" || status === "REJECTED") && completion && completion.missing_fields.length > 0;
 
   return (
     <div className={`flex items-center justify-between gap-5 rounded-[9px] border px-5 py-4 ${content.container}`}>
@@ -79,21 +76,11 @@ export function CompanyProfileStatusBanner({
             <h2 className="font-bold text-[#171570] text-[12px]">{content.title}</h2>
 
             <span className={`rounded-[4px] px-2 py-1 font-bold text-[8px] ${content.badgeClass}`}>{content.badge}</span>
-
-            {completion && (
-              <span className="text-[#777b92] text-[8px]">{completion.percentage}% complete</span>
-            )}
           </div>
 
           <p className="mt-1 text-[#555b76] text-[9px]">
             {status === "REJECTED" && verificationNote ? `Reason: ${verificationNote}` : content.description}
           </p>
-
-          {showMissingFields && (
-            <p className="mt-1 text-[#86899d] text-[8px]">
-              Missing: {completion.missing_fields.map((field) => field.replaceAll("_", " ")).join(", ")}
-            </p>
-          )}
         </div>
       </div>
 
