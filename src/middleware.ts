@@ -91,13 +91,75 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+/*
+ * Reads the "name=value" pair from a Set-Cookie header.
+ * An empty value means the backend cleared that cookie.
+ */
+function parseSetCookie(setCookie: string) {
+  const [pair] = setCookie.split(";");
+  const separatorIndex = pair.indexOf("=");
+
+  return {
+    name: pair.slice(0, separatorIndex).trim(),
+    value: pair.slice(separatorIndex + 1).trim(),
+  };
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const cookieHeader = request.headers.get("cookie") || "";
 
+  /*
+   * When the access_token cookie has expired, the backend's /auth/me
+   * renews the session using the refresh_token cookie. It rotates the
+   * refresh token and sends the new tokens back as Set-Cookie headers.
+   *
+   * This fetch runs on the Next.js server, so the browser never sees
+   * those headers. Forward them in every response. If we drop them,
+   * the browser keeps the old refresh token, which the backend has
+   * already revoked, and the user gets logged out.
+   */
+  let setCookieHeaders: string[] = [];
+
+  const withRenewedCookies = (response: NextResponse) => {
+    for (const setCookie of setCookieHeaders) {
+      response.headers.append("Set-Cookie", setCookie);
+    }
+
+    return response;
+  };
+
   const redirectTo = (path: string) => {
-    return NextResponse.redirect(new URL(path, request.url));
+    return withRenewedCookies(NextResponse.redirect(new URL(path, request.url)));
+  };
+
+  /*
+   * Also give the new tokens to Server Components rendering this
+   * request, so their calls to cookies() use the fresh access token.
+   */
+  const continueRequest = () => {
+    if (setCookieHeaders.length === 0) {
+      return NextResponse.next();
+    }
+
+    for (const setCookie of setCookieHeaders) {
+      const { name, value } = parseSetCookie(setCookie);
+
+      if (value) {
+        request.cookies.set(name, value);
+      } else {
+        request.cookies.delete(name);
+      }
+    }
+
+    return withRenewedCookies(
+      NextResponse.next({
+        request: {
+          headers: request.headers,
+        },
+      }),
+    );
   };
 
   let user = null;
@@ -116,6 +178,8 @@ export async function middleware(request: NextRequest) {
 
       cache: "no-store",
     });
+
+    setCookieHeaders = response.headers.getSetCookie();
 
     if (response.ok) {
       const result = await response.json();
@@ -146,7 +210,7 @@ export async function middleware(request: NextRequest) {
    */
   if (isBuyerAuthPage || isSupplierAuthPage || isAdminAuthPage) {
     if (!user) {
-      return NextResponse.next();
+      return continueRequest();
     }
 
     /*
@@ -165,7 +229,7 @@ export async function middleware(request: NextRequest) {
       return redirectTo("/");
     }
 
-    return NextResponse.next();
+    return continueRequest();
   }
 
   /*
@@ -191,7 +255,7 @@ export async function middleware(request: NextRequest) {
       return redirectTo("/admin/login");
     }
 
-    return NextResponse.next();
+    return continueRequest();
   }
 
   /*
@@ -217,7 +281,7 @@ export async function middleware(request: NextRequest) {
       return redirectTo("/supplier/login");
     }
 
-    return NextResponse.next();
+    return continueRequest();
   }
 
   /*
@@ -243,10 +307,10 @@ export async function middleware(request: NextRequest) {
       return redirectTo("/login");
     }
 
-    return NextResponse.next();
+    return continueRequest();
   }
 
-  return NextResponse.next();
+  return continueRequest();
 }
 
 export const config = {
