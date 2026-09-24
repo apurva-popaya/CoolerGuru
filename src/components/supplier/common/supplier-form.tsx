@@ -25,12 +25,20 @@ interface FormFieldProps {
   label: string;
   required?: boolean;
   description?: string;
+  // Highlights the control and shows the message below it.
+  error?: string;
   children: ReactNode;
 }
 
-export function SupplierFormField({ label, required = false, description, children }: FormFieldProps) {
+export function SupplierFormField({ label, required = false, description, error, children }: FormFieldProps) {
   return (
-    <div>
+    <div
+      className={
+        error
+          ? "[&_input:not([type=file])]:border-red-400 [&_select]:border-red-400 [&_textarea]:border-red-400"
+          : undefined
+      }
+    >
       <label className="mb-1.5 block font-bold text-[#292e55] text-[10px]">
         {label}
 
@@ -40,6 +48,12 @@ export function SupplierFormField({ label, required = false, description, childr
       {children}
 
       {description ? <p className="mt-1 text-[#85899f] text-[7.5px] leading-[1.45]">{description}</p> : null}
+
+      {error ? (
+        <p role="alert" className="mt-1 text-[7.5px] text-red-500 leading-[1.45]">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
