@@ -1,6 +1,4 @@
-import {
-  notFound,
-} from "next/navigation";
+import { notFound } from "next/navigation";
 
 import {
   CompanyDetail,
@@ -33,9 +31,7 @@ export default async function AdminCompanyDetailPage({
         companyId,
       );
 
-    if (
-      !response.data?.company
-    ) {
+    if (!response.data?.company) {
       notFound();
     }
 

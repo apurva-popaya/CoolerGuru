@@ -123,16 +123,34 @@ export interface AdminCompanyDetailData {
 export type AdminCompanyDetailResponse =
   ApiResponse<AdminCompanyDetailData>;
 
-export interface ReviewCompanyVerificationPayload {
-  status:
-    | "VERIFIED"
-    | "REJECTED";
+/* -------------------------------------------------------------------------- */
+/* Verification                                                               */
+/* -------------------------------------------------------------------------- */
 
+export interface ReviewCompanyVerificationPayload {
+  status: "VERIFIED" | "REJECTED";
   note: string;
 }
 
 export type ReviewCompanyVerificationResponse =
   ApiResponse<Record<string, unknown>>;
+
+export async function reviewAdminCompanyVerification(
+  companyId: number | string,
+  payload: ReviewCompanyVerificationPayload,
+) {
+  return apiRequest<ReviewCompanyVerificationResponse>(
+    `/admin/companies/${encodeURIComponent(String(companyId))}/verification`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Featured                                                                   */
+/* -------------------------------------------------------------------------- */
 
 export interface UpdateFeaturedCompanyPayload {
   is_featured: boolean;
@@ -153,19 +171,6 @@ export interface UpdateFeaturedCompanyData {
 export type UpdateFeaturedCompanyResponse =
   ApiResponse<UpdateFeaturedCompanyData>;
 
-export async function reviewAdminCompanyVerification(
-  companyId: number | string,
-  payload: ReviewCompanyVerificationPayload,
-) {
-  return apiRequest<ReviewCompanyVerificationResponse>(
-    `/admin/companies/${encodeURIComponent(String(companyId))}/verification`,
-    {
-      method: "PATCH",
-      body: JSON.stringify(payload),
-    },
-  );
-}
-
 export async function updateAdminCompanyFeatured(
   companyId: number | string,
   payload: UpdateFeaturedCompanyPayload,
@@ -178,6 +183,128 @@ export async function updateAdminCompanyFeatured(
     },
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* Active / Suspended status                                                  */
+/* -------------------------------------------------------------------------- */
+
+export interface UpdateAdminCompanyStatusPayload {
+  is_active: boolean;
+  note: string;
+}
+
+export interface UpdateAdminCompanyStatusData {
+  company?: {
+    company_id?: number;
+    name?: string;
+    is_active?: boolean;
+  };
+  [key: string]: unknown;
+}
+
+export type UpdateAdminCompanyStatusResponse =
+  ApiResponse<UpdateAdminCompanyStatusData>;
+
+export async function updateAdminCompanyStatus(
+  companyId: number | string,
+  payload: UpdateAdminCompanyStatusPayload,
+) {
+  return apiRequest<UpdateAdminCompanyStatusResponse>(
+    `/admin/companies/${encodeURIComponent(String(companyId))}/status`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Moderation notes                                                           */
+/* -------------------------------------------------------------------------- */
+
+export interface AdminCompanyModerationNote {
+  id: number | string;
+  note: string;
+  created_at: string;
+
+  created_by?: {
+    user_id?: number;
+    name?: string | null;
+    email?: string | null;
+  } | null;
+}
+
+export interface AdminCompanyNotesPagination {
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface AdminCompanyNotesData {
+  notes: AdminCompanyModerationNote[];
+  pagination: AdminCompanyNotesPagination;
+}
+
+export type AdminCompanyNotesResponse =
+  ApiResponse<AdminCompanyNotesData>;
+
+export interface GetAdminCompanyNotesParams {
+  page?: number;
+  limit?: number;
+}
+
+export async function getAdminCompanyNotes(
+  companyId: number | string,
+  params: GetAdminCompanyNotesParams = {},
+) {
+  const searchParams = new URLSearchParams();
+
+  if (params.page !== undefined) {
+    searchParams.set("page", String(params.page));
+  }
+
+  if (params.limit !== undefined) {
+    searchParams.set("limit", String(params.limit));
+  }
+
+  const queryString = searchParams.toString();
+
+  return apiRequest<AdminCompanyNotesResponse>(
+    `/admin/companies/${encodeURIComponent(String(companyId))}/notes${
+      queryString ? `?${queryString}` : ""
+    }`,
+    {
+      method: "GET",
+    },
+  );
+}
+
+export interface CreateAdminCompanyNotePayload {
+  note: string;
+}
+
+export type CreateAdminCompanyNoteResponse =
+  ApiResponse<Record<string, unknown>>;
+
+export async function createAdminCompanyNote(
+  companyId: number | string,
+  payload: CreateAdminCompanyNotePayload,
+) {
+  return apiRequest<CreateAdminCompanyNoteResponse>(
+    `/admin/companies/${encodeURIComponent(String(companyId))}/notes`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* All companies                                                              */
+/* -------------------------------------------------------------------------- */
 
 export interface AdminCompaniesPagination {
   page: number;
@@ -200,8 +327,10 @@ export interface GetAdminCompaniesParams {
   verification_status?:
     | "DRAFT"
     | "PENDING"
+    | "UNDER_VERIFICATION"
     | "VERIFIED"
     | "REJECTED";
+
   page?: number;
   limit?: number;
 }
@@ -209,8 +338,7 @@ export interface GetAdminCompaniesParams {
 export async function getAdminCompanies(
   params: GetAdminCompaniesParams = {},
 ) {
-  const searchParams =
-    new URLSearchParams();
+  const searchParams = new URLSearchParams();
 
   if (params.verification_status) {
     searchParams.set(
@@ -233,17 +361,21 @@ export async function getAdminCompanies(
     );
   }
 
-  const queryString =
-    searchParams.toString();
+  const queryString = searchParams.toString();
 
   return apiRequest<AdminCompaniesResponse>(
     `/admin/companies${
-      queryString
-        ? `?${queryString}`
-        : ""
+      queryString ? `?${queryString}` : ""
     }`,
     {
       method: "GET",
     },
   );
 }
+
+
+export interface UpdateAdminCompanyStatusPayload {
+  is_active: boolean;
+  note: string;
+}
+
