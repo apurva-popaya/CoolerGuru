@@ -265,6 +265,7 @@ export type ProductApprovalDecision = "APPROVED" | "REJECTED";
 export interface ReviewProductApprovalPayload {
   status: ProductApprovalDecision;
   note: string;
+  is_active: boolean;
 }
 
 export type ReviewProductApprovalResponse = ApiResponse<Record<string, unknown>>;

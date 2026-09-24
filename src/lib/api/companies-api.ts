@@ -51,14 +51,33 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ??
   "http://localhost:8000/api/v1";
 
+export interface GetCompaniesFilters {
+  city?: string;
+  state?: string;
+  business_type?: string;
+}
+
 export async function getCompanies(
   page = 1,
   limit = 12,
+  filters?: GetCompaniesFilters,
 ): Promise<CompaniesResponse> {
   const params = new URLSearchParams({
     page: String(page),
     limit: String(limit),
   });
+
+  if (filters?.city) {
+    params.set("city", filters.city);
+  }
+
+  if (filters?.state) {
+    params.set("state", filters.state);
+  }
+
+  if(filters?.business_type){
+    params.set("business_type", filters.business_type);
+  }
 
   const response = await fetch(
     `${API_BASE_URL}/companies?${params.toString()}`,
@@ -79,7 +98,6 @@ export async function getCompanies(
 
   return response.json();
 }
-
 
 
 

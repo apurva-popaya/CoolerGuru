@@ -38,6 +38,7 @@ export function ProductAdminDecision({ product }: { product: ProductDetailData }
       await reviewProductApproval(product.slug, {
         status: "APPROVED",
         note: "Product approved by admin.",
+        is_active: true
       });
 
       router.refresh();
@@ -66,6 +67,7 @@ export function ProductAdminDecision({ product }: { product: ProductDetailData }
       await reviewProductApproval(product.slug, {
         status: "REJECTED",
         note: sanitizedReason,
+        is_active: false,
       });
 
       setOpen(false);

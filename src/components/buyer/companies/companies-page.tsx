@@ -22,9 +22,17 @@ import {
 } from "./company-tabs";
 import { CompaniesPagination } from "./companies-pagination";
 
+import { useSearchParams } from "next/navigation";
+
 const PAGE_SIZE = 12;
 
 export function CompaniesPage() {
+    const searchParams = useSearchParams();
+
+  const city = searchParams.get("city");
+  const state = searchParams.get("state");
+  const business_type = searchParams.get("business_type");
+
   const [companies, setCompanies] =
     React.useState<DirectoryCompany[]>([]);
 
@@ -57,6 +65,11 @@ export function CompaniesPage() {
           await getCompanies(
             page,
             PAGE_SIZE,
+            {
+      city: city || undefined,
+      state: state || undefined,
+      business_type: business_type || undefined,
+    },
           );
 
         const mappedCompanies =
@@ -84,7 +97,9 @@ export function CompaniesPage() {
         setLoading(false);
       }
     },
-    [],
+
+
+    [city, state, business_type],
   );
 
   React.useEffect(() => {
