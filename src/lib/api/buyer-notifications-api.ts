@@ -1,7 +1,9 @@
-import { getApiErrorMessage } from "@/lib/api/get-api-error-message";
+import { apiRequest } from "@/lib/api/api-client";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+/**
+ * Backend rejects notification list requests with limit > 50.
+ */
+export const MAX_NOTIFICATIONS_LIMIT = 50;
 
 export interface BuyerNotificationInquiry {
   inquiry_number?: string;
@@ -54,31 +56,6 @@ interface GetBuyerNotificationsParams {
   limit?: number;
 }
 
-async function parseResponse<T>(response: Response): Promise<T> {
-  let body: unknown;
-
-  try {
-    body = await response.json();
-  } catch {
-    throw new Error("Unable to read the server response.");
-  }
-
-  if (!response.ok) {
-    if (
-      body &&
-      typeof body === "object" &&
-      "message" in body &&
-      typeof body.message === "string"
-    ) {
-      throw new Error(body.message);
-    }
-
-    throw new Error(`Request failed with status ${response.status}.`);
-  }
-
-  return body as T;
-}
-
 /**
  * Get buyer notifications.
  */
@@ -93,40 +70,36 @@ export async function getBuyerNotifications(
   );
 
   searchParams.set("page", String(params.page ?? 1));
-  searchParams.set("limit", String(params.limit ?? 100));
+  searchParams.set(
+    "limit",
+    String(
+      Math.min(
+        params.limit ?? MAX_NOTIFICATIONS_LIMIT,
+        MAX_NOTIFICATIONS_LIMIT,
+      ),
+    ),
+  );
 
-  const response = await fetch(
-    `${API_BASE_URL}/buyer/notifications?${searchParams.toString()}`,
+  return apiRequest<BuyerNotificationsResponse>(
+    `/buyer/notifications?${searchParams.toString()}`,
     {
       method: "GET",
-      credentials: "include",
-      headers: {
-        Accept: "application/json",
-      },
       cache: "no-store",
     },
   );
-
-  return parseResponse<BuyerNotificationsResponse>(response);
 }
 
 /**
  * Get lightweight unread notification count.
  */
 export async function getBuyerNotificationUnreadCount(): Promise<BuyerNotificationUnreadCountResponse> {
-  const response = await fetch(
-    `${API_BASE_URL}/buyer/notifications/unread-count`,
+  return apiRequest<BuyerNotificationUnreadCountResponse>(
+    "/buyer/notifications/unread-count",
     {
       method: "GET",
-      credentials: "include",
-      headers: {
-        Accept: "application/json",
-      },
       cache: "no-store",
     },
   );
-
-  return parseResponse<BuyerNotificationUnreadCountResponse>(response);
 }
 
 /**
@@ -135,36 +108,24 @@ export async function getBuyerNotificationUnreadCount(): Promise<BuyerNotificati
 export async function markBuyerNotificationAsRead(
   notificationId: number,
 ): Promise<unknown> {
-  const response = await fetch(
-    `${API_BASE_URL}/buyer/notifications/${notificationId}/read`,
+  return apiRequest<unknown>(
+    `/buyer/notifications/${notificationId}/read`,
     {
       method: "PATCH",
-      credentials: "include",
-      headers: {
-        Accept: "application/json",
-      },
     },
   );
-
-  return parseResponse(response);
 }
 
 /**
  * Mark all buyer notifications as read.
  */
 export async function markAllBuyerNotificationsAsRead(): Promise<unknown> {
-  const response = await fetch(
-    `${API_BASE_URL}/buyer/notifications/read-all`,
+  return apiRequest<unknown>(
+    "/buyer/notifications/read-all",
     {
       method: "PATCH",
-      credentials: "include",
-      headers: {
-        Accept: "application/json",
-      },
     },
   );
-
-  return parseResponse(response);
 }
 
 /**

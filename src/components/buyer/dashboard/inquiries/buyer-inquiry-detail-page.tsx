@@ -73,7 +73,7 @@ export function BuyerInquiryDetailPage({
           getBuyerNotifications({
             unread_only: false,
             page: 1,
-            limit: 100,
+            limit: 50,
           }),
         ]);
 

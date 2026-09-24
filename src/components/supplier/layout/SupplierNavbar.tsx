@@ -926,8 +926,11 @@ export default function SupplierNavbar() {
                 </button>
               </div>
 
+              {/* Controlled + readOnly so React doesn't warn when the real input replaces it. */}
               <input
                 type="text"
+                value=""
+                readOnly
                 disabled
                 placeholder="Search companies, products, brands or categories..."
                 className="min-w-0 flex-1 border border-[#dedff0] border-r-0 bg-white px-4 text-[#363b5d] text-[11px] outline-none placeholder:text-[#9a9db2] disabled:bg-white"

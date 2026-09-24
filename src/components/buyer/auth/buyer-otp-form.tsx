@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, LockKeyhole } from "lucide-react";
 
 import { sendBuyerOtp, verifyBuyerOtp } from "@/lib/api/buyer-auth-api";
+import { notifyBuyerAuthChanged } from "@/lib/buyer-auth-events";
 import { sanitizeText } from "@/lib/utils/sanitize";
 
 type BuyerOtpMode = "register" | "login";
@@ -220,6 +221,9 @@ export function BuyerOtpForm({ mode }: BuyerOtpFormProps) {
       console.log("Buyer authenticated:", response);
 
       setSuccessMessage(response.message);
+
+      // Navbar lives in the persistent layout, so tell it to reload the user.
+      notifyBuyerAuthChanged();
 
       router.push("/");
 

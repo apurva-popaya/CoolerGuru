@@ -31,6 +31,7 @@ import {
   getBuyerNotificationUnreadCount,
 } from "@/lib/api/buyer-notifications-api";
 
+import { BUYER_AUTH_CHANGED } from "@/lib/buyer-auth-events";
 import {
   BUYER_NOTIFICATIONS_UPDATED,
 } from "@/lib/buyer-notification-events";
@@ -103,72 +104,101 @@ export function BuyerNavbar() {
         response.data.unread_count,
       );
     } catch (error) {
-      console.error(
+      // Non-critical badge; warn instead of error so the
+      // dev overlay isn't triggered. Keep existing value.
+      console.warn(
         "Buyer notification count error:",
         error,
       );
-
-      // Keep existing value if API fails.
     }
   }, []);
+
+  /**
+   * Tracks the latest auth request so a slower,
+   * older response cannot overwrite a newer one.
+   */
+  const authRequestIdRef = useRef(0);
 
   /**
    * Check authentication and load notification count
    * only for logged-in buyers.
    */
-  useEffect(() => {
-    let active = true;
+  const loadCurrentUser = useCallback(async () => {
+    const requestId = ++authRequestIdRef.current;
 
-    async function initializeBuyerNavbar() {
-      try {
-        const response = await getCurrentUser();
+    try {
+      const response = await getCurrentUser();
 
-        if (!active) {
-          return;
-        }
+      if (requestId !== authRequestIdRef.current) {
+        return;
+      }
 
-        const user = response.user;
+      const user = response.user;
 
-        if (user?.active_portal !== "BUYER") {
-          setIsLoggedIn(false);
-          setBuyerName("Buyer");
-          setNotificationCount(0);
-          setAuthChecked(true);
-
-          return;
-        }
-
-        const fullName =
-          user.name?.trim() ||
-          [user.first_name, user.last_name]
-            .filter(Boolean)
-            .join(" ")
-            .trim() ||
-          "Buyer";
-
-        setBuyerName(fullName);
-        setIsLoggedIn(true);
-        setAuthChecked(true);
-
-        await loadNotificationCount();
-      } catch {
-        if (!active) {
-          return;
-        }
-
+      if (user?.active_portal !== "BUYER") {
         setIsLoggedIn(false);
         setBuyerName("Buyer");
         setNotificationCount(0);
         setAuthChecked(true);
-      }
-    }
 
-    void initializeBuyerNavbar();
+        return;
+      }
+
+      const fullName =
+        user.name?.trim() ||
+        [user.first_name, user.last_name]
+          .filter(Boolean)
+          .join(" ")
+          .trim() ||
+        "Buyer";
+
+      setBuyerName(fullName);
+      setIsLoggedIn(true);
+      setAuthChecked(true);
+
+      await loadNotificationCount();
+    } catch {
+      if (requestId !== authRequestIdRef.current) {
+        return;
+      }
+
+      setIsLoggedIn(false);
+      setBuyerName("Buyer");
+      setNotificationCount(0);
+      setAuthChecked(true);
+    }
+  }, [loadNotificationCount]);
+
+  useEffect(() => {
+    void loadCurrentUser();
 
     return () => {
-      active = false;
+      // Invalidate any in-flight request on unmount.
+      authRequestIdRef.current += 1;
     };
-  }, [loadNotificationCount]);
+  }, [loadCurrentUser]);
+
+  /**
+   * Reload the user after login/register, since the
+   * navbar stays mounted across client navigation.
+   */
+  useEffect(() => {
+    function handleAuthChanged() {
+      void loadCurrentUser();
+    }
+
+    window.addEventListener(
+      BUYER_AUTH_CHANGED,
+      handleAuthChanged,
+    );
+
+    return () => {
+      window.removeEventListener(
+        BUYER_AUTH_CHANGED,
+        handleAuthChanged,
+      );
+    };
+  }, [loadCurrentUser]);
 
   /**
    * Refresh notification count whenever another
