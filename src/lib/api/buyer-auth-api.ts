@@ -7,6 +7,8 @@ export interface SendBuyerOtpRequest {
 
 export interface SendBuyerOtpResponse {
   message: string;
+  // Returned by the backend only outside production, for testing.
+  otp?: string;
 }
 
 export interface VerifyBuyerOtpRequest {

@@ -85,6 +85,10 @@ export function BuyerOtpForm({ mode }: BuyerOtpFormProps) {
       setOtpSent(true);
       setSuccessMessage(response.message);
 
+      if (response.otp) {
+        window.alert(`Your OTP is ${response.otp}`);
+      }
+
       focusFirstOtp();
     } catch (error) {
       setOtpSent(false);
@@ -179,6 +183,10 @@ export function BuyerOtpForm({ mode }: BuyerOtpFormProps) {
       resetOtpFields();
       setOtpSent(true);
       setSuccessMessage(response.message);
+
+      if (response.otp) {
+        window.alert(`Your OTP is ${response.otp}`);
+      }
 
       focusFirstOtp();
     } catch (error) {

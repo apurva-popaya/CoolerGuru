@@ -6,6 +6,8 @@ interface SupplierSendOtpRequest {
 
 interface SupplierSendOtpResponse {
   message: string;
+  // Returned by the backend only outside production, for testing.
+  otp?: string;
 }
 
 interface SupplierVerifyOtpRequest {

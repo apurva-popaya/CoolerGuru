@@ -55,6 +55,10 @@ export default function SupplierRegistrationForm() {
 
       setSuccessMessage(response.message);
 
+      if (response.otp) {
+        window.alert(`Your OTP is ${response.otp}`);
+      }
+
       focusFirstOtp();
     } catch (error) {
       setOtpSent(false);
