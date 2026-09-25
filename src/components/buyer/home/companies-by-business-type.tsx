@@ -14,40 +14,34 @@ import { Container } from "@/components/common/container";
 const businessTypes = [
   {
     title: "Manufacturers",
-    // count: "2000+ Companies",
-    href: "/companies?businessType=manufacturer",
+    href: "/companies?business_type=MANUFACTURER",
     icon: Factory,
   },
   {
     title: "Distributors",
-    // count: "1500+ Companies",
-    href: "/companies?businessType=distributor",
+    href: "/companies?business_type=DISTRIBUTOR",
     icon: PackageCheck,
   },
   {
     title: "Exporters",
-    // count: "300+ Companies",
-    href: "/companies?businessType=exporter",
+    href: "/companies?business_type=EXPORTER",
     icon: UserRound,
   },
   {
     title: "Suppliers",
-    // count: "3000+ Companies",
-    href: "/companies?businessType=supplier",
+    href: "/companies?business_type=SUPPLIER",
     icon: Store,
   },
   {
     title: "OEMs",
-    // count: "500+ Companies",
-    href: "/companies?businessType=oem",
+    href: "/companies?business_type=OEM",
     icon: Boxes,
   },
-  {
-    title: "Wholesalers",
-    // count: "300+ Companies",
-    href: "/companies?businessType=wholesaler",
-    icon: Handshake,
-  },
+  // {
+  //   title: "Wholesalers",
+  //   href: "/companies?business_type=WHOLESALER",
+  //   icon: Handshake,
+  // },
 ];
 
 export function CompaniesByBusinessType() {
@@ -58,7 +52,7 @@ export function CompaniesByBusinessType() {
           Find Companies by Business Type
         </h2>
 
-        <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-5">
           {businessTypes.map((item) => {
             const Icon = item.icon;
 

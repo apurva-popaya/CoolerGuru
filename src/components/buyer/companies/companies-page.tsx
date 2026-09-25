@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { Loader2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Container } from "@/components/common/container";
 
@@ -22,16 +23,81 @@ import {
 } from "./company-tabs";
 import { CompaniesPagination } from "./companies-pagination";
 
-import { useSearchParams } from "next/navigation";
-
 const PAGE_SIZE = 12;
 
+/**
+ * Maps the UI tab value to the business_type
+ * expected by the backend API.
+ */
+const BUSINESS_TYPE_MAP: Record<
+  Exclude<CompanyTab, "all">,
+  string
+> = {
+  manufacturers: "MANUFACTURER",
+  suppliers: "SUPPLIER",
+  exporters: "EXPORTER",
+  oem: "OEM",
+  distributors: "DISTRIBUTOR",
+};
+
+function getTabFromBusinessType(
+  businessType: string | null,
+): CompanyTab {
+  if (!businessType) {
+    return "all";
+  }
+
+  const normalized = businessType.toLowerCase();
+
+  switch (normalized) {
+    case "manufacturer":
+    case "manufacturers":
+      return "manufacturers";
+
+    case "supplier":
+    case "suppliers":
+      return "suppliers";
+
+    case "exporter":
+    case "exporters":
+      return "exporters";
+
+    case "oem":
+      return "oem";
+
+    case "distributor":
+    case "distributors":
+      return "distributors";
+
+    default:
+      return "all";
+  }
+}
+
 export function CompaniesPage() {
-    const searchParams = useSearchParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   const city = searchParams.get("city");
   const state = searchParams.get("state");
-  const business_type = searchParams.get("business_type");
+
+  /*
+   * Support both:
+   *
+   * ?businessType=manufacturer
+   *
+   * and
+   *
+   * ?business_type=MANUFACTURER
+   */
+  const businessType =
+    searchParams.get("businessType") ??
+    searchParams.get("business_type");
+
+  const activeTab = React.useMemo(
+    () => getTabFromBusinessType(businessType),
+    [businessType],
+  );
 
   const [companies, setCompanies] =
     React.useState<DirectoryCompany[]>([]);
@@ -46,9 +112,6 @@ export function CompaniesPage() {
       hasPreviousPage: false,
     });
 
-  const [activeTab, setActiveTab] =
-    React.useState<CompanyTab>("all");
-
   const [loading, setLoading] =
     React.useState(true);
 
@@ -61,16 +124,55 @@ export function CompaniesPage() {
         setLoading(true);
         setError(null);
 
-        const response =
-          await getCompanies(
-            page,
-            PAGE_SIZE,
-            {
-      city: city || undefined,
-      state: state || undefined,
-      business_type: business_type || undefined,
-    },
-          );
+        /*
+         * Convert URL business type to the value
+         * expected by the backend.
+         */
+        let apiBusinessType: string | undefined;
+
+        if (businessType) {
+          const normalized =
+            businessType.toLowerCase();
+
+          switch (normalized) {
+            case "manufacturer":
+            case "manufacturers":
+              apiBusinessType = "MANUFACTURER";
+              break;
+
+            case "supplier":
+            case "suppliers":
+              apiBusinessType = "SUPPLIER";
+              break;
+
+            case "exporter":
+            case "exporters":
+              apiBusinessType = "EXPORTER";
+              break;
+
+            case "oem":
+              apiBusinessType = "OEM";
+              break;
+
+            case "distributor":
+            case "distributors":
+              apiBusinessType = "DISTRIBUTOR";
+              break;
+
+            default:
+              apiBusinessType = undefined;
+          }
+        }
+
+        const response = await getCompanies(
+          page,
+          PAGE_SIZE,
+          {
+            city: city || undefined,
+            state: state || undefined,
+            business_type: apiBusinessType,
+          },
+        );
 
         const mappedCompanies =
           response.data.companies.map(
@@ -97,9 +199,7 @@ export function CompaniesPage() {
         setLoading(false);
       }
     },
-
-
-    [city, state, business_type],
+    [city, state, businessType],
   );
 
   React.useEffect(() => {
@@ -118,18 +218,54 @@ export function CompaniesPage() {
     fetchCompanies(page);
   }
 
-  function handleTabChange(
-    tab: CompanyTab,
-  ) {
-    setActiveTab(tab);
+  function handleTabChange(tab: CompanyTab) {
+    /*
+     * All Companies
+     */
+    if (tab === "all") {
+      const params = new URLSearchParams(
+        searchParams.toString(),
+      );
+
+      params.delete("businessType");
+      params.delete("business_type");
+
+      router.push(
+        `/companies${
+          params.toString()
+            ? `?${params.toString()}`
+            : ""
+        }`,
+      );
+
+      return;
+    }
 
     /*
-     * Currently `/companies` does not expose
-     * filter query parameters in the API contract.
-     *
-     * So only the "All Companies" tab is backed
-     * directly by the API for now.
+     * Business-type tab
      */
+    const businessType =
+      BUSINESS_TYPE_MAP[tab];
+
+    const params = new URLSearchParams(
+      searchParams.toString(),
+    );
+
+    /*
+     * Keep using businessType in the URL
+     * because the homepage also uses it.
+     */
+    params.set("businessType", businessType);
+
+    /*
+     * Remove the old API-style parameter
+     * so we have only one source of truth.
+     */
+    params.delete("business_type");
+
+    router.push(
+      `/companies?${params.toString()}`,
+    );
   }
 
   return (
@@ -213,29 +349,20 @@ export function CompaniesPage() {
 
               {/* Company Grid */}
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                {companies.map(
-                  (company) => (
-                    <CompanyCard
-                      key={company.id}
-                      company={company}
-                    />
-                  ),
-                )}
+                {companies.map((company) => (
+                  <CompanyCard
+                    key={company.id}
+                    company={company}
+                  />
+                ))}
               </div>
 
               {/* Pagination */}
-              {pagination.totalPages >
-                1 && (
+              {pagination.totalPages > 1 && (
                 <CompaniesPagination
-                  currentPage={
-                    pagination.page
-                  }
-                  totalPages={
-                    pagination.totalPages
-                  }
-                  onPageChange={
-                    handlePageChange
-                  }
+                  currentPage={pagination.page}
+                  totalPages={pagination.totalPages}
+                  onPageChange={handlePageChange}
                 />
               )}
             </>

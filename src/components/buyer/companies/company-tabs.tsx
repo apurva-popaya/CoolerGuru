@@ -2,8 +2,8 @@
 
 export type CompanyTab =
   | "all"
-  | "verified"
-  | "premium"
+  | "oem"
+  | "distributors"
   | "manufacturers"
   | "suppliers"
   | "exporters";
@@ -29,15 +29,7 @@ export function CompanyTabs({
     {
       id: "all",
       label: "All Companies",
-      count: totalCompanies,
-    },
-    {
-      id: "verified",
-      label: "Verified",
-    },
-    {
-      id: "premium",
-      label: "Premium",
+      count: activeTab === "all" ? totalCompanies : undefined,
     },
     {
       id: "manufacturers",
@@ -51,22 +43,27 @@ export function CompanyTabs({
       id: "exporters",
       label: "Exporters",
     },
+    {
+      id: "oem",
+      label: "OEM",
+    },
+    {
+      id: "distributors",
+      label: "Distributors",
+    },
   ];
 
   return (
     <div className="overflow-x-auto rounded-[8px] border border-[#e3e4ef] bg-white p-2 scrollbar-none">
       <div className="grid min-w-[650px] grid-cols-6">
         {tabs.map((tab, index) => {
-          const active =
-            activeTab === tab.id;
+          const active = activeTab === tab.id;
 
           return (
             <button
               key={tab.id}
               type="button"
-              onClick={() =>
-                onTabChange(tab.id)
-              }
+              onClick={() => onTabChange(tab.id)}
               className={`relative flex h-[36px] items-center justify-center gap-2 rounded-[5px] px-3 font-bold text-[9px] transition sm:text-[10px] ${
                 active
                   ? "bg-[#2116a5] text-white"
