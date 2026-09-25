@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError } from "@/lib/api/api-client";
-import { createCategory, getCategoryBySlug, updateCategory } from "@/lib/api/categories-api";
+import { createCategory, getCategoryBySlug, updateCategory } from "@/lib/api/admin-categories-api";
 import {
   deleteFile,
   getUploadErrorMessage,
@@ -134,7 +134,7 @@ export function CategoryForm({ mode, operation = "ADD", mainCategorySlug, catego
 
   const [description, setDescription] = React.useState("");
 
-  const [displayOrder, setDisplayOrder] = React.useState("0");
+  const [displayOrder, setDisplayOrder] = React.useState("1");
 
   const [status, setStatus] = React.useState<"Active" | "Inactive">("Active");
 
@@ -168,60 +168,60 @@ export function CategoryForm({ mode, operation = "ADD", mainCategorySlug, catego
       setError("");
 
       try {
-        if (mainCategorySlug) {
-          const response = await getCategoryBySlug(mainCategorySlug);
+ if (mainCategorySlug) {
+  const response = await getCategoryBySlug(mainCategorySlug);
 
-          if (response.data) {
-            setMainCategory(response.data);
-          }
-        }
+  if (response.data?.category) {
+    setMainCategory(response.data.category);
+  }
+}
 
-        if (categorySlug) {
-          const response = await getCategoryBySlug(categorySlug);
+if (categorySlug) {
+  const response = await getCategoryBySlug(categorySlug);
 
-          if (response.data) {
-            setCategory(response.data);
-          }
-        }
+  if (response.data?.category) {
+    setCategory(response.data.category);
+  }
+}
 
-        if (operation === "EDIT" && editSlug) {
-          const response = await getCategoryBySlug(editSlug);
+if (operation === "EDIT" && editSlug) {
+  const response = await getCategoryBySlug(editSlug);
 
-          const item = response.data;
+  const item = response.data?.category;
 
-          if (!item) {
-            throw new Error("Category not found.");
-          }
+  if (!item) {
+    throw new Error("Category not found.");
+  }
 
-          setName(item.name);
+  setName(item.name);
+  setSlug(item.slug);
+  setDescription(item.description ?? "");
+  setDisplayOrder(String(item.sort_order ?? 0));
+  setStatus(item.is_active === false ? "Inactive" : "Active");
+  setEditCategoryId(item.category_id);
+  setImageUrl(item.image ?? "");
 
-          setSlug(item.slug);
+  // GET /categories returns the URL only;
+  // find its fileId for replace/delete.
+  if (item.image) {
+    try {
+      const files = await listAllFiles({
+        category: "category_image",
+        categoryId: item.category_id,
+      });
 
-          setDescription(item.description ?? "");
+      const file = files.find(
+        (candidate) => candidate.url === item.image,
+      );
 
-          setDisplayOrder(String(item.sort_order ?? 0));
-
-          setStatus(item.is_active === false ? "Inactive" : "Active");
-
-          setEditCategoryId(item.category_id);
-
-          setImageUrl(item.image ?? "");
-
-          // GET /categories returns the url only; find its fileId for replace/delete.
-          if (item.image) {
-            try {
-              const files = await listAllFiles({ category: "category_image", categoryId: item.category_id });
-
-              const file = files.find((candidate) => candidate.url === item.image);
-
-              setImageFileId(file?.fileId);
-              setImageName(file?.originalFilename ?? undefined);
-            } catch (lookupError) {
-              // Not fatal: without a fileId a new upload replaces the image on save.
-              console.error("Category image lookup failed:", lookupError);
-            }
-          }
-        }
+      setImageFileId(file?.fileId);
+      setImageName(file?.originalFilename ?? undefined);
+    } catch (lookupError) {
+      // Not fatal.
+      console.error("Category image lookup failed:", lookupError);
+    }
+  }
+}
       } catch (error) {
         setError(getApiErrorMessage(error));
       } finally {
@@ -311,7 +311,7 @@ export function CategoryForm({ mode, operation = "ADD", mainCategorySlug, catego
 
           description: sanitizeText(description) || null,
 
-          sort_order: Number(displayOrder),
+          sort_order: Math.max(1, Number(displayOrder) || 1),
 
           is_active: status === "Active",
 
@@ -538,13 +538,26 @@ export function CategoryForm({ mode, operation = "ADD", mainCategorySlug, catego
                 </label>
 
                 <Input
-                  id="display-order"
-                  type="number"
-                  min="0"
-                  value={displayOrder}
-                  onChange={(event) => setDisplayOrder(event.target.value)}
-                  className="mt-2 h-11"
-                />
+  id="display-order"
+  type="number"
+  min="1"
+  value={displayOrder}
+  onChange={(event) => {
+    const value = event.target.value;
+
+    if (value === "") {
+      setDisplayOrder("1");
+      return;
+    }
+
+    const numberValue = Number(value);
+
+    if (numberValue >= 1) {
+      setDisplayOrder(String(numberValue));
+    }
+  }}
+  className="mt-2 h-11"
+/>
 
                 <p className="mt-1 text-[11px] text-muted-foreground">Lower numbers will appear first.</p>
               </div>
