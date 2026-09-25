@@ -1,6 +1,7 @@
 "use client";
-
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import * as React from "react";
 
 import {
   ArrowLeft,
@@ -18,6 +19,7 @@ import {
 import { DetailSection } from "@/components/admin/company-detail/detail-section";
 import { StatusBadge, type StatusVariant } from "@/components/common/status-badge";
 import { Button } from "@/components/ui/button";
+import { updateProductActiveStatus } from "@/lib/api/admin-products-api";
 
 import { ProductAdminDecision } from "./product-admin-decision";
 import type { ProductDetailData } from "./product-detail-data";
@@ -45,6 +47,41 @@ export function ProductDetail({ product }: { product: ProductDetailData }) {
   const approved = product.approvalStatus === "Approved";
 
   const rejected = product.approvalStatus === "Rejected";
+
+  const router = useRouter();
+
+  const [updatingActive, setUpdatingActive] = React.useState(false);
+
+  const [activeError, setActiveError] = React.useState("");
+
+    async function handleToggleActive() {
+    if (updatingActive) {
+      return;
+    }
+
+    const isCurrentlyActive = product.listingStatus === "Active";
+    const nextActiveStatus = !isCurrentlyActive;
+
+    setUpdatingActive(true);
+    setActiveError("");
+
+    try {
+      await updateProductActiveStatus(
+        product.slug,
+        nextActiveStatus,
+      );
+
+      router.refresh();
+    } catch (error) {
+      setActiveError(
+        error instanceof Error
+          ? error.message
+          : "Unable to update product status.",
+      );
+    } finally {
+      setUpdatingActive(false);
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -103,21 +140,45 @@ export function ProductDetail({ product }: { product: ProductDetailData }) {
       </div>
 
       {approved && (
-        <div className="flex justify-end gap-3">
-          {product.companyId !== null ? (
-            <Button asChild variant="outline">
-              <Link href={`/admin/companies/${product.companyId}`}>
-                <Building2 className="size-4" />
-                View Company
-              </Link>
-            </Button>
-          ) : null}
+  <div className="flex flex-col items-end gap-2">
+    {activeError ? (
+      <div className="w-full rounded-[6px] border border-red-200 bg-red-50 px-3 py-2 text-[11px] font-medium text-red-600">
+        {activeError}
+      </div>
+    ) : null}
 
-          <Button variant="outline" className="border-red-300 text-red-600 hover:bg-red-50">
-            Deactivate Product
-          </Button>
-        </div>
-      )}
+    <div className="flex justify-end gap-3">
+      {product.companyId !== null ? (
+        <Button asChild variant="outline">
+          <Link href={`/admin/companies/${product.companyId}`}>
+            <Building2 className="size-4" />
+            View Company
+          </Link>
+        </Button>
+      ) : null}
+
+      <Button
+        type="button"
+        variant="outline"
+        disabled={updatingActive}
+        onClick={() => {
+          void handleToggleActive();
+        }}
+        className={
+          product.listingStatus === "Active"
+            ? "border-red-300 text-red-600 hover:bg-red-50"
+            : "border-green-300 text-green-600 hover:bg-green-50"
+        }
+      >
+        {updatingActive
+          ? "Updating..."
+          : product.listingStatus === "Active"
+            ? "Deactivate Product"
+            : "Activate Product"}
+      </Button>
+    </div>
+  </div>
+)}
 
       {rejected && (
         <div className="rounded-[9px] border border-red-200 bg-red-50 p-4">
