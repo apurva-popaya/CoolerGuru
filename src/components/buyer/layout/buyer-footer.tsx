@@ -23,10 +23,6 @@ const buyerLinks = [
     href: "/products",
   },
   {
-    label: "By Category",
-    href: "/categories",
-  },
-  {
     label: "By Location",
     href: "/companies",
   },
@@ -56,10 +52,6 @@ const supplierLinks = [
   {
     label: "Supplier Benefits",
     href: "/supplier",
-  },
-  {
-    label: "Pricing",
-    href: "/supplier/pricing",
   },
 ];
 
@@ -125,13 +117,15 @@ export function BuyerFooter() {
         >
           {/* BRAND */}
           <div className="min-w-0">
-            <Image
-              src="/images/logo/logo-light1.png"
-              alt="CoolerGuru"
-              width={175}
-              height={55}
-              className="h-auto w-[140px] brightness-0 invert sm:w-[150px]"
-            />
+            <Link href="/">
+  <Image
+    src="/images/logo/logo-light1.png"
+    alt="CoolerGuru"
+    width={175}
+    height={55}
+    className="h-auto w-[140px] brightness-0 invert sm:w-[150px]"
+  />
+</Link>
 
             <p className="mt-3 max-w-[220px] text-[9px] leading-[1.55] text-white/80">
               India&apos;s most comprehensive directory for air cooler
@@ -184,15 +178,19 @@ export function BuyerFooter() {
             </h3>
 
             <div className="mt-3 space-y-2.5">
-              <ContactItem
-                icon={<Phone size={13} />}
-                text="+91 98765 43210"
-              />
+              <a href="tel:+919876543210">
+  <ContactItem
+    icon={<Phone size={13} />}
+    text="+91 98765 43210"
+  />
+</a>
 
-              <ContactItem
-                icon={<Mail size={13} />}
-                text="support@coolerguru.com"
-              />
+<a href="mailto:support@coolerguru.com">
+  <ContactItem
+    icon={<Mail size={13} />}
+    text="support@coolerguru.com"
+  />
+</a>
 
               <ContactItem
                 icon={<MapPin size={13} />}

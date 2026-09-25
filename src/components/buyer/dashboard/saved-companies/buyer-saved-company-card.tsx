@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/common/safe-image";
 import Link from "next/link";
 
 import {
@@ -64,7 +64,7 @@ export function BuyerSavedCompanyCard({
         <div className="flex h-[82px] w-[82px] items-center justify-center rounded-[7px] border border-[#e2e3ee] bg-white p-2">
           <div className="relative h-full w-full">
             {company.company_logo_url ? (
-              <Image
+              <SafeImage
                 src={company.company_logo_url}
                 alt={company.name}
                 fill
