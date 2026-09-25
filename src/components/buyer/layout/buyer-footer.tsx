@@ -110,7 +110,7 @@ export function BuyerFooter() {
             mx-auto w-full max-w-[1600px]
             grid grid-cols-1 gap-7
             sm:grid-cols-2
-            lg:grid-cols-4
+            lg:grid-cols-6
             xl:grid-cols-[1.35fr_1fr_1fr_1fr_1fr_1.2fr]
             xl:gap-7
           "
