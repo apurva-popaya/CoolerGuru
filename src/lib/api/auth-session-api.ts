@@ -55,6 +55,27 @@ export async function getCurrentUser() {
   });
 }
 
+/* Self-service fields only. null (or "") clears an optional field. */
+export interface UpdateMyProfilePayload {
+  name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  profile_image_url?: string | null;
+}
+
+export interface UpdateMyProfileResponse {
+  message: string;
+  user: AuthUser;
+}
+
+export async function updateMyProfile(payload: UpdateMyProfilePayload) {
+  return apiRequest<UpdateMyProfileResponse>("/users/me", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function logoutUser() {
   return apiRequest<ApiResponse>("/auth/logout", {
     method: "POST",

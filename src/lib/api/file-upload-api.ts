@@ -17,6 +17,7 @@ export const UPLOAD_CATEGORIES = [
   "product_image",
   "product_brochure",
   "category_image",
+  "user_profile_image",
 ] as const;
 
 export type UploadCategory = (typeof UPLOAD_CATEGORIES)[number];
@@ -96,6 +97,7 @@ const UPLOAD_KINDS: Record<UploadCategory, UploadKind> = {
   product_image: "image",
   product_brochure: "pdf",
   category_image: "image",
+  user_profile_image: "image",
 };
 
 /* Categories that accept several files in one request (`files` field). */
