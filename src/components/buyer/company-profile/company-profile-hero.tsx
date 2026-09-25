@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { SafeImage } from "@/components/common/safe-image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import {
   Bookmark,
@@ -16,6 +17,7 @@ import {
   UsersRound,
 } from "lucide-react";
 
+import { ApiError } from "@/lib/api/api-client";
 import {
   getSavedStatus,
   removeSavedCompany,
@@ -24,6 +26,10 @@ import {
 
 import type { CompanyProfile } from "@/types/company-profile";
 
+function isUnauthorized(error: unknown) {
+  return error instanceof ApiError && error.status === 401;
+}
+
 interface CompanyProfileHeroProps {
   company: CompanyProfile;
 }
@@ -31,6 +37,8 @@ interface CompanyProfileHeroProps {
 export function CompanyProfileHero({
   company,
 }: CompanyProfileHeroProps) {
+  const router = useRouter();
+
   const [isSaved, setIsSaved] = useState(false);
   const [loadingSavedStatus, setLoadingSavedStatus] = useState(true);
   const [savingCompany, setSavingCompany] = useState(false);
@@ -65,10 +73,13 @@ export function CompanyProfileHero({
 
         setIsSaved(savedCompany?.is_saved ?? false);
       } catch (error) {
-        console.error(
-          "Failed to fetch company saved status:",
-          error,
-        );
+        // Logged-out visitors get 401: just show the company as not saved.
+        if (!isUnauthorized(error)) {
+          console.warn(
+            "Failed to fetch company saved status:",
+            error,
+          );
+        }
       } finally {
         if (!cancelled) {
           setLoadingSavedStatus(false);
@@ -107,7 +118,12 @@ export function CompanyProfileHero({
 
       setIsSaved(response.data.is_saved);
     } catch (error) {
-      console.error(
+      if (isUnauthorized(error)) {
+        router.push("/login");
+        return;
+      }
+
+      console.warn(
         `Failed to ${isSaved ? "remove" : "save"} company:`,
         error,
       );
