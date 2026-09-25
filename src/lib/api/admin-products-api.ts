@@ -276,3 +276,20 @@ export async function reviewProductApproval(slug: string, payload: ReviewProduct
     body: JSON.stringify(payload),
   });
 }
+
+
+export async function updateProductActiveStatus(
+  slug: string,
+  isActive: boolean,
+) {
+  return apiRequest<ReviewProductApprovalResponse>(
+    `/admin/products/${encodeURIComponent(slug)}/approval`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        status: "APPROVED",
+        is_active: isActive,
+      }),
+    },
+  );
+}
